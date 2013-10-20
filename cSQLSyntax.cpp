@@ -435,6 +435,9 @@ void __fastcall TSQLEdit::MouseUp(TMouseButton Button, Classes::TShiftState Shif
 void TSQLEdit::ProcessMouseMove(int &x, int &y)
 {
   WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+  NSpan * ch = GetCursor() != NULL ? GetCursor()->line : NULL;
+  NSpan * ch2 = GetCursorEnd() != NULL ? GetCursorEnd()->line : NULL;
+
   ProcessMouseClear();
   itrCursorSecond = XYtoItr(x, y);
   cursorsInInvOrder = (y < cy || (y == cy && x < cx));
@@ -444,7 +447,12 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
     GetCursorEnd()->MarkupEnd(selectionFormat);
   }
   if(*itrCursor != *itrCursorSecond)
+  {
+    if(ch) parser->ParseFromLine(ch, 2);
     parser->ParseFromLine(GetCursor()->line, 2);
+    if(GetCursorEnd()) parser->ParseFromLine(GetCursorEnd()->line, 2);
+    if(ch2) parser->ParseFromLine(ch2, 2);
+  }
   if(!recmsg)
   {
     recmsg = true;

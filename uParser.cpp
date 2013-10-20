@@ -200,43 +200,36 @@ void __fastcall Parser::Execute()
         itr->line->parserState = this->state;
         tasklistprior.remove(itr->line);
         tasklist.remove(itr->line);
-#ifdef DEBUG
-        Write("calling ParseLine");
-#endif
         ParseLine(itr, searchtoken, linenum >= 0);
-#ifdef DEBUG
-        Write("exiting ParseLine");
-#endif
-        if(linenum && linenum >= 0);
+        if(linenum >= 0);
         {
           FlushAll();
-          if(itr->line->nextline == NULL)
-            SendEof();
         }
         itr->GoChar();
-        ReleaseMutex(bufferMutex); //let buffer to push new task
         if(linenum >= 0)
           linenum = parent->GetLineNum(itr->line);
         else if(parent->GetLineFirst(itr->line))
           linenum = 0;
+        ReleaseMutex(bufferMutex); //let buffer to push new task
+
         this->state.statemask = this->state.statemask | MASK_PARSED;
+
         WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
 
-        if(!(linenum >= 0 && linenum <= parent->GetVisLineCount() && itr->line->parserState != this->state) && tasklistprior.size() > 0 )
+        //if(!(linenum >= 0 && linenum <= parent->GetVisLineCount() && itr->line->parserState != this->state) && tasklistprior.size() > 0 )
+        if(linenum < 0 && tasklistprior.size() > 0)
         {
           if(itr->word->next)
             this->tasklist.push_back(itr->line);
-          else if(linenum >= 0)
-            FlushAll();
           break;
         }
       }
       if(!itr->word->next && linenum >= 0)
       {
-        FlushAll();
+        if(first)  //means line has not been either parsed or flushed, because iter was already on nextline (empty line)
+          FlushAll();
         SendEof();
       }
-
 
       itr->line->parserState = this->state;
       ReleaseMutex(bufferMutex);
@@ -417,17 +410,8 @@ void Parser::CheckMarkup(Iter * itr, bool paint)
   {
     if((*m)->pos == itr->offset)
     {
-#ifdef DEBUG
-  Write(String("found mark: pain = ")+String((int)paint));
-#endif
       if(paint)
         Flush();
-#ifdef DEBUG
-  Write(" flushed");
-  Mark * n = (*m);
-  Write(" dereferenced");
-  Write(String((int)n->begin));
-#endif
       if((*m)->begin)
       {
 
