@@ -1,0 +1,10 @@
+#define DEBUG
+//define DEBUG_CURSOR
+#define DEBUG_REPAINT true
+
+
+
+#define FONTSIZE 13
+#define LINESIZE 20
+#define WAIT_TIMEOUT_TIME INFINITE
+#define Y_OFF 0

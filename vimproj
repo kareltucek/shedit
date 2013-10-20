@@ -1,0 +1,12 @@
+se path=""
+se tags=~/.vim/ctags/SQL;/,~/.vim/ctags/xetags
+call OpenObject("cSQLSyntax")
+call OpenObject("uBuffer")
+call OpenObject("uIter")
+call OpenObject("uSpan")
+call OpenObject("uParser")
+call OpenObject("uDrawer")
+call OpenObject("uFormat")
+call OpenObject("uMark")
+call OpenObject("uLanguageDefinition")
+call OpenObject("uLanguageDefinitionSQL")
