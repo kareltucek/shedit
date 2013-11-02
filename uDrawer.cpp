@@ -126,19 +126,19 @@ void __fastcall Drawer::Execute()
       switch(tasktoprocess->type)
       {
         case DrawType::Text:
-        {
-          if(((DrawTaskText*)tasktoprocess)->format.foreground)
-            drawcanvas->Font->Color = *(((DrawTaskText*)tasktoprocess)->format.foreground);
-          if(((DrawTaskText*)tasktoprocess)->format.background)
-            drawcanvas->Brush->Color = *(((DrawTaskText*)tasktoprocess)->format.background);
+          {
+            if(((DrawTaskText*)tasktoprocess)->format.foreground)
+              drawcanvas->Font->Color = *(((DrawTaskText*)tasktoprocess)->format.foreground);
+            if(((DrawTaskText*)tasktoprocess)->format.background)
+              drawcanvas->Brush->Color = *(((DrawTaskText*)tasktoprocess)->format.background);
 
-          if(((DrawTaskText*)tasktoprocess)->newline)
-            x = 2;
-          y = Y_OFF+LINESIZE*((DrawTaskText*)tasktoprocess)->linenum;
-          drawcanvas->TextOut(x, y, *(((DrawTaskText*)tasktoprocess)->text));
-          x += drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text));
-
-        }
+            if(((DrawTaskText*)tasktoprocess)->newline)
+              x = 2;
+            y = Y_OFF+LINESIZE*((DrawTaskText*)tasktoprocess)->linenum;
+            drawcanvas->TextOut(x, y, *(((DrawTaskText*)tasktoprocess)->text));
+            x += drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text));
+            
+          }
           break;
         case DrawType::Move:
 #define FROM ((DrawTaskMove*)tasktoprocess)->from

@@ -25,21 +25,14 @@ std::ofstream myfile;
 //---------------------------------------------------------------------------
 Parser::ParserState::ParserState()
 {
-  parentheses = 0;
-  braces = 0;
-  brackets = 0;
   statemask = 0;
   markupStack = NULL;
 }
 //---------------------------------------------------------------------------
 SHEdit::Parser::ParserState& Parser::ParserState::operator=(const SHEdit::Parser::ParserState& p)
 {
-  parentheses = p.parentheses;
-  braces = p.braces;
-  brackets = p.brackets;
+  parsed = p.parsed;
   statemask = p.statemask;
-
-
   while(markupStack != NULL)
   {
     Node *n = markupStack;
@@ -69,12 +62,12 @@ Parser::Node::Node(SHEdit::Format * format, SHEdit::Parser::Node * node)
 //---------------------------------------------------------------------------
 bool Parser::ParserState::operator==(const ParserState& state)
 {
-  return (this->statemask == state.statemask && this->braces == state.braces && this->brackets == state.brackets && this->parentheses == state.parentheses && MarkupEquals(markupStack, state.markupStack));
+  return (this->statemask == state.statemask && this->parsed == state.parsed &&  MarkupEquals(markupStack, state.markupStack));
 }
 //---------------------------------------------------------------------------
 bool Parser::ParserState::operator!=(const ParserState& state)
 {
-  return !(this->statemask == state.statemask && this->braces == state.braces && this->brackets == state.brackets && this->parentheses == state.parentheses && MarkupEquals(markupStack, state.markupStack));
+  return !(this->statemask == state.statemask && this->parsed == state.parsed && MarkupEquals(markupStack, state.markupStack));
 }
 //---------------------------------------------------------------------------
 void Parser::MarkupPush(SHEdit::Parser::Node ** at, SHEdit::Format * format)
@@ -201,7 +194,7 @@ void __fastcall Parser::Execute()
         tasklistprior.remove(itr->line);
         tasklist.remove(itr->line);
         ParseLine(itr, searchtoken, linenum >= 0);
-        if(linenum >= 0);
+        if(linenum >= 0)
         {
           FlushAll();
         }
@@ -212,7 +205,7 @@ void __fastcall Parser::Execute()
           linenum = 0;
         ReleaseMutex(bufferMutex); //let buffer to push new task
 
-        this->state.statemask = this->state.statemask | MASK_PARSED;
+        this->state.parsed = true;
 
         WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
 
@@ -270,39 +263,25 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
   Write("entering ParseLine function");
 #endif
   wchar_t * ptr;
+  LanguageDefinition::TreeItem * lineback;
+  LanguageDefinition::TreeItem * lasttoken;
+  bool linetag = false;
   switch(searchtoken->type)
   {
     case LangDefSpecType::Normal:
     case LangDefSpecType::Nomatch:
     case LangDefSpecType::Empty:
+    case LangDefSpecType::NoEmpty:
+    case LangDefSpecType::PairTag:
+    case LangDefSpecType::LineTag:
       while(*(itr->ptr) != '\n')
       {
         if(itr->word->mark)
           CheckMarkup(itr, paint);
+        lasttoken = searchtoken;
         switch(langdef->Go(searchtoken, *(itr->ptr)))
         {
           case LangDefSpecType::Empty:
-            switch(*(itr->ptr))
-            {
-              case '(':
-                state.parentheses++;
-                break;
-              case '[':
-                state.brackets++;
-                break;
-              case '{':
-                state.braces++;
-                break;
-              case ')':
-                state.parentheses--;
-                break;
-              case ']':
-                state.brackets--;
-                break;
-              case '}':
-                state.braces--;
-                break;
-            }
             if(paint)
             {
               *(actTask->text) += *(itr->ptr);
@@ -310,7 +289,23 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
               Flush();
             }
             break;
+          case LangDefSpecType::NoEmpty:
+            if(paint)
+            {
+              Flush();
+              *(actTask->text) += *(itr->ptr);
+              actTask->format = *(searchtoken->format);
+            }
+            break;
+          case LangDefSpecType::LineTag:
+            linetag = true;
+            lineback = lasttoken;
+            goto paint;
+          case LangDefSpecType::PairTag:
+            Flush();
+            state.statemask = searchtoken->mask;
           case LangDefSpecType::Normal:
+paint:
             if(paint)
             {
               *(actTask->text) += *(itr->ptr);
@@ -322,9 +317,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
             if(paint)
               *(actTask->text) += *(itr->ptr);
             break;
-          case LangDefSpecType::PairTag:
           case LangDefSpecType::WordTag:
-          case LangDefSpecType::LineTag:
             if(paint)
               *(actTask->text) += *(itr->ptr);
             itr->GoChar();
@@ -335,34 +328,10 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
       }
       if(itr->word->mark)
         CheckMarkup(itr, paint);
+      if(linetag)
+        searchtoken = lineback;
       return;
       break;
-    case LangDefSpecType::PairTag:
-      ptr = searchtoken->pair;
-      actTask->format = *(searchtoken->format);
-      while(*(itr->ptr) != '\n')
-      {
-        if(itr->word->mark)
-          CheckMarkup(itr, paint);
-        if(paint)
-          *(actTask->text) += *(itr->ptr);
-        if(*(itr->ptr) == *ptr)
-          ptr++;
-        else
-          ptr = searchtoken->pair;
-        itr->GoChar();
-        if(*ptr == '\0')
-        {
-          if(paint)
-            Flush();
-          searchtoken = langdef->GetTree();
-          actTask->format = *(searchtoken->format);
-          ParseLine(itr, searchtoken, paint);
-        }
-      }
-      if(itr->word->mark)
-        CheckMarkup(itr,paint);
-      return;
     case LangDefSpecType::WordTag:
       actTask->format = *(searchtoken->format);
       while(langdef->IsAlNum(*(itr->ptr))) //IsAlNum should return true for \n //seems like accidental comment
@@ -371,30 +340,14 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
           CheckMarkup(itr,paint);
         if(paint)
           *(actTask->text) += *(itr->ptr);
-        ++itr;      
+        itr->GoChar();
       }
       if(itr->word->mark)
         CheckMarkup(itr,paint);
       if(paint)
         Flush();
-      searchtoken = langdef->GetTree();
+      searchtoken = searchtoken->nextTree;
       ParseLine(itr, searchtoken, paint);
-      return;
-    case LangDefSpecType::LineTag:
-      actTask->format = *(searchtoken->format);
-      while(*(itr->ptr) != '\n')
-      {
-        if(itr->word->mark)
-          CheckMarkup(itr,paint);
-        if(paint)
-          *(actTask->text) += *(itr->ptr);
-        ++itr;      
-      }
-      if(itr->word->mark)
-        CheckMarkup(itr,paint);
-      if(paint)
-        Flush();
-      searchtoken = langdef->GetTree();
       return;
   }
 }
@@ -403,9 +356,6 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
 void Parser::CheckMarkup(Iter * itr, bool paint)
 {
   Mark ** m = &(itr->word->mark);
-#ifdef DEBUG
-  Write("checking marks");
-#endif
   while(*m != NULL)
   {
     if((*m)->pos == itr->offset)
@@ -414,26 +364,15 @@ void Parser::CheckMarkup(Iter * itr, bool paint)
         Flush();
       if((*m)->begin)
       {
-
-#ifdef DEBUG
-  Write(" begin");
-#endif
         MarkupPush(&(state.markupStack), (*m)->format);
       }
       else
       {
-
-#ifdef DEBUG
-  Write(" end");
-#endif
         MarkupPop(&(state.markupStack), (*m)->format);
       }
     }
     m = &((*m)->mark);
   }
-#ifdef DEBUG
-  Write("leaving marks");
-#endif
 }
 //---------------------------------------------------------------------------
 void Parser::SetLangDef(LanguageDefinition * langdef)
@@ -493,7 +432,7 @@ void Parser::SendEof()
 {
   DrawTaskEof * task = new DrawTaskEof();
   task->linenum = this->linenum+1;
-    WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
+  WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
   drawer->Draw(task);
   ReleaseMutex(drawerQueueMutex);
 }

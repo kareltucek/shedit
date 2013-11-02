@@ -20,20 +20,21 @@
 namespace SHEdit
 {
   class FontStyle;
-  enum LangDefSpecType{Empty, Nomatch, Normal, PairTag, WordTag, LineTag};
+  enum LangDefSpecType{Empty, Nomatch, Normal, PairTag, WordTag, LineTag, NoEmpty};
   //---------------------------------------------------------------------------
   class LanguageDefinition
   {
     public:
       struct TreeItem
       {
-        TreeItem(wchar_t c, LangDefSpecType type, FontStyle * format);
+        TreeItem(wchar_t c, LangDefSpecType type, FontStyle * format, LanguageDefinition::TreeItem * at);
 
         wchar_t thisItem;
         std::list<TreeItem*> items;
+        TreeItem * map[128];
         FontStyle * format;
         LangDefSpecType type;
-        wchar_t * pair;
+        TreeItem * nextTree;
         short mask;
       };
 
@@ -44,13 +45,18 @@ namespace SHEdit
       std::list<TreeItem*> specItems;
       short masksUsed;
 
-      TreeItem* FindOrCreateItem(TreeItem * item, wchar_t c);
-      TreeItem* FindOrCreateDefinition(wchar_t c);
+      TreeItem* FindOrCreateItem(TreeItem * item, wchar_t c, TreeItem * at);
     protected:
-      void AddReservedNames(wchar_t * string, TColor * color); 
-      void AddSpecial(wchar_t * opening, wchar_t * closing, LangDefSpecType type, TColor * color);
+      void AddReservedNames(wchar_t * string, FontStyle * format, TreeItem * at = NULL);
+      void AddJump(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeItem * at, TreeItem * to);
+      void AddWord(wchar_t * string, FontStyle * format, TreeItem * at = NULL);
+      TreeItem * AddLine(wchar_t * string, FontStyle * format, TreeItem * at = NULL, TreeItem * to = NULL);
+      TreeItem * AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeItem * at = NULL);
+      TreeItem * AddNewTree(FontStyle * format);
+
       void SetCaseSensitive(bool caseSensitive);
       void SetDefaultColor(TColor * defColor);
+
     public:
 
       __fastcall LanguageDefinition();

@@ -31,6 +31,9 @@ namespace SHEdit
       bool GoChar();
       bool RevChar();
 
+      int GetLeftOffset();
+      void GoBy(int chars);
+
       static void MarkupBegin(Mark ** at, int pos, bool begin, Format * format);
       void MarkupBegin(SHEdit::Format * format);
       void MarkupEnd(SHEdit::Format * format);

@@ -56,10 +56,15 @@ TSQLEdit * SQLEditFocused; //callback musi jit na statickou metodu...
   itrCursor = buffer->End();
   itrCursorSecond = NULL;
 
+  scrolldelta = 0;
+  cursorLeftOffset = 0;
+
   recmsg = false;
 
   selectionFormat = new Format(NULL, new TColor(clGray));
   cursorsInInvOrder = false;
+
+  clipboard = Clipboard();
 
   bufferChanged = CreateEvent(NULL, true, false, NULL);
   bufferMutex = CreateMutex(NULL, false, NULL);
@@ -148,19 +153,19 @@ void __fastcall TSQLEdit::RepaintWindow(bool force)
 {
   if(!DEBUG_REPAINT || force)
   {
-  WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
-  NSpan * line = itrLine->line;
-  for(int i = GetVisLineCount(); i > 0; i--)
-  {
-    parser->ParseFromLine(line, 2);
-    if(line->nextline && line->nextline->nextline)
-      line = line->nextline;
-    else
-      break;
-  }
-  ReleaseMutex(bufferMutex);
-  SetEvent(bufferChanged);
-
+    WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+    NSpan * line = itrLine->line;
+    for(int i = GetVisLineCount(); i > 0; i--)
+    {
+      parser->ParseFromLine(line, 2);
+      if(line->nextline && line->nextline->nextline)
+        line = line->nextline;
+      else
+        break;
+    }
+    ReleaseMutex(bufferMutex);
+    SetEvent(bufferChanged);
+    
   }
 }
 
@@ -181,19 +186,26 @@ LRESULT CALLBACK TSQLEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
     {
       case VK_LEFT:
         itrCursor->RevChar();
+        AdjustLine();
         trap = true;
         break;
       case VK_RIGHT:
         itrCursor->GoChar();
+        AdjustLine();
         trap = true;
         break;
       case VK_UP:
-        itrCursor->RevLine();
-        trap = true;
+          itrCursor->RevLine();
+          itrCursor->GoBy(cursorLeftOffset);
+          AdjustLine();
+          trap = true;
         break;
       case VK_DOWN:
-        itrCursor->GoLine();
-        trap = true;
+          int tmp = itrCursor->GetLeftOffset();
+          itrCursor->GoLine();
+          itrCursor->GoBy(cursorLeftOffset);
+          AdjustLine();
+          trap = true;
         break;
     }
   }
@@ -212,83 +224,127 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
   Write("received msg local");
 #endif
   bool processed = false;
-  NSpan* changed;
+  NSpan* changed = NULL;
   Iter * itr;
-  int linesMoved;
+  int linesMoved = 0;
+  int linesMovedFrom = 0;
   switch(Message.Msg)
-  {        /*
-              case WM_KEYDOWN:
-              switch(Message.WParam)
-              {
-              case VK_LEFT:
-              itrCursor->GoChar();
-              break;
-              case VK_RIGHT:
-              itrCursor->RevChar();
-              break;
-              case VK_UP:
-              itrCursor->RevLine();
-              break;
-              case VK_DOWN:
-              itrCursor->GoChar();
-              break;
-              default:
-              this->TControl::WndProc(Message);
-              break;
-              }
-              break;   */
+  {
+    case WM_MOUSEWHEEL:
+      {
+        scrolldelta += (short)HIWORD(Message.WParam);
+        bool scrolled = false;
+        while(scrolldelta >= 120 ||scrolldelta <= -120)
+        {
+          scrolled = true;
+          if(scrolldelta > 0)
+          {
+            itrLine->RevLine();
+              itrLine->RevLine();
+              scrolldelta -= 120;
+          }
+          else
+          {
+            if(itrLine->line->nextline && itrLine->line->nextline->nextline && itrLine->line->nextline->nextline->nextline)
+              itrLine->GoLine();
+                if(itrLine->line->nextline && itrLine->line->nextline->nextline && itrLine->line->nextline->nextline->nextline)
+                  itrLine->GoLine();
+                    scrolldelta += 120;
+          }
+        }
+        if(scrolled)
+        {
+          UpdateCursor(false);
+          RepaintWindow(true); //todo optimize
+          
+        }
+      }
+      return;
     case WM_KEYDOWN:
       switch(Message.WParam)
       {
-      case VK_F2:
-        WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
-        buffer->LoadFile(L"test.txt");
-        ReleaseMutex(bufferMutex);
-        UpdateCursor(true);
-        RepaintWindow(true);
-        break;
-      case VK_F5:
-        RepaintWindow(true);
-        break;
-      default:
-        this->TControl::WndProc(Message);
-        break;
+        case VK_DELETE:
+        case VK_BACK:
+          WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+          /*
+             if(itrCursorSecond)
+             {
+             linesMovedFrom = GetLineNum(GetCursorEnd()->line)+1;  //the iter wont be longer valid
+             selectionFormat->RemoveAllMarks();
+             linesMoved = -buffer->Delete(GetCursor(), GetCursorEnd());      // '-' is not a typo!
+             delete itrCursorSecond;
+             itrCursorSecond = NULL;
+             changed = GetCursor()->line;
+             }
+             else
+             {
+             if(Message.WParam == VK_BACK && !(itrCursor->word->prev->prev || (itrCursor->word->prev && itrCursor->offset > 0)))  //have to stop after the head, not on it
+             break;
+             if(Message.WParam == VK_DELETE && !(itrCursor->word->next))  //have to stop after the head, not on it
+             break;
+             itr = itrCursor->Duplicate();
+             if(Message.WParam == VK_BACK)
+             itr->RevChar();
+             else
+             itrCursor->GoChar();
+             if(itr->word->prev)
+             linesMoved = -buffer->Delete(itr, itrCursor);      // '-' is not a typo!
+             changed = itrCursor->line;
+             linesMovedFrom = GetLineNum(changed)+1;
+             delete itr;
+             }*/
+          if(!itrCursorSecond)
+          {
+            if(Message.WParam == VK_BACK && !(itrCursor->word->prev->prev || (itrCursor->word->prev && itrCursor->offset > 0)))  //have to stop after the head, not on it
+              break;
+            if(Message.WParam == VK_DELETE && !(itrCursor->word->next))  //have to stop after the head, not on it
+              break;
+            itrCursorSecond = itrCursor->Duplicate();
+              if(Message.WParam == VK_BACK)
+                itrCursor->RevChar();
+              else
+                itrCursorSecond->GoChar();
+          }
+          if(itrCursorSecond)
+            DeleteSel();
+          ReleaseMutex(bufferMutex);
+          break;
+        case VK_F2:
+          WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+          buffer->LoadFile(L"test.txt");
+          ReleaseMutex(bufferMutex);
+          UpdateCursor(true);
+          RepaintWindow(true);
+          return;
+        case VK_F5:
+          RepaintWindow(true);
+          return;
+        case VK_F6:
+          {
+            int justbreaksomewhere = 666;
+          }
+          return;
+        default:
+          this->TControl::WndProc(Message);
+          return;
       }
       break;
     case WM_SETFOCUS:
       if(!KBHook)
         KBHook = SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)ProcessKeyCall, NULL, GetCurrentThreadId());
       SQLEditFocused = this;
-      break;
+      return;
     case WM_KILLFOCUS:
       UnhookWindowsHookEx(KBHook);
       KBHook = NULL;
-      break;
+      return;
     case WM_CHAR:
-
-#ifdef DEBUG
-      Write("new change");
-#endif
       WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
-
-#ifdef DEBUG
-      Write("parser is idle and buffer idle is reset");
-#endif
-      linesMoved = 0;
-      changed = NULL;
       switch(Message.WParam)
       {
+        case 0x7F: // Process a delete
         case 0x08: // Process a backspace.
-          if(itrCursor->word->prev->prev || (itrCursor->word->prev && itrCursor->offset > 0))  //have to stop after the head, not on it
-          {
-            itr = itrCursor->Duplicate();
-            itr->RevChar();
-            if(itr->word->prev)
-              linesMoved = -buffer->Delete(itr, itrCursor);      // '-' is not a typo!
-            changed = itrCursor->line;
-            delete itr;
-            this->Paint();
-          }
+
           break;
           //case 0x0A: // Process a linefeed.
           //    break;
@@ -296,76 +352,138 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
           break;
         case 0x09: // Process a tab.
           break;
-        case 0x7F: // Process a delete
-          break;
 
           //case 0x0D: // Process a carriage return.
           //    break;
+        case 0x03:
+          Copy();
+          break;
+        case 0x16:
+          Paste();
+          break;
         default:
-
-#ifdef DEBUG
-          Write(AnsiString(Message.WParam));
-#endif
+          //(Message.WParam < 0x1F)
+          //  break;
           changed = itrCursor->line;
           wchar_t * str = new wchar_t[2];
           str[0] = Message.WParam;
           str[1] = '\0';
           if(str[0] == '\r')
+          {
             str[0] = '\n';
-          linesMoved = buffer->Insert(itrCursor, str);
-#ifdef DEBUG
-          dbgIter();
-#endif
+            linesMovedFrom = GetLineNum(changed)+1;
+          }
+          //linesMoved = buffer->Insert(itrCursor, str);
+          AdjustLine();
+          Insert(str);
+  cursorLeftOffset = itrCursor->GetLeftOffset();
           break;
       }
-      if(linesMoved != 0)
-        drawer->Draw(new DrawTaskMove(GetLineNum(changed)+1, GetVisLineCount(), linesMoved));
-      if(changed)
-      {
-        UpdateCursor(false);
-        short linenum = GetLineNum(changed);
-        parser->ParseFromLine(changed, linenum >= 0 ? 2 : 1);
-        parser->ParseFromLine(itrCursor->line, linenum >= 0 ? 2 : 1);
-        Iter * it = GetLineByNum(GetVisLineCount()+linesMoved);
-        for(int i = linesMoved; i < 0 && it->line->nextline; i++, it->GoLine())
-          parser->ParseFromLine(it->line, 2);
-        delete it;
-      }
-
-#ifdef DEBUG
-
-      Write("going to sync");
-#endif
-      if(!recmsg)
-      {
-        recmsg = true;
-        Application->ProcessMessages();
-        SetEvent(bufferChanged);
-        recmsg = false;
-      }
       ReleaseMutex(bufferMutex);
-
-#ifdef DEBUG
-      Write("finished");
-#endif
       break;
     default:
       this->TControl::WndProc(Message);
-      break;
+      return;
+  }           /*
+                 if(linesMoved != 0)
+                 drawer->Draw(new DrawTaskMove(linesMovedFrom, GetVisLineCount(), linesMoved));
+                 if(changed)
+                 {
+                 UpdateCursor(false);
+                 short linenum = GetLineNum(changed);
+                 parser->ParseFromLine(changed, linenum >= 0 ? 2 : 1);
+                 parser->ParseFromLine(itrCursor->line, linenum >= 0 ? 2 : 1);
+                 Iter * it = GetLineByNum(GetVisLineCount()+linesMoved);
+                 for(int i = linesMoved; i < 0 && it->line->nextline; i++, it->GoLine())
+                 parser->ParseFromLine(it->line, 2);
+                 delete it;
+                 }
+                 if(!recmsg)
+                 {
+                 recmsg = true;
+                 Application->ProcessMessages();
+                 SetEvent(bufferChanged);
+                 recmsg = false;
+                 }             */
+}
+//---------------------------------------------------------------------------
+void TSQLEdit::AdjustLine()
+{
+  int l = GetLineNum(itrCursor->line);
+    if(l > 4 && l < GetVisLineCount() - 4)
+      return;
+    int movingby = 0;
+    WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+    if(l >= 0 && l <= 4)
+    {
+      for(int i = 0; i < 4 - l; i++)
+      {
+        if(itrLine->line->prevline)
+        {
+          itrLine->RevLine();
+            movingby--;
+        }
+      }
+    }
+    else if(l >= GetVisLineCount()-4)
+    {
+      for(int i = l; i > GetVisLineCount() - 4; i--)
+      {
+        if(itrLine->line->nextline)
+        {
+          itrLine->GoLine();
+            movingby++;
+        }
+      }
+    }
+    else
+    {
+      delete itrLine;
+        itrLine = itrCursor->Duplicate();
+        for(int i = 0; i < 4; i++)
+          itrLine->RevLine();
+            RepaintWindow(true);
+            ReleaseMutex(bufferMutex);
+            return;
+    }
+  WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
+    UpdateCursor(false);
+    drawer->Draw(new DrawTaskMove(movingby < 0 ? -movingby : 0, GetVisLineCount(), -movingby));
+    ReleaseMutex(drawerQueueMutex);
+    if(movingby < 0)
+    {
+      Iter * itr = itrLine->Duplicate();
+        for(int i = movingby; i <= 0; i++)
+        {
+          parser->ParseFromLine(itr->line, 2);
+            itr->GoLine();
+        }
+      SetEvent(bufferChanged);
+        delete itr;
+    }
+  if(movingby > 0)
+  {
+    Iter * itr = GetLineByNum(GetVisLineCount()-movingby);
+      for(int i = movingby; i >= 0; i--)
+      {
+        parser->ParseFromLine(itr->line, 2);
+          itr->RevLine();
+      }
+    SetEvent(bufferChanged);
+      delete itr;
   }
+  ReleaseMutex(bufferMutex);
 }
 //---------------------------------------------------------------------------
 void TSQLEdit::UpdateCursor(bool sync)
 {
-  if(sync)
-  {
-    WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
-    WaitForSingleObject(drawerCanvasMutex, WAIT_TIMEOUT_TIME);
-  }
+  WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+  WaitForSingleObject(drawerCanvasMutex, WAIT_TIMEOUT_TIME);
 
   this->Canvas->Lock();
-  int x = 2, y = Y_OFF + LINESIZE*GetLineNum(itrCursor->line);
-  if(itrCursor->line->nextline && itrCursor->line->next != (Span*)itrCursor->line->nextline)
+  int lnum = GetLineNum(itrCursor->line);
+  int x = 2, y = Y_OFF + LINESIZE*lnum;
+  if(lnum >= 0 && itrCursor->line->nextline && itrCursor->line->next != (Span*)itrCursor->line->nextline)
   {
     for(Span * word = itrCursor->line->next; word != itrCursor->word; word = word->next)
     {
@@ -380,12 +498,8 @@ void TSQLEdit::UpdateCursor(bool sync)
 
   cx = x;
   cy = y;
-
-  if(sync)
-  {
-    ReleaseMutex(bufferMutex);
-    ReleaseMutex(drawerCanvasMutex);
-  }
+  ReleaseMutex(drawerCanvasMutex);
+  ReleaseMutex(bufferMutex);
 }
 //---------------------------------------------------------------------------
 void __fastcall TSQLEdit::MouseDown(TMouseButton Button, Classes::TShiftState Shift, int X, int Y)
@@ -396,30 +510,31 @@ void __fastcall TSQLEdit::MouseDown(TMouseButton Button, Classes::TShiftState Sh
   dy = Y;
 
   ProcessMouseClear();
-  delete itrCursor;
-  itrCursor = XYtoItr(X, Y);
-
-  cx = X;
-  cy = Y;
-
-  SetEvent(bufferChanged);
-  WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
+    delete itrCursor;
+    itrCursor = XYtoItr(X, Y);
+    cursorLeftOffset = itrCursor->GetLeftOffset();
+    
+    cx = X;
+    cy = Y;
+    
+    SetEvent(bufferChanged);
+    WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
   drawer->Draw(new DrawTaskCursor(X, Y));
   ReleaseMutex(drawerQueueMutex);
-
-  mouseDown = true;
+    
+    mouseDown = true;
 }
 //---------------------------------------------------------------------------
 void __fastcall TSQLEdit::MouseMove(Classes::TShiftState Shift, int X, int Y)
 {
   if(!mouseDown)
     return;
-  if(!mouseSelect && (abs(X-dx) > 2 || abs(X-dx) > 2))
-    mouseSelect = true;
-  if(!mouseSelect)
-    return;
+      if(!mouseSelect && (abs(X-dx) > 2 || abs(X-dx) > 2))
+        mouseSelect = true;
+          if(!mouseSelect)
+            return;
 #ifndef DEBUG_CURSOR
-  ProcessMouseMove(X, Y);
+              ProcessMouseMove(X, Y);
 #endif
 }
 //---------------------------------------------------------------------------
@@ -429,7 +544,7 @@ void __fastcall TSQLEdit::MouseUp(TMouseButton Button, Classes::TShiftState Shif
     ProcessMouseMove(X, Y);
 
   mouseDown = false;
-  mouseSelect = false;
+    mouseSelect = false;
 }
 //---------------------------------------------------------------------------
 void TSQLEdit::ProcessMouseMove(int &x, int &y)
@@ -439,25 +554,25 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
   NSpan * ch2 = GetCursorEnd() != NULL ? GetCursorEnd()->line : NULL;
 
   ProcessMouseClear();
-  itrCursorSecond = XYtoItr(x, y);
-  cursorsInInvOrder = (y < cy || (y == cy && x < cx));
-  if(*itrCursor != *itrCursorSecond)
-  {
-    GetCursor()->MarkupBegin(selectionFormat);
-    GetCursorEnd()->MarkupEnd(selectionFormat);
-  }
+    itrCursorSecond = XYtoItr(x, y);
+    cursorsInInvOrder = (y < cy || (y == cy && x < cx));
+    if(*itrCursor != *itrCursorSecond)
+    {
+      GetCursor()->MarkupBegin(selectionFormat);
+        GetCursorEnd()->MarkupEnd(selectionFormat);
+    }
   if(*itrCursor != *itrCursorSecond)
   {
     if(ch) parser->ParseFromLine(ch, 2);
-    parser->ParseFromLine(GetCursor()->line, 2);
-    if(GetCursorEnd()) parser->ParseFromLine(GetCursorEnd()->line, 2);
-    if(ch2) parser->ParseFromLine(ch2, 2);
+      parser->ParseFromLine(GetCursor()->line, 2);
+        if(GetCursorEnd()) parser->ParseFromLine(GetCursorEnd()->line, 2);
+          if(ch2) parser->ParseFromLine(ch2, 2);
   }
   if(!recmsg)
   {
     recmsg = true;
-    Application->ProcessMessages();
-    SetEvent(bufferChanged);
+      Application->ProcessMessages();
+      SetEvent(bufferChanged);
     recmsg = false;
   }
   ReleaseMutex(bufferMutex);
@@ -465,28 +580,28 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
 //---------------------------------------------------------------------------
 void TSQLEdit::ProcessMouseClear()
 {
-    WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
-  selectionFormat->RemoveAllMarks();
-  if(itrCursorSecond)
+      WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+    selectionFormat->RemoveAllMarks();
+    if(itrCursorSecond)
   {
     if(*itrCursor != *itrCursorSecond)
       parser->ParseFromLine(GetCursor()->line, 2);
-    delete itrCursorSecond;
+        delete itrCursorSecond;
     itrCursorSecond = NULL;
   }
-    ReleaseMutex(bufferMutex);
+  ReleaseMutex(bufferMutex);
 }
 //---------------------------------------------------------------------------
 Iter * TSQLEdit::GetCursor()
 {
-  return cursorsInInvOrder ? itrCursorSecond : itrCursor;
-}
-//---------------------------------------------------------------------------
+    return cursorsInInvOrder ? itrCursorSecond : itrCursor;
+  }
+  //---------------------------------------------------------------------------
 Iter * TSQLEdit::GetCursorEnd()
 {
-  return cursorsInInvOrder ? itrCursor : itrCursorSecond;
-}
-//---------------------------------------------------------------------------
+    return cursorsInInvOrder ? itrCursor : itrCursorSecond;
+  }
+  //---------------------------------------------------------------------------
 
 Iter * TSQLEdit::XYtoItr(int& x, int& y)
 {
@@ -503,14 +618,16 @@ Iter * TSQLEdit::XYtoItr(int& x, int& y)
   while (xSum + w < x && itr->word != stop)
   {
     xSum += w;
-    itr->GoWord();
-    w = this->Canvas->TextWidth(String(itr->word->string));
-    if(!itr->word->next)
-    break;
+      itr->GoWord();
+      w = this->Canvas->TextWidth(String(itr->word->string));
+      if(!itr->word->next)
+        break;
   }
   if(itr->word != stop)
   {
-    String str = String(itr->word->string).Trim(); //jump to approximately good place, and then adjust
+    String str = String(itr->word->string); //jump to approximately good place, and then adjust
+    if(str == "\n")
+      str = "";
     int offset = 0;
     if(str.Length() > 0)
     {
@@ -527,7 +644,7 @@ Iter * TSQLEdit::XYtoItr(int& x, int& y)
     else
     {
       itr->offset = offset;
-      itr->Update();
+        itr->Update();
     }
   }
   x = xSum;
@@ -577,10 +694,88 @@ int __fastcall TSQLEdit::GetLineNum(NSpan * line)
       if(testline->nextline->next)
         testline = testline->nextline;
       else
-        return i;
+        return -1;
     }
   }
   return -1;
+}
+//---------------------------------------------------------------------------
+void TSQLEdit::DeleteSel(bool allowsync)
+{
+  WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+  int linesMovedFrom = GetLineNum(GetCursorEnd()->line)+1;
+  int linesMoved = -buffer->Delete(GetCursor(), GetCursorEnd());
+  NSpan* changed = itrCursor->line;
+  selectionFormat->RemoveAllMarks();
+  delete itrCursorSecond;
+    itrCursorSecond = NULL;
+    
+    ProcessChange(linesMovedFrom, linesMoved, changed);
+    ReleaseMutex(bufferMutex);
+}
+//---------------------------------------------------------------------------
+void TSQLEdit::Insert(wchar_t * text)
+{
+  WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+  if(itrCursorSecond)
+    DeleteSel(false);
+  NSpan* changed = itrCursor->line;
+  int linesMovedFrom = GetLineNum(itrCursor->line)+1;
+  int linesMoved = buffer->Insert(itrCursor, text);
+  
+    ProcessChange(linesMovedFrom, linesMoved, changed);
+    ReleaseMutex(bufferMutex);
+}
+//---------------------------------------------------------------------------
+void TSQLEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed)
+{
+  if(linesMoved != 0)
+    drawer->Draw(new DrawTaskMove(linesMovedFrom, GetVisLineCount(), linesMoved));
+  if(changed)
+  {
+    UpdateCursor(false);
+    short linenum = GetLineNum(changed);
+    parser->ParseFromLine(changed, linenum >= 0 ? 2 : 1);
+    parser->ParseFromLine(itrCursor->line, linenum >= 0 ? 2 : 1);
+    Iter * it = GetLineByNum(GetVisLineCount()+linesMoved);
+    for(int i = linesMoved; i < 0 && it->line->nextline; i++, it->GoLine())
+      parser->ParseFromLine(it->line, 2);
+    delete it;
+  }
+  if(!recmsg)
+  {
+    recmsg = true;
+      Application->ProcessMessages();
+      SetEvent(bufferChanged);
+    recmsg = false;
+  }
+}
+//---------------------------------------------------------------------------
+void TSQLEdit::Copy()
+{
+  if(itrCursorSecond)
+  {
+    wchar_t * str = buffer->GetText(GetCursor(), GetCursorEnd());
+      clipboard->SetTextBuf(str);
+    delete str;
+  }
+}
+//---------------------------------------------------------------------------
+void TSQLEdit::Paste()
+{
+  int basesize = 256;
+  int memused = basesize;
+  wchar_t * buf = NULL;
+  //oh funny, tclipboard does not provide info about size of data stored in memory...
+  while(memused == basesize)
+  {
+    if(buf)
+      delete buf;
+    buf = new wchar_t[basesize];
+    memused = clipboard->GetTextBuf(buf, basesize);
+  }
+  Insert(buf);
+  delete buf;
 }
 //---------------------------------------------------------------------------
 bool __fastcall TSQLEdit::GetLineFirst(NSpan * line)

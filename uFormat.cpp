@@ -16,8 +16,8 @@ Format::Format()
   background = new TColor(clWhite);
 };
 //---------------------------------------------------------------------------
-Format::Format(TColor * foreground, TColor * background)
-  : FontStyle(foreground, background)
+  Format::Format(TColor * foreground, TColor * background)
+: FontStyle(foreground, background)
 {
 
 };
@@ -26,6 +26,12 @@ FontStyle::FontStyle(TColor * foreground, TColor * background)
 {
   this->foreground = foreground;
   this->background = background;
+};
+//---------------------------------------------------------------------------
+FontStyle::FontStyle(TColor * foreground)
+{
+  this->foreground = foreground;
+  this->background = NULL;
 };
 //---------------------------------------------------------------------------
 FontStyle::FontStyle()
@@ -56,7 +62,7 @@ void Format::RemoveAllMarks()
     Mark * old = marks.front();
     *(old->parent) = old->mark;
     if(old->mark)
-        old->mark->parent = old->parent;
+      old->mark->parent = old->parent;
     delete old;
     marks.pop_front();
   }

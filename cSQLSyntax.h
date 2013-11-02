@@ -6,6 +6,7 @@
 #include <SysUtils.hpp>
 #include <Classes.hpp>
 #include <Controls.hpp>
+#include <Clipbrd.hpp>
 #include "uIter.h"
 #include "uBuffer.h"
 #include "uDrawer.h"
@@ -65,6 +66,10 @@ namespace SHEdit
       bool cursorsInInvOrder;
       int dx, dy; //down
       int cx, cy; //cursor
+      int cursorLeftOffset;
+      int scrolldelta; //used by ms to treat smooth-scroll wheels...
+
+      void AdjustLine();
 
     protected:
       virtual void __fastcall Paint();
@@ -73,9 +78,17 @@ namespace SHEdit
 
       virtual void __fastcall WndProc(Messages::TMessage &Message);
 
-    	DYNAMIC void __fastcall MouseDown(TMouseButton Button, Classes::TShiftState Shift, int X, int Y);
-	    DYNAMIC void __fastcall MouseMove(Classes::TShiftState Shift, int X, int Y);
-	    DYNAMIC void __fastcall MouseUp(TMouseButton Button, Classes::TShiftState Shift, int X, int Y);
+      DYNAMIC void __fastcall MouseDown(TMouseButton Button, Classes::TShiftState Shift, int X, int Y);
+      DYNAMIC void __fastcall MouseMove(Classes::TShiftState Shift, int X, int Y);
+        DYNAMIC void __fastcall MouseUp(TMouseButton Button, Classes::TShiftState Shift, int X, int Y);
+
+      TClipboard * clipboard;
+      void Copy();
+      void Paste();
+      void DeleteSel(bool allowsync = true);
+      void Insert(wchar_t * text);
+      void ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed);
+
     public:
       TMemo * dbgLog;
       int __fastcall GetVisLineCount();

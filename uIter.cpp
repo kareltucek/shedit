@@ -21,6 +21,8 @@ Iter::Iter(NSpan * line)
     this->word = line->next;
     this->line = line;
     line->Register(this);
+    if(*(word->string) == '\0')
+      GoChar();
     this->Update();
   }
   else
@@ -101,7 +103,10 @@ bool Iter::GoWord()
     word = word->next;
     offset = 0;
     Update();
-    return true;
+    if(*ptr == '\0')
+      return GoWord();
+    else
+      return true;
   }
   else
     return false;
@@ -201,6 +206,30 @@ void Iter::MarkupBegin(SHEdit::Mark ** at, int pos, bool begin, SHEdit::Format *
   if((*at)->mark)
     (*at)->mark->parent = &((*at)->mark);
   format->Add(*at);
+}
+//---------------------------------------------------------------------------
+int Iter::GetLeftOffset()
+{
+  Span * w = this->word->prev;
+  int count = this->offset;
+  while(*(w->string) != '\n')
+  {
+    count += w->length;
+    w = w->prev;
+  }
+  return count;
+}
+//---------------------------------------------------------------------------
+void Iter::GoBy(int chars)
+{
+  while(this->word->length - this->offset <= chars && *(word->string) != '\n')
+  {
+    chars -= this->word->length - this->offset;
+    GoWord();
+  }
+  if(*(word->string) != '\n')
+    this->offset = chars;
+  Update();
 }
 
 //---------------------------------------------------------------------------

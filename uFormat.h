@@ -15,6 +15,7 @@ namespace SHEdit
     public:
       FontStyle();
       FontStyle(TColor * foreground, TColor * background);
+      FontStyle(TColor * foreground);
       TColor * foreground;
       TColor * background;
       bool operator==(const FontStyle& f);

@@ -20,9 +20,9 @@ namespace SHEdit
   class Iter;
   class DrawTaskText;
 
-#define MASK_PARSED 1
+  //define MASK_PARSED 1
   //define MASK_MARKED 2
-  //other masks are allocated dynamically
+  //"masks" were supposed to be stored simply as masks, but it would make difficult distinguishing their order (for nested markup)
 
 #define MODE_NORMAL 0
   //---------------------------------------------------------------------------
@@ -44,10 +44,8 @@ namespace SHEdit
         bool operator!=(const ParserState& state);
         ParserState& operator=(const ParserState& p);
 
-        short parentheses;
-        short braces;
-        short brackets;
         short statemask;
+        bool parsed;
         Node * markupStack;
       };
 

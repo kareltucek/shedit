@@ -49,11 +49,12 @@ namespace SHEdit
       int Insert(Iter * At, wchar_t * string);
       int Delete(Iter * From, Iter * To);
 
+      wchar_t* GetText(Iter * From, Iter * To);
 
       void LoadFile(wchar_t * filename);
       void LoadFileAsync(wchar_t * filename);
-      bool Preload(int lines);
-      void FlushPreload();
+        bool Preload(int lines);
+        void FlushPreload();
 
       Iter * Begin();
       Iter * First();

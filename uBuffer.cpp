@@ -58,8 +58,10 @@ Iter * Buffer::End()
 //---------------------------------------------------------------------------
 void Buffer::_Insert(Span * word)
 {
-  word->next->prev = word;
-  word->prev->next = word;
+  if(word->next)
+    word->next->prev = word;
+  if(word->prev)
+    word->prev->next = word;
 }
 //---------------------------------------------------------------------------
 void Buffer::_Delete(Span * word)
@@ -424,60 +426,70 @@ void Buffer::LoadFile(wchar_t * filename)
 void Buffer::LoadFileAsync(wchar_t * filename)
 {
   preloadFile = new std::ifstream();
-  preloadFile->open("test.txt");
-  preload->first = data->first;
-  preload->firstLine = data->firstLine;
-  preload->last = data->last;
-  preload->lastLine = data->lastLine;
+    preloadFile->open("test.txt");
+    preload->first = data->first;
+    preload->firstLine = data->firstLine;
+    preload->last = data->last;
+    preload->lastLine = data->lastLine;
 }
 //---------------------------------------------------------------------------
 bool Buffer::Preload(int lines)
 {
   std::string line;
-  if (preloadFile && preloadFile->is_open())
-  {
-    using namespace std;
-    int i;
-    for(i = 0; i != lines && getline(*preloadFile,line); i++)
+    if (preloadFile && preloadFile->is_open())
     {
-      wchar_t * str = new wchar_t[line.length()+1];
-      wcscpy(str, wstring(line.begin(), line.end()).c_str());
-      Span * text = new Span(preload->last, preload->lastLine, str, 0);
-      text->length = wcslen(text->string);
-      NSpan * line = new NSpan(text, preload->lastLine);
-      text->next = line;
-      if(i == 0)
+      using namespace std;
+        int i;
+        for(i = 0; i != lines && getline(*preloadFile,line); i++)
+        {
+          wchar_t * str;
+            if(line.size() > 0)
+            {
+              int wchars_num =  MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, NULL , 0 );
+                str = new wchar_t[wchars_num];
+                MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, str , wchars_num );
+            }
+            else
+            {
+              str = new wchar_t[1];
+                str[0] = '\0';
+            }
+          Span * text = new Span(preload->last, preload->lastLine, str, 0);
+            text->length = wcslen(text->string);
+            NSpan * line = new NSpan(text, preload->lastLine);
+            text->next = line;
+            if(i == 0)
+            {
+              text->prev = preload->first;
+                line->prevline = preload->firstLine;
+                preload->first = text;
+                preload->firstLine = line;
+                line->next = preload->last;
+                line->nextline = preload->lastLine;
+            }
+            else
+            {
+              line->next = preload->last->next;
+                line->nextline = preload->lastLine->nextline;
+                preload->last->next = text;
+                preload->lastLine->nextline = line;
+            }
+          preload->last = line;
+            preload->lastLine = line;
+        }
+      if(i != lines)
       {
-        text->prev = preload->first;
-        line->prevline = preload->firstLine;
-        preload->first = text;
-        preload->firstLine = line;
-        line->next = preload->last;
-        line->nextline = preload->lastLine;
+        preloadFile->close();
+          delete preloadFile;
       }
-      else
-      {
-        line->next = preload->last->next;
-        line->nextline = preload->lastLine->nextline;
-        preload->last->next = text;
-        preload->lastLine->nextline = line;
-      }
-      preload->last = line;
-      preload->lastLine = line;
+      return true;
     }
-    if(i != lines)
-    {
-      preloadFile->close();
-      delete preloadFile;
-    }
-    return true;
-  }
   return false;
 }
 //---------------------------------------------------------------------------
 void Buffer::FlushPreload()
 {
-//undo
+  //undo
   if(preload->first == data->first)
     return; //invalid file or whatever alike
   if(preload->first->prev->next == preload->last->next)
@@ -515,25 +527,28 @@ void Buffer::FlushPreload()
   preload->lastLine = preload->lastLine->nextline;
 }
 //---------------------------------------------------------------------------
-/*
-   bool Buffer::IsAl(wchar_t c)
-   {
-   return isalpha(c) || c == '_' || (int)c > 127;
-   }
-//---------------------------------------------------------------------------
-bool Buffer::IsAlNum(wchar_t c)
+wchar_t * Buffer::GetText(Iter * From, Iter* To)
 {
-return isalnum(c) || c == '_' || (int)c > 127;
+  Iter * itr = From->Duplicate();
+  std::wstring str;
+  if(From->word != To->word)
+  {
+    str += itr->ptr;
+    itr->GoWord();
+    while(itr->word != To->word)
+    {
+      str += itr->word->string;
+      itr->GoWord();
+    }
+    str += std::wstring(itr->word->string).substr(0, To->offset);
+  }
+  else
+  {
+    str = std::wstring(itr->word->string).substr(From->offset, To->offset);
+  }
+  delete itr;
+  wchar_t * cstr = new wchar_t[str.length()+1];
+  wcscpy(cstr, str.c_str());
+  return cstr;
 }
 //---------------------------------------------------------------------------
-bool Buffer::IsNum(wchar_t c)
-{
-return isdigit(c);
-}
-//---------------------------------------------------------------------------
-bool Buffer::IsWhite(wchar_t c)
-{
-return (int)c < 33 && c != '\n';
-}
-*/
-
