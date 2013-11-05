@@ -51,6 +51,9 @@ TSQLEdit * SQLEditFocused; //callback musi jit na statickou metodu...
 #ifdef DEBUG
   myfile.open("main.txt", ios::out );
 #endif
+  //TScrollBar * test = new TScrollBar(this);
+  //test->Visible = true;
+  //test->Show() ;
   buffer = new Buffer();
   itrLine = buffer->First();
   itrCursor = buffer->End();
@@ -167,6 +170,7 @@ void __fastcall TSQLEdit::RepaintWindow(bool force)
     SetEvent(bufferChanged);
     
   }
+  this->SetAutoSize(false);
 }
 
 //---------------------------------------------------------------------------

@@ -82,11 +82,11 @@ void Buffer::_Insert(NSpan * word)
 //---------------------------------------------------------------------------
 void Buffer::_Delete(NSpan * word)
 {
+  word->prevline->ItersMove(word, word->prevline, word->next, 0); //some fix - not sure what i am doing
   word->ItersTransmitAll(word->prevline);
   word->nextline->prevline = word->prevline;
   word->prevline->nextline = word->nextline;
   _Delete((Span*)word);
-  word->ItersTransmitAll(word->prevline);
 }
 //---------------------------------------------------------------------------
 Span* Buffer::_SplitBegin(Iter * At)
@@ -443,37 +443,37 @@ bool Buffer::Preload(int lines)
         for(i = 0; i != lines && getline(*preloadFile,line); i++)
         {
           wchar_t * str;
-            if(line.size() > 0)
-            {
-              int wchars_num =  MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, NULL , 0 );
-                str = new wchar_t[wchars_num];
-                MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, str , wchars_num );
-            }
-            else
-            {
-              str = new wchar_t[1];
-                str[0] = '\0';
-            }
+          if(line.size() > 0)
+          {
+            int wchars_num =  MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, NULL , 0 );
+              str = new wchar_t[wchars_num];
+              MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, str , wchars_num );
+          }
+          else
+          {
+            str = new wchar_t[0];
+            str[0] = '\0';
+          }
           Span * text = new Span(preload->last, preload->lastLine, str, 0);
-            text->length = wcslen(text->string);
-            NSpan * line = new NSpan(text, preload->lastLine);
-            text->next = line;
-            if(i == 0)
-            {
-              text->prev = preload->first;
-                line->prevline = preload->firstLine;
-                preload->first = text;
-                preload->firstLine = line;
-                line->next = preload->last;
-                line->nextline = preload->lastLine;
-            }
-            else
-            {
-              line->next = preload->last->next;
-                line->nextline = preload->lastLine->nextline;
-                preload->last->next = text;
-                preload->lastLine->nextline = line;
-            }
+          text->length = wcslen(text->string);
+          NSpan * line = new NSpan(text, preload->lastLine);
+          text->next = line;
+          if(i == 0)
+          {
+            text->prev = preload->first;
+            line->prevline = preload->firstLine;
+            preload->first = text;
+            preload->firstLine = line;
+            line->next = preload->last;
+            line->nextline = preload->lastLine;
+          }
+          else
+          {
+            line->next = preload->last->next;
+            line->nextline = preload->lastLine->nextline;
+            preload->last->next = text;
+            preload->lastLine->nextline = line;
+          }
           preload->last = line;
             preload->lastLine = line;
         }
