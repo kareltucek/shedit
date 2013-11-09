@@ -168,6 +168,7 @@ void __fastcall Drawer::Execute()
           DrawCursor(); //this one here deletes the last one
           cx = ((DrawTaskCursor*)tasktoprocess)->x;
           cy = ((DrawTaskCursor*)tasktoprocess)->y;
+          //cursorBGcolor = canvas->Pixels[cx][cy];
           break;
         case DrawType::Endline:
           drawcanvas->Pen->Color = (TColor)0xFFFFFF;
@@ -193,14 +194,20 @@ void __fastcall Drawer::Execute()
     //drawcanvas->Unlock();
     canvas->Unlock();
     ReleaseMutex(drawerCanvasMutex);
+#ifdef DEBUG
+      Write(String("freeing everything"));
+#endif
   }
 }
 //---------------------------------------------------------------------------
 void Drawer::Draw(DrawTask * drawtask)
 {
+      WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
   tasklist.push_back(drawtask);
   SetEvent(drawerTaskPending); //function is called from different threads while this one is suspended/running thus it is not logical nonsense
-}
+
+    ReleaseMutex(drawerQueueMutex);
+    }
 //---------------------------------------------------------------------------
 void Drawer::DrawCursor()
 {
@@ -219,7 +226,7 @@ __fastcall Drawer::~Drawer()
 //---------------------------------------------------------------------------
 #ifdef DEBUG
 void Drawer::QueueDump()
-{
+{        /*
   DrawTaskText* debug;
   Write("Dumping queue");
   for (std::list<DrawTask*>::const_iterator iterator = tasklist.begin(), end = tasklist.end(); iterator != end; ++iterator)
@@ -240,7 +247,7 @@ void Drawer::QueueDump()
         Write("	endline");
         break;
     }
-  } 
+  }      */
 }
 #endif
 //---------------------------------------------------------------------------

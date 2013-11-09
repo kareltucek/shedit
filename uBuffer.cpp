@@ -17,11 +17,15 @@
 #include <ctype.h>
 
 using namespace SHEdit;
+std::ofstream myfile;
 
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
 Buffer::Buffer()
 {
+#ifdef DEBUG
+  myfile.open("buffer.txt", ios::out);
+#endif
   NSpan * head = new NSpan();
   NSpan * tail = new NSpan();
 
@@ -66,8 +70,15 @@ void Buffer::_Insert(Span * word)
 //---------------------------------------------------------------------------
 void Buffer::_Delete(Span * word)
 {
+
+#ifdef DEBUG
+    Write("delete words "+String((int)word->prev)+String(" ")+String((int)word->next));
+#endif
   word->next->prev = word->prev;
   word->prev->next = word->next;
+#ifdef DEBUG
+    Write("delete words returning");
+#endif
 }
 //---------------------------------------------------------------------------
 void Buffer::_Insert(NSpan * word)
@@ -82,10 +93,28 @@ void Buffer::_Insert(NSpan * word)
 //---------------------------------------------------------------------------
 void Buffer::_Delete(NSpan * word)
 {
+
+#ifdef DEBUG
+    Write("Delete line");
+    if(word == NULL)
+      Write("Delete line NULL word !!!!!!!!!!!!!!");
+#endif
   word->prevline->ItersMove(word, word->prevline, word->next, 0); //some fix - not sure what i am doing
+
+#ifdef DEBUG
+    Write(String("first iter prevline is")+String((int)word->prevline));
+#endif
   word->ItersTransmitAll(word->prevline);
+#ifdef DEBUG
+    Write("iters done");
+#endif
+  if(word->nextline);
   word->nextline->prevline = word->prevline;
+  if(word->prevline)
   word->prevline->nextline = word->nextline;
+#ifdef DEBUG
+    Write("links done");
+#endif
   _Delete((Span*)word);
 }
 //---------------------------------------------------------------------------
@@ -188,8 +217,8 @@ int Buffer::Insert(Iter * At, wchar_t * string)
       prev = new Span(prev, prev->next, word, wcslen(word));
       _Insert(prev);
     }
-    //delete[] word; //nemazat, od zaèátku poèítáme, že string je již pøekopírovaný a tedy jen ukládáme pointer
   }
+  delete[] string;
   wordBeingEdited = prev;
   return linesInserted;
 }
@@ -217,6 +246,10 @@ int Buffer::Delete(Iter * From, Iter * To)
   }
   else
   {
+
+#ifdef DEBUG
+    Write("Delete cycle");
+#endif
     Span * begin, * end;
     Span * undoBegin, * undoEnd;
     int linesDeleted = 0;
@@ -265,35 +298,70 @@ int Buffer::Delete(Iter * From, Iter * To)
 //---------------------------------------------------------------------------
 void Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
 {
+#ifdef DEBUG
+    Write("DeleteAt");
+#endif
+  if(*(From->word->string) == '\0' && From->word->next && From->word->next == To->word && To->offset == 0)
+  {
+    _Delete(From->word);
+    return;
+  }
+#ifdef DEBUG
+    Write("DeleteAt 1");
+    if(*(From->word->string) == '\0')
+      Write("DeleteAt Null string!!!!");
+#endif
+
   int toOffset = To->offset;
   if(From->word->next == To->word && To->offset == 0)
     toOffset = From->word->length;
   int length = (toOffset-From->offset);
+#ifdef DEBUG
+    Write(String("DeleteAt going to allocate")+String((int)(From->word->length-length+1)));
+#endif
   wchar_t* newstr = new wchar_t[From->word->length-length+1];
+
+#ifdef DEBUG
+    Write("DeleteAt allocated");
+#endif
   wcsncpy( newstr, From->word->string, From->offset);
   wcscpy( newstr+From->offset, From->word->string+toOffset);
 
+#ifdef DEBUG
+    Write("DeleteAt 2");
+#endif
   Span * newword;
   if((wordBeingEdited != From->word && writeundo) || forcenew)
   {
+#ifdef DEBUG
+    Write("DeleteAt branch 1");
+#endif
     newword = new Span(From->word->prev, From->word->next, newstr, wcslen(newstr));
     wordBeingEdited = newword;
     if(writeundo)
       stackUndo.push(new Range(From->word, From->word, false, NULL, NULL, false));
     _Insert(newword);
     From->line->ItersTranslate(From->word, newword, From->offset, -length);
+    From->line->ItersSplit(newword, newword, newword->next, newword->length, true, 0);
     if(From->word->mark)
       for(Mark ** m = &(From->word->mark); *m != NULL; m = &((*m)->mark))
         Iter::MarkupBegin(&(newword->mark), (*m)->pos, (*m)->begin, (*m)->format);
   }
   else
   {
+#ifdef DEBUG
+    Write("DeleteAt branch 2");
+#endif
     delete[] From->word->string;
     From->word->string = newstr;
     From->word->length = wcslen(newstr);
     From->line->ItersTranslate(From->word, From->word, From->offset, -length);
+    From->line->ItersSplit(From->word, From->word, From->word->next, From->word->length, true, 0);
     newword = From->word;
   }
+#ifdef DEBUG
+    Write("maaaarks");
+#endif
   if(newword->mark)
   {
     for(Mark ** m = &(newword->mark); *m != NULL; m = &((*m)->mark))
@@ -304,6 +372,9 @@ void Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
         (*m)->pos -= (*m)->pos - From->offset;
     }
   }
+#ifdef DEBUG
+    Write("DeleteAt exit");
+#endif
 }
 
 //---------------------------------------------------------------------------
@@ -443,19 +514,20 @@ bool Buffer::Preload(int lines)
         for(i = 0; i != lines && getline(*preloadFile,line); i++)
         {
           wchar_t * str;
+          int wchars_num = 0;
           if(line.size() > 0)
           {
-            int wchars_num =  MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, NULL , 0 );
-              str = new wchar_t[wchars_num];
-              MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, str , wchars_num );
+            wchars_num =  MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, NULL , 0 );
+            str = new wchar_t[wchars_num];
+            MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, str , wchars_num );
           }
           else
           {
-            str = new wchar_t[0];
+            str = new wchar_t[1];
             str[0] = '\0';
           }
           Span * text = new Span(preload->last, preload->lastLine, str, 0);
-          text->length = wcslen(text->string);
+          text->length = wcslen(str);
           NSpan * line = new NSpan(text, preload->lastLine);
           text->next = line;
           if(i == 0)
@@ -475,7 +547,7 @@ bool Buffer::Preload(int lines)
             preload->lastLine->nextline = line;
           }
           preload->last = line;
-            preload->lastLine = line;
+          preload->lastLine = line;
         }
       if(i != lines)
       {
@@ -551,4 +623,57 @@ wchar_t * Buffer::GetText(Iter * From, Iter* To)
   wcscpy(cstr, str.c_str());
   return cstr;
 }
+//---------------------------------------------------------------------------
+int Buffer::CheckIntegrity(int& emptyCount)
+{
+#ifdef DEBUG
+    Write(String("checking integrity"));
+#endif
+  emptyCount = 0;
+  Span* lastword = data->first;
+  Span* word = data->first->next;
+  NSpan* line = data->firstLine;
+  NSpan* nextline = data->firstLine->nextline;
+
+  while(word != data->last)
+  {
+    if(word->prev != lastword)
+      return 1;
+    if(*(word->string) == '\n')
+    {
+      if(word != (Span*)nextline)
+        return 2;
+      line = (NSpan*)word;
+      nextline = line->nextline;
+      /*
+      for (std::list<Iter*>::const_iterator itr = line->ItrList.begin(); itr != line->ItrList.end(); ++itr)
+      {
+        try
+        {
+          (*itr)->word->prev++;
+          (*itr)->word->prev--;
+        }
+        catch(...)
+        {
+          return 3;
+        }
+      }  */
+    }
+    if(*(word->string) == '\0')
+      emptyCount++;
+    lastword = word;
+    word = word->next;
+  }
+#ifdef DEBUG
+    Write(String("integrity check done"));
+#endif
+  return 0;
+}
+//---------------------------------------------------------------------------
+#ifdef DEBUG
+void Buffer::Write(AnsiString message)
+{
+  myfile << message.c_str() << std::endl;
+}
+#endif
 //---------------------------------------------------------------------------

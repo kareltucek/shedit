@@ -15,23 +15,15 @@ using namespace SHEdit;
 //---------------------------------------------------------------------------
 Iter::Iter(NSpan * line)
 {
-  if(line->next)
-  {
-    this->offset = 0;
-    this->word = line->next;
-    this->line = line;
-    line->Register(this);
-    if(*(word->string) == '\0')
-      GoChar();
-    this->Update();
-  }
-  else
-  {
     this->offset = 0;
     this->word = (Span*)line;
-    this->line = line;
+    if(line->prevline)
+      this->line = line->prevline;
+    else
+      this->line = line;
     line->Register(this);
-  }
+    if(word->next)
+      GoChar();
 }
 //---------------------------------------------------------------------------
 Iter::Iter(int offset, Span * word, NSpan * line)
@@ -45,6 +37,7 @@ Iter::Iter(int offset, Span * word, NSpan * line)
 //---------------------------------------------------------------------------
 Iter::~Iter()
 {
+
   line->Unregister(this);
 }
 //---------------------------------------------------------------------------
@@ -102,11 +95,13 @@ bool Iter::GoWord()
     }
     word = word->next;
     offset = 0;
-    Update();
-    if(*ptr == '\0')
+    if(*(word->string) == '\0')
       return GoWord();
     else
+    {
+      Update();
       return true;
+    }
   }
   else
     return false;
@@ -117,6 +112,8 @@ bool Iter::RevWord()
   if(word->prev->prev)
   {
     word = word->prev;
+    while(*(word->string) == '\0')
+      word = word->prev;
     offset = word->length-1;
     if(*(word->string) == '\n' && word->prev)
     {

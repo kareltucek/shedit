@@ -1,4 +1,4 @@
-//define DEBUG
+#define DEBUG
 //define DEBUG_CURSOR
 #define DEBUG_REPAINT true
 

@@ -78,11 +78,12 @@ namespace SHEdit
 
       TCanvas * canvas;
       TCanvas * drawcanvas;
-      Graphics::TBitmap * bitmap;
 
       int x, y;
       int cx, cy;
-      bool con;
+      bool con;   //cursorOn
+      TColor cursorBGcolor;
+
 
       void DrawCursor();
 #ifdef DEBUG

@@ -168,7 +168,7 @@ void __fastcall Parser::Execute()
 #ifdef DEBUG
     Write("waiting for buffer changed");
 #endif
-    int dbg = WaitForSingleObject(bufferChanged, WAIT_TIMEOUT_TIME);
+    int dbg = WaitForSingleObject(bufferChanged, 1000000);
 #ifdef DEBUG
     Write(String("BufferChangedEvent") + String(dbg) + " error code " + String(GetLastError()));
 #endif
@@ -177,15 +177,23 @@ void __fastcall Parser::Execute()
     while(tasklist.size() > 0 || tasklistprior.size() > 0)
     {
       //take care of record from list
+#ifdef DEBUG
+    Write(String("waiting for mutex "));
+
+#endif
+
       WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+
+
       line = tasklistprior.size() > 0 ? tasklistprior.front() : tasklist.front();
       linenum = parent->GetLineNum(line);
       bool first = true;
       Iter * itr = new Iter(line);
       state = itr->line->parserState;
       LanguageDefinition::TreeItem * searchtoken = langdef->GetSpecItem(state.statemask);
-      tasklistprior.remove(itr->line);  //has to be there! (cycle wont end if anything is invalid and task remains)
-      tasklist.remove(itr->line);
+      tasklistprior.remove(line);  //has to be there! (cycle wont end if anything is invalid and task remains)
+      tasklist.remove(line);
+
       while(itr->word->next && (first || itr->line->parserState != this->state))
       {
         first = false;
@@ -193,7 +201,13 @@ void __fastcall Parser::Execute()
         itr->line->parserState = this->state;
         tasklistprior.remove(itr->line);
         tasklist.remove(itr->line);
+#ifdef DEBUG
+    Write(String("going to parseline "));
+#endif
         ParseLine(itr, searchtoken, linenum >= 0);
+#ifdef DEBUG
+    Write(String("gouing out of parseline "));
+#endif
         if(linenum >= 0)
         {
           FlushAll();
@@ -203,6 +217,7 @@ void __fastcall Parser::Execute()
           linenum = parent->GetLineNum(itr->line);
         else if(parent->GetLineFirst(itr->line))
           linenum = 0;
+
         ReleaseMutex(bufferMutex); //let buffer to push new task
 
         this->state.parsed = true;
@@ -216,7 +231,13 @@ void __fastcall Parser::Execute()
             this->tasklist.push_back(itr->line);
           break;
         }
+#ifdef DEBUG
+    Write(String("ending loop "));
+#endif
       }
+#ifdef DEBUG
+    Write(String("out of loop "));
+#endif
       if(!itr->word->next && linenum >= 0)
       {
         if(first)  //means line has not been either parsed or flushed, because iter was already on nextline (empty line)
@@ -225,9 +246,9 @@ void __fastcall Parser::Execute()
       }
 
       itr->line->parserState = this->state;
-      ReleaseMutex(bufferMutex);
 
       delete itr;
+      ReleaseMutex(bufferMutex);
 #ifdef DEBUG
       Write("synced");
 #endif

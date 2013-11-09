@@ -39,6 +39,10 @@ namespace SHEdit
 
       wchar_t * _ParseWord(wchar_t*& ptr, wchar_t*& ptrend);
 
+#ifdef DEBUG
+      void Write(AnsiString message);
+#endif
+
     public:
       Buffer();
       ~Buffer();
@@ -61,6 +65,9 @@ namespace SHEdit
       Iter * End();
 
       bool IsPlainWord(wchar_t * string);
+
+      int CheckIntegrity(int& emptyCount);
+
       /*
          bool IsAl(wchar_t c);
          bool IsAlNum(wchar_t c);
