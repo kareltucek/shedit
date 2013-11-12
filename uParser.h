@@ -86,7 +86,7 @@ namespace SHEdit
 
       void ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, bool paint);
 #ifdef DEBUG
-      void Write(AnsiString message);
+      static bool Write(AnsiString message);
 #endif
     public:
       static void MarkupPush(Node ** at, Format* format);

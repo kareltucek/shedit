@@ -271,7 +271,7 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
         if(scrolled != 0)
         {
           ProcessChange(0, scrolled, NULL);
-          UpdateCursor(false);
+          UpdateCursor(true);
           //RepaintWindow(true); //todo optimize
           
         }
@@ -577,15 +577,15 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
   ProcessMouseClear();
   itrCursorSecond = XYtoItr(x, y);
   bool lastInvOrder = cursorsInInvOrder;
-    cursorsInInvOrder = (y < cy || (y == cy && x < cx));
-    if(*itrCursor != *itrCursorSecond)
-    {
-      GetCursor()->MarkupBegin(selectionFormat);
-        GetCursorEnd()->MarkupEnd(selectionFormat);
-    }
+  cursorsInInvOrder = (y < cy || (y == cy && x < cx));
   if(*itrCursor != *itrCursorSecond)
   {
-    if(lastInvOrder)
+    GetCursor()->MarkupBegin(selectionFormat);
+    GetCursorEnd()->MarkupEnd(selectionFormat);
+  }
+  if(*itrCursor != *itrCursorSecond)
+  {
+    if(cursorsInInvOrder)
     {
       parser->ParseFromLine(GetCursor()->line, 2);
       if(ch) parser->ParseFromLine(ch, 2);

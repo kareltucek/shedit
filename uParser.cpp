@@ -94,19 +94,45 @@ bool Parser::MarkupContains(SHEdit::Parser::Node ** at, SHEdit::Format * format)
 //---------------------------------------------------------------------------
 bool Parser::MarkupEquals(SHEdit::Parser::Node * at, SHEdit::Parser::Node * bt)
 {
+#ifdef DEBUG
+  Parser::Write(" Markup equals");
+#endif
   if(at != NULL && bt != NULL)
   {
+                                                                                #ifdef DEBUG
+                                                                                  Parser::Write("   if");
+                                                                                #endif
     Node * a = at;
     Node * b = bt;
-    while(a != NULL)
+    while(a != NULL && b != NULL)
     {
+                                                                                #ifdef DEBUG
+                                                                                  Parser::Write("   while");
+                                                                                #endif
       if(a->format != b->format)
+      {
+                                                                                #ifdef DEBUG
+                                                                                  Parser::Write(" Markup returns");
+                                                                                #endif
         return false;
+      }
+                                                                                #ifdef DEBUG
+                                                                                  Parser::Write("   assign");
+                                                                                #endif
       a = a->node;
       b = b->node;
+                                                                                #ifdef DEBUG
+                                                                                  Parser::Write("   assigned");
+                                                                                #endif
     }
-    return (b == NULL);
+                                                                                #ifdef DEBUG
+                                                                                  Parser::Write(" Markup returns1");
+                                                                                #endif
+    return (b == a);
   }
+#ifdef DEBUG
+  Parser::Write(" Markup returns2");
+#endif
   return (at == NULL && bt == NULL);
 }
 //---------------------------------------------------------------------------
@@ -168,7 +194,7 @@ void __fastcall Parser::Execute()
 #ifdef DEBUG
     Write("waiting for buffer changed");
 #endif
-    int dbg = WaitForSingleObject(bufferChanged, 1000000);
+    int dbg = WaitForSingleObject(bufferChanged, WAIT_TIMEOUT_TIME);
 #ifdef DEBUG
     Write(String("BufferChangedEvent") + String(dbg) + " error code " + String(GetLastError()));
 #endif
@@ -179,11 +205,9 @@ void __fastcall Parser::Execute()
       //take care of record from list
 #ifdef DEBUG
     Write(String("waiting for mutex "));
-
 #endif
 
       WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
-
 
       line = tasklistprior.size() > 0 ? tasklistprior.front() : tasklist.front();
       linenum = parent->GetLineNum(line);
@@ -196,17 +220,21 @@ void __fastcall Parser::Execute()
 
       while(itr->word->next && (first || itr->line->parserState != this->state))
       {
+#ifdef DEBUG
+    Write(String("  starting loop with sizes: ")+String((int)(tasklistprior.size()))+String(" ")+String((int)(tasklist.size())));
+
+#endif
         first = false;
         //take care of line
         itr->line->parserState = this->state;
         tasklistprior.remove(itr->line);
         tasklist.remove(itr->line);
 #ifdef DEBUG
-    Write(String("going to parseline "));
+    Write(String("  going to parseline "));
 #endif
         ParseLine(itr, searchtoken, linenum >= 0);
 #ifdef DEBUG
-    Write(String("gouing out of parseline "));
+    Write(String("  gouing out of parseline "));
 #endif
         if(linenum >= 0)
         {
@@ -227,6 +255,9 @@ void __fastcall Parser::Execute()
         //if(!(linenum >= 0 && linenum <= parent->GetVisLineCount() && itr->line->parserState != this->state) && tasklistprior.size() > 0 )
         if(linenum < 0 && tasklistprior.size() > 0)
         {
+#ifdef DEBUG
+    Write(String(" breaking loop "));
+#endif
           if(itr->word->next)
             this->tasklist.push_back(itr->line);
           break;
@@ -281,7 +312,7 @@ void Parser::ParseFromLine(NSpan * line, int prior)
 void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, bool paint)
 {
 #ifdef DEBUG
-  Write("entering ParseLine function");
+  Write(" entering ParseLine function");
 #endif
   wchar_t * ptr;
   LanguageDefinition::TreeItem * lineback;
@@ -463,9 +494,10 @@ __fastcall Parser::~Parser()
 }
 //---------------------------------------------------------------------------
 #ifdef DEBUG
-void Parser::Write(AnsiString message)
+bool Parser::Write(AnsiString message)
 {
   myfile << message.c_str() << std::endl;
+  return true;
 }
 #endif
 //---------------------------------------------------------------------------
