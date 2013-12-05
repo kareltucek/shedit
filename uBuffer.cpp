@@ -30,6 +30,7 @@ Buffer::Buffer()
   NSpan * tail = new NSpan();
 
   markupMask = 0;
+  linecount=0;
 
   head->next = tail;
   head->nextline = tail;
@@ -72,12 +73,12 @@ void Buffer::_Delete(Span * word)
 {
 
 #ifdef DEBUG
-    Write("delete words "+String((int)word->prev)+String(" ")+String((int)word->next));
+  Write("delete words "+String((int)word->prev)+String(" ")+String((int)word->next));
 #endif
   word->next->prev = word->prev;
   word->prev->next = word->next;
 #ifdef DEBUG
-    Write("delete words returning");
+  Write("delete words returning");
 #endif
 }
 //---------------------------------------------------------------------------
@@ -93,28 +94,15 @@ void Buffer::_Insert(NSpan * word)
 //---------------------------------------------------------------------------
 void Buffer::_Delete(NSpan * word)
 {
-
-#ifdef DEBUG
-    Write("Delete line");
-    if(word == NULL)
-      Write("Delete line NULL word !!!!!!!!!!!!!!");
-#endif
   word->prevline->ItersMove(word, word->prevline, word->next, 0); //some fix - not sure what i am doing
-
-#ifdef DEBUG
-    Write(String("first iter prevline is")+String((int)word->prevline));
-#endif
   word->ItersTransmitAll(word->prevline);
-#ifdef DEBUG
-    Write("iters done");
-#endif
-  if(word->nextline);
   word->nextline->prevline = word->prevline;
+
+  if(word->nextline != NULL);
+    word->nextline->prevline = word->prevline;
   if(word->prevline)
-  word->prevline->nextline = word->nextline;
-#ifdef DEBUG
-    Write("links done");
-#endif
+    word->prevline->nextline = word->nextline;
+
   _Delete((Span*)word);
 }
 //---------------------------------------------------------------------------
@@ -220,6 +208,7 @@ int Buffer::Insert(Iter * At, wchar_t * string)
   }
   delete[] string;
   wordBeingEdited = prev;
+  linecount += linesInserted;
   return linesInserted;
 }
 //---------------------------------------------------------------------------
@@ -230,7 +219,7 @@ int Buffer::Delete(Iter * From, Iter * To)
   {
     if(To->offset == 0 && From->offset == 0 && From != To)
     {
-      stackUndo.push(new Range(From->word, From->word, false, From->line, From->line->nextline, false));
+      stackUndo.push(new Range(From->word, From->word, false, From->line->nextline, From->line, false));
       _Delete(From->word);
       From->line->ItersMove(From->word, From->line, To->word, 0);
     }
@@ -240,8 +229,9 @@ int Buffer::Delete(Iter * From, Iter * To)
   }
   else if(*(From->word->string) == '\n' && From->word->next == To->word && To->offset == 0)
   {
-    stackUndo.push(new Range(From->word, From->word, false, (NSpan*)(From->word), (NSpan*)(From->word), false));
+    stackUndo.push(new Range(From->word, From->word, false, From->line->nextline, From->line, false));
     _Delete((NSpan*)(From->word));
+    linecount--;
     return 1;
   }
   else
@@ -290,6 +280,7 @@ int Buffer::Delete(Iter * From, Iter * To)
         linesDeleted++;
       }
     }
+    linecount -= linesDeleted;
     return linesDeleted;
   }
 }
@@ -298,48 +289,28 @@ int Buffer::Delete(Iter * From, Iter * To)
 //---------------------------------------------------------------------------
 void Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
 {
-#ifdef DEBUG
-    Write("DeleteAt");
-#endif
   if(*(From->word->string) == '\0' && From->word->next && From->word->next == To->word && To->offset == 0)
   {
     _Delete(From->word);
     return;
   }
-#ifdef DEBUG
-    Write("DeleteAt 1");
-    if(*(From->word->string) == '\0')
-      Write("DeleteAt Null string!!!!");
-#endif
 
   int toOffset = To->offset;
   if(From->word->next == To->word && To->offset == 0)
     toOffset = From->word->length;
   int length = (toOffset-From->offset);
-#ifdef DEBUG
-    Write(String("DeleteAt going to allocate")+String((int)(From->word->length-length+1)));
-#endif
   wchar_t* newstr = new wchar_t[From->word->length-length+1];
 
-#ifdef DEBUG
-    Write("DeleteAt allocated");
-#endif
   wcsncpy( newstr, From->word->string, From->offset);
   wcscpy( newstr+From->offset, From->word->string+toOffset);
 
-#ifdef DEBUG
-    Write("DeleteAt 2");
-#endif
   Span * newword;
   if((wordBeingEdited != From->word && writeundo) || forcenew)
   {
-#ifdef DEBUG
-    Write("DeleteAt branch 1");
-#endif
     newword = new Span(From->word->prev, From->word->next, newstr, wcslen(newstr));
     wordBeingEdited = newword;
     if(writeundo)
-      stackUndo.push(new Range(From->word, From->word, false, NULL, NULL, false));
+      stackUndo.push(new Range(From->word, From->word, false, From->line->nextline, To->line, false));
     _Insert(newword);
     From->line->ItersTranslate(From->word, newword, From->offset, -length);
     From->line->ItersSplit(newword, newword, newword->next, newword->length, true, 0);
@@ -349,9 +320,6 @@ void Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
   }
   else
   {
-#ifdef DEBUG
-    Write("DeleteAt branch 2");
-#endif
     delete[] From->word->string;
     From->word->string = newstr;
     From->word->length = wcslen(newstr);
@@ -359,9 +327,6 @@ void Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
     From->line->ItersSplit(From->word, From->word, From->word->next, From->word->length, true, 0);
     newword = From->word;
   }
-#ifdef DEBUG
-    Write("maaaarks");
-#endif
   if(newword->mark)
   {
     for(Mark ** m = &(newword->mark); *m != NULL; m = &((*m)->mark))
@@ -372,9 +337,6 @@ void Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
         (*m)->pos -= (*m)->pos - From->offset;
     }
   }
-#ifdef DEBUG
-    Write("DeleteAt exit");
-#endif
 }
 
 //---------------------------------------------------------------------------
@@ -392,7 +354,7 @@ void Buffer::_InsertAt(NSpan * line, Span * word, int pos, wchar_t * string, boo
     newword = new Span(word->prev, word->next, newstr, wcslen(newstr));
     wordBeingEdited = newword;
     if(writeundo)
-      stackUndo.push(new Range(word, word, false, NULL, NULL, false));
+      stackUndo.push(new Range(word, word, false, line->nextline, line, false));
     _Insert(newword);
     line->ItersTranslate(word, newword, pos, wcslen(string));
     if(word->mark)
@@ -497,65 +459,156 @@ void Buffer::LoadFile(wchar_t * filename)
 void Buffer::LoadFileAsync(wchar_t * filename)
 {
   preloadFile = new std::ifstream();
-    preloadFile->open("test.txt");
-    preload->first = data->first;
-    preload->firstLine = data->firstLine;
-    preload->last = data->last;
-    preload->lastLine = data->lastLine;
+  preloadFile->open("test.txt");
+  preload->first = data->first;
+  preload->firstLine = data->firstLine;
+  preload->last = data->last;
+  preload->lastLine = data->lastLine;
+  linecount = 0;
+}
+//---------------------------------------------------------------------------
+void Buffer::Redo()
+{
+  int test = 888;
+}
+//---------------------------------------------------------------------------
+void Buffer::Undo()
+{
+#ifdef DEBUG
+  Write(String("undo called"));
+#endif
+  if(stackUndo.size() == 0)
+    return;
+  Range * event = stackUndo.top();
+  stackUndo.pop();
+  /*
+  if(event->empty)
+  {
+    if(event->lineempty)
+      stackRedo.push(new Range(event->first->next, event->last->prev, false, event->firstLine->nextline, event->lastLine->prevline, false));
+    else
+      stackRedo.push(new Range(event->first->next, event->last->prev, false, event->firstLine->prevline->nextline, event->lastLine->nextline->prevline, true));
+  }
+  else
+  {
+    if(event->lineempty)
+      stackRedo.push(new Range(event->first->prev->next, event->last->next->prev, true, event->firstLine->nextline, event->lastLine->prevline, false));
+    else
+      stackRedo.push(new Range(event->first->prev->next, event->last->next->prev, true, event->firstLine->prevline->nextline, event->lastLine->nextline->prevline, true));
+   }*/
+
+#ifdef DEBUG
+  Write(String("setting pointers"));
+#endif
+
+   //undo = lines that are gonna to be removed from buffer
+   //rep = lines that are  gonna to be placed to buffer
+   Span * undoFirst = event->empty ? event->first->next : event->first->prev->next;
+   Span * undoLast = event->empty ? event->last->prev : event->last->next->prev;
+   NSpan * undoLineFirst = event->lineempty ? event->firstLine : event->firstLine->prevline;
+   NSpan * replLineLast = event->lineempty ? event->firstLine : event->lastLine;
+
+   //stackRedo.push(new Range(event->first->next, event->last->prev, false, event->firstLine->nextline, event->lastLine->prevline, false));
+
+#ifdef DEBUG
+  Write(String("checking iters"));
+#endif
+  if(undoFirst->prev != undoLast)
+  {
+   NSpan * line = undoLineFirst;
+   for(Span * span = undoFirst; span != undoLast; span = span->next)
+   {
+     line->ItersMove(span, replLineLast, undoLast, 0);
+     line->ItersTransmitAll(replLineLast); //no longer needed
+     if(*(span->string) == '\n')
+       line = (NSpan*)span;
+  }
+   }
+#ifdef DEBUG
+  Write(String("checked iters"));
+#endif
+
+  if(event->empty)
+  {
+    event->first->next = event->last;
+    event->last->prev = event->first;
+  }
+  else
+  {
+    event->first->prev->next = event->first;
+    event->last->next->prev = event->last;
+  }
+
+  if(event->lineempty)
+  {
+    event->firstLine->nextline = event->lastLine;
+    event->lastLine->prevline = event->firstLine;
+  }
+  else
+  {
+    event->firstLine->prevline->nextline = event->firstLine;
+    event->lastLine->nextline->prevline = event->lastLine;
+  }
+
+  delete event;
+#ifdef DEBUG
+  Write(String("undone"));
+#endif
 }
 //---------------------------------------------------------------------------
 bool Buffer::Preload(int lines)
 {
   std::string line;
-    if (preloadFile && preloadFile->is_open())
+  if (preloadFile && preloadFile->is_open())
+  {
+    using namespace std;
+    int i;
+    for(i = 0; i != lines && getline(*preloadFile,line); i++)
     {
-      using namespace std;
-        int i;
-        for(i = 0; i != lines && getline(*preloadFile,line); i++)
-        {
-          wchar_t * str;
-          int wchars_num = 0;
-          if(line.size() > 0)
-          {
-            wchars_num =  MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, NULL , 0 );
-            str = new wchar_t[wchars_num];
-            MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, str , wchars_num );
-          }
-          else
-          {
-            str = new wchar_t[1];
-            str[0] = '\0';
-          }
-          Span * text = new Span(preload->last, preload->lastLine, str, 0);
-          text->length = wcslen(str);
-          NSpan * line = new NSpan(text, preload->lastLine);
-          text->next = line;
-          if(i == 0)
-          {
-            text->prev = preload->first;
-            line->prevline = preload->firstLine;
-            preload->first = text;
-            preload->firstLine = line;
-            line->next = preload->last;
-            line->nextline = preload->lastLine;
-          }
-          else
-          {
-            line->next = preload->last->next;
-            line->nextline = preload->lastLine->nextline;
-            preload->last->next = text;
-            preload->lastLine->nextline = line;
-          }
-          preload->last = line;
-          preload->lastLine = line;
-        }
-      if(i != lines)
+      linecount++;
+      wchar_t * str;
+      int wchars_num = 0;
+      if(line.size() > 0)
       {
-        preloadFile->close();
-          delete preloadFile;
+        wchars_num =  MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, NULL , 0 );
+        str = new wchar_t[wchars_num];
+        MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, str , wchars_num );
       }
-      return true;
+      else
+      {
+        str = new wchar_t[1];
+        str[0] = '\0';
+      }
+      Span * text = new Span(preload->last, preload->lastLine, str, 0);
+      text->length = wcslen(str);
+      NSpan * line = new NSpan(text, preload->lastLine);
+      text->next = line;
+      if(i == 0)
+      {
+        text->prev = preload->first;
+        line->prevline = preload->firstLine;
+        preload->first = text;
+        preload->firstLine = line;
+        line->next = preload->last;
+        line->nextline = preload->lastLine;
+      }
+      else
+      {
+        line->next = preload->last->next;
+        line->nextline = preload->lastLine->nextline;
+        preload->last->next = text;
+        preload->lastLine->nextline = line;
+      }
+      preload->last = line;
+      preload->lastLine = line;
     }
+    if(i != lines)
+    {
+      preloadFile->close();
+      delete preloadFile;
+    }
+    return true;
+  }
   return false;
 }
 //---------------------------------------------------------------------------
@@ -579,6 +632,7 @@ void Buffer::FlushPreload()
       lastN->ItersTransmitAll(preload->lastLine);         //moves all references from their former NLs to last inserted NL    //do not copy this, generally incorrect, though here working
     else
       lastN->ItersTransmit(span, preload->lastLine);
+      
     if(*(span->string) == '\n')
     {
       while(((NSpan*)span)->ItrList.size() == 0 && span != preload->lastLine->nextline)
@@ -593,6 +647,7 @@ void Buffer::FlushPreload()
   _Insert(preload->first);
   _Insert(preload->firstLine);
   _Insert(preload->lastLine);
+  _Insert(preload->last); //??probably wrong - added later
   preload->first = preload->last;
   preload->firstLine = preload->lastLine;
   preload->last = preload->last->next;
@@ -627,7 +682,7 @@ wchar_t * Buffer::GetText(Iter * From, Iter* To)
 int Buffer::CheckIntegrity(int& emptyCount)
 {
 #ifdef DEBUG
-    Write(String("checking integrity"));
+  Write(String("checking integrity"));
 #endif
   emptyCount = 0;
   Span* lastword = data->first;
@@ -646,18 +701,18 @@ int Buffer::CheckIntegrity(int& emptyCount)
       line = (NSpan*)word;
       nextline = line->nextline;
       /*
-      for (std::list<Iter*>::const_iterator itr = line->ItrList.begin(); itr != line->ItrList.end(); ++itr)
-      {
-        try
-        {
-          (*itr)->word->prev++;
-          (*itr)->word->prev--;
-        }
-        catch(...)
-        {
-          return 3;
-        }
-      }  */
+         for (std::list<Iter*>::const_iterator itr = line->ItrList.begin(); itr != line->ItrList.end(); ++itr)
+         {
+         try
+         {
+         (*itr)->word->prev++;
+         (*itr)->word->prev--;
+         }
+         catch(...)
+         {
+         return 3;
+         }
+         }  */
     }
     if(*(word->string) == '\0')
       emptyCount++;
@@ -665,7 +720,7 @@ int Buffer::CheckIntegrity(int& emptyCount)
     word = word->next;
   }
 #ifdef DEBUG
-    Write(String("integrity check done"));
+  Write(String("integrity check done"));
 #endif
   return 0;
 }

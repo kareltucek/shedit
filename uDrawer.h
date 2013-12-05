@@ -15,7 +15,7 @@ namespace SHEdit
   class TSQLEdit;
   class FontStyle;
   //---------------------------------------------------------------------------
-  enum DrawType {Text, Move, Cursor, Endline, Eof};
+  enum DrawType {Text, Move, HMove, Cursor, Endline, Eof};
   //---------------------------------------------------------------------------
   struct DrawTask
   {
@@ -65,6 +65,12 @@ namespace SHEdit
     short to;
     short by;
   };
+
+  //------------------------------------------------------------------------
+  struct DrawTaskHMove : public DrawTask
+  {
+    DrawTaskHMove();
+  };
   //---------------------------------------------------------------------------
   class Drawer : public TThread
   {
@@ -79,10 +85,19 @@ namespace SHEdit
       TCanvas * canvas;
       TCanvas * drawcanvas;
 
+      inline int RightBorder();
+      inline int BottomBorder();
+
       int x, y;
       int cx, cy;
       bool con;   //cursorOn
       TColor cursorBGcolor;
+
+      int debugtasks;
+      int debugcount;
+
+      int HPos, HMax;
+      void __fastcall UpdateHBar();
 
 
       void DrawCursor();
@@ -97,6 +112,8 @@ namespace SHEdit
       virtual __fastcall ~Drawer();
 
       void Draw(DrawTask* drawtask);
+    public:
+      friend class TSQLEdit;
   };
 }
 //---------------------------------------------------------------------------

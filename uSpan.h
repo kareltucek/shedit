@@ -45,7 +45,6 @@ namespace SHEdit
     void ItersTransmitAll(NSpan * to);
     void ItersTransmit(Span * from, NSpan * to);
     void ItersMove(Span * from, NSpan * to, Span * toword, int offset);
-
     Parser::ParserState parserState;
 
     //int GetPos();
@@ -55,6 +54,8 @@ namespace SHEdit
   struct Range
   {
     Range(Span * first, Span * last, bool empty, NSpan * firstLine, NSpan * lastLine, bool lineempty);
+    ~Range();
+    void Free(); //destructor shall not destroy data it holds, but free shoul
 
     Span* first;
     Span* last;

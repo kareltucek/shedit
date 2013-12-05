@@ -12,6 +12,7 @@
 #include "uFormat.h"
 #include <string>
 #include <stdio.h>
+#include <time.h>
 #include <list>
 
 using namespace SHEdit;
@@ -94,45 +95,21 @@ bool Parser::MarkupContains(SHEdit::Parser::Node ** at, SHEdit::Format * format)
 //---------------------------------------------------------------------------
 bool Parser::MarkupEquals(SHEdit::Parser::Node * at, SHEdit::Parser::Node * bt)
 {
-#ifdef DEBUG
-  Parser::Write(" Markup equals");
-#endif
   if(at != NULL && bt != NULL)
   {
-                                                                                #ifdef DEBUG
-                                                                                  Parser::Write("   if");
-                                                                                #endif
     Node * a = at;
     Node * b = bt;
     while(a != NULL && b != NULL)
     {
-                                                                                #ifdef DEBUG
-                                                                                  Parser::Write("   while");
-                                                                                #endif
       if(a->format != b->format)
       {
-                                                                                #ifdef DEBUG
-                                                                                  Parser::Write(" Markup returns");
-                                                                                #endif
         return false;
       }
-                                                                                #ifdef DEBUG
-                                                                                  Parser::Write("   assign");
-                                                                                #endif
       a = a->node;
       b = b->node;
-                                                                                #ifdef DEBUG
-                                                                                  Parser::Write("   assigned");
-                                                                                #endif
     }
-                                                                                #ifdef DEBUG
-                                                                                  Parser::Write(" Markup returns1");
-                                                                                #endif
     return (b == a);
   }
-#ifdef DEBUG
-  Parser::Write(" Markup returns2");
-#endif
   return (at == NULL && bt == NULL);
 }
 //---------------------------------------------------------------------------
@@ -181,33 +158,30 @@ void Parser::MarkupPop(SHEdit::Parser::Node ** at, SHEdit::Format * format)
 //---------------------------------------------------------------------------
 void __fastcall Parser::Execute()
 {
+  this->Priority=tpHigher;
   while(!Terminated)
   {
-#ifdef DEBUG
-    Write("beginning new cycle");
-#endif
     for(int i = 0; langdef == NULL; i++)
     {
       WaitForSingleObject(bufferChanged, WAIT_TIMEOUT_TIME);
       ResetEvent(bufferChanged);
     }
-#ifdef DEBUG
-    Write("waiting for buffer changed");
-#endif
     int dbg = WaitForSingleObject(bufferChanged, WAIT_TIMEOUT_TIME);
-#ifdef DEBUG
-    Write(String("BufferChangedEvent") + String(dbg) + " error code " + String(GetLastError()));
-#endif
+
     NSpan* line=NULL;
     //parse lists
+#ifdef DEBUG
+    Write(String("queue size ")+String((int)(tasklist.size()+tasklistprior.size())));
+    WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+    clock_t timer = clock();
+    int dbglines = 0;
+#endif
     while(tasklist.size() > 0 || tasklistprior.size() > 0)
     {
       //take care of record from list
-#ifdef DEBUG
-    Write(String("waiting for mutex "));
-#endif
-
+#ifndef DEBUG
       WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+#endif
 
       line = tasklistprior.size() > 0 ? tasklistprior.front() : tasklist.front();
       linenum = parent->GetLineNum(line);
@@ -220,21 +194,22 @@ void __fastcall Parser::Execute()
 
       while(itr->word->next && (first || itr->line->parserState != this->state))
       {
+      //take care of record from list
 #ifdef DEBUG
-    Write(String("  starting loop with sizes: ")+String((int)(tasklistprior.size()))+String(" ")+String((int)(tasklist.size())));
-
+      dbglines++;
 #endif
+        newline = true;
         first = false;
         //take care of line
         itr->line->parserState = this->state;
         tasklistprior.remove(itr->line);
         tasklist.remove(itr->line);
 #ifdef DEBUG
-    Write(String("  going to parseline "));
+    Write("going into parseline");
 #endif
         ParseLine(itr, searchtoken, linenum >= 0);
 #ifdef DEBUG
-    Write(String("  gouing out of parseline "));
+    Write("going out of parseline");
 #endif
         if(linenum >= 0)
         {
@@ -255,20 +230,11 @@ void __fastcall Parser::Execute()
         //if(!(linenum >= 0 && linenum <= parent->GetVisLineCount() && itr->line->parserState != this->state) && tasklistprior.size() > 0 )
         if(linenum < 0 && tasklistprior.size() > 0)
         {
-#ifdef DEBUG
-    Write(String(" breaking loop "));
-#endif
           if(itr->word->next)
             this->tasklist.push_back(itr->line);
           break;
         }
-#ifdef DEBUG
-    Write(String("ending loop "));
-#endif
       }
-#ifdef DEBUG
-    Write(String("out of loop "));
-#endif
       if(!itr->word->next && linenum >= 0)
       {
         if(first)  //means line has not been either parsed or flushed, because iter was already on nextline (empty line)
@@ -279,15 +245,16 @@ void __fastcall Parser::Execute()
       itr->line->parserState = this->state;
 
       delete itr;
+#ifndef DEBUG
       ReleaseMutex(bufferMutex);
-#ifdef DEBUG
-      Write("synced");
 #endif
     }
-    ResetEvent(bufferChanged);
 #ifdef DEBUG
-    Write("synced after all tasks");
+      ReleaseMutex(bufferMutex);
+    double time = (clock()-timer)/((double)CLOCKS_PER_SEC);
+    Write(String("parsed ")+String(dbglines)+String(" in ")+String(time)+String(" queuesize is ")+String((int)(tasklist.size()+tasklistprior.size())));
 #endif
+    ResetEvent(bufferChanged);
   }
 }
 //---------------------------------------------------------------------------
@@ -312,7 +279,7 @@ void Parser::ParseFromLine(NSpan * line, int prior)
 void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, bool paint)
 {
 #ifdef DEBUG
-  Write(" entering ParseLine function");
+    Write(" entering parseline");
 #endif
   wchar_t * ptr;
   LanguageDefinition::TreeItem * lineback;
@@ -326,14 +293,28 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
     case LangDefSpecType::NoEmpty:
     case LangDefSpecType::PairTag:
     case LangDefSpecType::LineTag:
+#ifdef DEBUG
+    Write(" normal switch");
+#endif
       while(*(itr->ptr) != '\n')
       {
+
+#ifdef DEBUG
+    Write("   while");
+#endif
         if(itr->word->mark)
           CheckMarkup(itr, paint);
+
+#ifdef DEBUG
+    Write("   markup checked");
+#endif
         lasttoken = searchtoken;
         switch(langdef->Go(searchtoken, *(itr->ptr)))
         {
           case LangDefSpecType::Empty:
+#ifdef DEBUG
+    Write("   1");
+#endif
             if(paint)
             {
               *(actTask->text) += *(itr->ptr);
@@ -342,21 +323,36 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
             }
             break;
           case LangDefSpecType::NoEmpty:
+#ifdef DEBUG
+    Write("   2");
+#endif
             if(paint)
             {
               Flush();
               *(actTask->text) += *(itr->ptr);
               actTask->format = *(searchtoken->format);
             }
+#ifdef DEBUG
+    Write("   2e");
+#endif
             break;
           case LangDefSpecType::LineTag:
+#ifdef DEBUG
+    Write("   3");
+#endif
             linetag = true;
             lineback = lasttoken;
             goto paint;
           case LangDefSpecType::PairTag:
+#ifdef DEBUG
+    Write("   4");
+#endif
             Flush();
             state.statemask = searchtoken->mask;
           case LangDefSpecType::Normal:
+#ifdef DEBUG
+    Write("   5");
+#endif
 paint:
             if(paint)
             {
@@ -366,25 +362,53 @@ paint:
             }
             break;
           case LangDefSpecType::Nomatch:
+#ifdef DEBUG
+    Write("   6");
+#endif
             if(paint)
               *(actTask->text) += *(itr->ptr);
             break;
           case LangDefSpecType::WordTag:
+#ifdef DEBUG
+    Write("   7");
+#endif
             if(paint)
               *(actTask->text) += *(itr->ptr);
             itr->GoChar();
             ParseLine(itr, searchtoken, paint);
             return;
+          default:
+#ifdef DEBUG
+    Write("   muhaha");
+#endif
+          break;
         }
+
+#ifdef DEBUG
+    Write("   gotta gochar");
+#endif
         itr->GoChar();
+#ifdef DEBUG
+    Write("   wentchar");
+#endif
       }
+
+#ifdef DEBUG
+    Write(" got through");
+#endif
       if(itr->word->mark)
         CheckMarkup(itr, paint);
       if(linetag)
         searchtoken = lineback;
+#ifdef DEBUG
+    Write(" returning");
+#endif
       return;
       break;
     case LangDefSpecType::WordTag:
+#ifdef DEBUG
+    Write(" wordtag switch");
+#endif
       actTask->format = *(searchtoken->format);
       while(langdef->IsAlNum(*(itr->ptr))) //IsAlNum should return true for \n //seems like accidental comment
       {
@@ -456,9 +480,9 @@ void Parser::FlushAll()
   SendString();
   DrawTaskEndline * task = new DrawTaskEndline();
   task->linenum = this->linenum;
-  WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
+  //WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
   drawer->Draw(task);
-  ReleaseMutex(drawerQueueMutex);
+  //ReleaseMutex(drawerQueueMutex);
 }
 //---------------------------------------------------------------------------
 void Parser::SendString()
@@ -466,10 +490,12 @@ void Parser::SendString()
   if(!outTask->text->IsEmpty())
   {
     outTask->newline = newline;
+    if(newline)
+      newline = false;
     outTask->linenum = this->linenum;
-    WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
+    //WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
     drawer->Draw(outTask);
-    ReleaseMutex(drawerQueueMutex);
+   // ReleaseMutex(drawerQueueMutex);
   }
   else
   {
@@ -484,9 +510,9 @@ void Parser::SendEof()
 {
   DrawTaskEof * task = new DrawTaskEof();
   task->linenum = this->linenum+1;
-  WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
+  //WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
   drawer->Draw(task);
-  ReleaseMutex(drawerQueueMutex);
+  //ReleaseMutex(drawerQueueMutex);
 }
 //---------------------------------------------------------------------------
 __fastcall Parser::~Parser()

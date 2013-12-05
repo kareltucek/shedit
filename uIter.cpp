@@ -8,6 +8,7 @@
 #include "uSpan.h"
 #include "uMark.h"
 #include "uFormat.h"
+#include "uBuffer.h"
 
 using namespace SHEdit;
 
@@ -26,12 +27,13 @@ Iter::Iter(NSpan * line)
       GoChar();
 }
 //---------------------------------------------------------------------------
-Iter::Iter(int offset, Span * word, NSpan * line)
+Iter::Iter(int offset, Span * word, NSpan * line, int linenum)
 {
   this->offset = offset;
   this->word = word;
   this->line = line;
   line->Register(this);
+  this->linenum = line->prevline ? linenum : 0;
   this->Update();
 }
 //---------------------------------------------------------------------------
@@ -43,6 +45,8 @@ Iter::~Iter()
 //---------------------------------------------------------------------------
 bool Iter::GoLine(bool allowEnd)
 {
+  if(linenum >= 0)
+    linenum++;
   if(line->nextline && line->nextline->next)
   {
     line->Unregister(this);
@@ -69,6 +73,8 @@ bool Iter::GoLine(bool allowEnd)
 //---------------------------------------------------------------------------
 bool Iter::RevLine()
 {
+  if(linenum > 0)
+    linenum--;
   if(line->prevline)
   {
     line->Unregister(this);
@@ -92,6 +98,8 @@ bool Iter::GoWord()
       line->Unregister(this);
       line = ((NSpan*)word);
       line->Register(this);
+      if(linenum >= 0)
+        linenum++;
     }
     word = word->next;
     offset = 0;
@@ -120,6 +128,8 @@ bool Iter::RevWord()
       line->Unregister(this);
       line = ((NSpan*)word)->prevline;
       line->Register(this);
+      if(linenum > 0)
+        linenum--;
     }
     Update();
     return true;
@@ -157,7 +167,7 @@ bool Iter::RevChar()
 //---------------------------------------------------------------------------
 Iter * Iter::Duplicate()
 {
-  return new Iter(offset, word, line);
+  return new Iter(offset, word, line, linenum);
 }
 //---------------------------------------------------------------------------
 void Iter::Update()

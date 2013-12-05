@@ -191,7 +191,7 @@ LangDefSpecType LanguageDefinition::Go(TreeItem *& item, wchar_t c)
 {
   wchar_t comp = towupper(c);
 beginning:
-  if((int)c < (int)0xEF)
+  if((int)c < (int)0x7F)
   {
     if(item->map[(int)comp])
     {
@@ -213,7 +213,7 @@ beginning:
   if(item != item->nextTree)
   {
     item = item->nextTree;
-    if((int)c < (int)0xEF)
+    if((int)c < (int)0x7F)
     {
       if(item->map[(int)comp])
       {

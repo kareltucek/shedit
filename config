@@ -1,12 +1,13 @@
-//define DEBUG
+#define DEBUG
 //define DEBUG_CURSOR
-#define DEBUG_REPAINT true
+#define DEBUG_REPAINT false
 
 
 
-#define FONTSIZE 13
-#define LINESIZE 20
-//define FONTSIZE 8
-//define LINESIZE 13
+//define FONTSIZE 13
+//define LINESIZE 20
+#define FONTSIZE 8
+#define LINESIZE 14
 #define WAIT_TIMEOUT_TIME INFINITE
+#define SCROLL_STEP 3
 #define Y_OFF 0

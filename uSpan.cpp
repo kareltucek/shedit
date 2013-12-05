@@ -205,3 +205,8 @@ Range::Range(Span * first, Span * last, bool lineempty, NSpan * firstLine, NSpan
   this->lineempty = lineempty;
 }
 //---------------------------------------------------------------------------
+Range::~Range()
+{
+
+}
+//---------------------------------------------------------------------------

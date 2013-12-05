@@ -9,17 +9,19 @@ namespace SHEdit
   class NSpan;
   class Mark;
   class Format;
+  class Buffer;
   //---------------------------------------------------------------------------
   class Iter
   {
     public:
       Iter(NSpan * line);
-      Iter(int offset, Span * word, NSpan * line);
+      Iter(int offset, Span * word, NSpan * line, int linenum = -1);
       ~Iter();
 
       Span * word;
       NSpan * line;
       int offset;
+      int linenum;
       wchar_t * ptr;
 
       bool GoLine(bool allowEnd = false);

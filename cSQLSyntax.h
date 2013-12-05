@@ -7,6 +7,7 @@
 #include <Classes.hpp>
 #include <Controls.hpp>
 #include <Clipbrd.hpp>
+#include <time.h>
 #include "uIter.h"
 #include "uBuffer.h"
 #include "uDrawer.h"
@@ -56,8 +57,14 @@ namespace SHEdit
       Parser * parser;
       Drawer * drawer;
 
+      TScrollBar * HBar;
+      TScrollBar * VBar;
+      void UpdateVBar();
+      void UpdateHBar();
+      clock_t lastHBarUpdate;
+
       Iter * XYtoItr(int& x, int& y);
-      void UpdateCursor(bool sync);
+      void UpdateCursor();
       void ProcessMouseMove(int& x, int& y);
       void ProcessMouseClear();
       Format * selectionFormat;
@@ -70,6 +77,10 @@ namespace SHEdit
       int scrolldelta; //used by ms to treat smooth-scroll wheels...
 
       void AdjustLine();
+      void Scroll(int by);
+      void __fastcall OnVScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);
+      void __fastcall OnHScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);
+      void __fastcall OnResizeCallback(TObject* Sender);
 
     protected:
       virtual void __fastcall Paint();
@@ -80,7 +91,7 @@ namespace SHEdit
 
       DYNAMIC void __fastcall MouseDown(TMouseButton Button, Classes::TShiftState Shift, int X, int Y);
       DYNAMIC void __fastcall MouseMove(Classes::TShiftState Shift, int X, int Y);
-        DYNAMIC void __fastcall MouseUp(TMouseButton Button, Classes::TShiftState Shift, int X, int Y);
+      DYNAMIC void __fastcall MouseUp(TMouseButton Button, Classes::TShiftState Shift, int X, int Y);
 
       TClipboard * clipboard;
       void Copy();
@@ -90,6 +101,8 @@ namespace SHEdit
       void ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed);
 
     public:
+      friend class Drawer;
+
       TMemo * dbgLog;
       int __fastcall GetVisLineCount();
       int __fastcall GetLineNum(NSpan * line);

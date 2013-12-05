@@ -47,6 +47,8 @@ namespace SHEdit
       Buffer();
       ~Buffer();
 
+      friend class Iter;
+
       void Undo();
       void Redo();
 
@@ -55,10 +57,11 @@ namespace SHEdit
 
       wchar_t* GetText(Iter * From, Iter * To);
 
+      void SimpleLoadFile(wchar_t * filename);
       void LoadFile(wchar_t * filename);
       void LoadFileAsync(wchar_t * filename);
-        bool Preload(int lines);
-        void FlushPreload();
+      bool Preload(int lines);
+      void FlushPreload();
 
       Iter * Begin();
       Iter * First();
@@ -67,6 +70,8 @@ namespace SHEdit
       bool IsPlainWord(wchar_t * string);
 
       int CheckIntegrity(int& emptyCount);
+
+      int linecount;
 
       /*
          bool IsAl(wchar_t c);
