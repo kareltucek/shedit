@@ -8,6 +8,7 @@
 #include <list>
 #include <uLanguageDefinition.h>
 #include <windows.h>
+#include <queue>
 #include "config"
 
 namespace SHEdit

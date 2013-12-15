@@ -162,6 +162,7 @@ void NSpan::ItersTransmit(Span * from, NSpan * to)
       to->Register(*itr);
       (*itr)->line = to;
       itr = ItrList.erase(itr);
+      itr++;
     }
     else
       itr++;
@@ -195,7 +196,7 @@ void NSpan::Unregister(Iter* itr)
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 
-Range::Range(Span * first, Span * last, bool lineempty, NSpan * firstLine, NSpan * lastLine, bool empty)
+Range::Range(Span * first, Span * last, bool empty, NSpan * firstLine, NSpan * lastLine, bool lineempty, int linecount)
 {
   this->first = first;
   this->last = last;
@@ -203,9 +204,15 @@ Range::Range(Span * first, Span * last, bool lineempty, NSpan * firstLine, NSpan
   this->lastLine = lastLine;
   this->empty = empty;
   this->lineempty = lineempty;
+  this->linecount = linecount;
 }
 //---------------------------------------------------------------------------
 Range::~Range()
+{
+
+}
+//---------------------------------------------------------------------------
+void Range::Free()
 {
 
 }

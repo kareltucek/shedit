@@ -53,7 +53,7 @@ namespace SHEdit
   //---------------------------------------------------------------------------
   struct Range
   {
-    Range(Span * first, Span * last, bool empty, NSpan * firstLine, NSpan * lastLine, bool lineempty);
+    Range(Span * first, Span * last, bool empty, NSpan * firstLine, NSpan * lastLine, bool lineempty, int linecount);
     ~Range();
     void Free(); //destructor shall not destroy data it holds, but free shoul
 
@@ -65,6 +65,8 @@ namespace SHEdit
 
     bool empty;
     bool lineempty;
+
+    int linecount;
   };
 }
 //---------------------------------------------------------------------------

@@ -30,15 +30,14 @@ Buffer::Buffer()
   NSpan * tail = new NSpan();
 
   markupMask = 0;
-  linecount=0;
 
   head->next = tail;
   head->nextline = tail;
   tail->prev = head;
   tail->prevline = head;
 
-  data = new Range(head, tail, false, head, tail, false);
-  preload = new Range(NULL, NULL, false, NULL, NULL, false);
+  data = new Range(head, tail, false, head, tail, false, 0);
+  preload = new Range(NULL, NULL, false, NULL, NULL, false, 0);
 
 }
 //---------------------------------------------------------------------------
@@ -177,11 +176,11 @@ int Buffer::Insert(Iter * At, wchar_t * string)
   {
     prev = At->word->prev;
     prevN = At->line;
-    stackUndo.push(new Range(prev, prev->next, true, At->line, At->line->nextline, true));
+    UndoPush(new Range(prev, prev->next, true, At->line, At->line->nextline, true, 0));
   }
   else
   {
-    stackUndo.push(new Range(At->word, At->word, false, At->line, At->line->nextline, true));
+    UndoPush(new Range(At->word, At->word, false, At->line, At->line->nextline, true, 0));
     prev = _SplitAt(At);
     prevN = At->line;
   }
@@ -208,7 +207,7 @@ int Buffer::Insert(Iter * At, wchar_t * string)
   }
   delete[] string;
   wordBeingEdited = prev;
-  linecount += linesInserted;
+  data->linecount += linesInserted;
   return linesInserted;
 }
 //---------------------------------------------------------------------------
@@ -219,7 +218,7 @@ int Buffer::Delete(Iter * From, Iter * To)
   {
     if(To->offset == 0 && From->offset == 0 && From != To)
     {
-      stackUndo.push(new Range(From->word, From->word, false, From->line->nextline, From->line, false));
+      UndoPush(new Range(From->word, From->word, false, From->line->nextline, From->line, false, 0));
       _Delete(From->word);
       From->line->ItersMove(From->word, From->line, To->word, 0);
     }
@@ -229,9 +228,9 @@ int Buffer::Delete(Iter * From, Iter * To)
   }
   else if(*(From->word->string) == '\n' && From->word->next == To->word && To->offset == 0)
   {
-    stackUndo.push(new Range(From->word, From->word, false, From->line->nextline, From->line, false));
+    UndoPush(new Range(From->word, From->word, false, From->line->nextline, From->line, false, 1));
     _Delete((NSpan*)(From->word));
-    linecount--;
+    data->linecount--;
     return 1;
   }
   else
@@ -261,7 +260,7 @@ int Buffer::Delete(Iter * From, Iter * To)
       undoEnd = To->word;
       end = _SplitEnd(To);
     }
-    stackUndo.push(new Range(undoBegin, undoEnd, false, From->line->nextline, To->line, false));
+    UndoPush(new Range(undoBegin, undoEnd, false, From->line->nextline, To->line, false, 0));
     begin->next = end;
     end->prev = begin;
     From->line->nextline = To->line->nextline;
@@ -280,7 +279,8 @@ int Buffer::Delete(Iter * From, Iter * To)
         linesDeleted++;
       }
     }
-    linecount -= linesDeleted;
+    stackUndo.top()->linecount = linesDeleted;
+    data->linecount -= linesDeleted;
     return linesDeleted;
   }
 }
@@ -310,7 +310,7 @@ void Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
     newword = new Span(From->word->prev, From->word->next, newstr, wcslen(newstr));
     wordBeingEdited = newword;
     if(writeundo)
-      stackUndo.push(new Range(From->word, From->word, false, From->line->nextline, To->line, false));
+      UndoPush(new Range(From->word, From->word, false, From->line->nextline, To->line, false, 0));
     _Insert(newword);
     From->line->ItersTranslate(From->word, newword, From->offset, -length);
     From->line->ItersSplit(newword, newword, newword->next, newword->length, true, 0);
@@ -354,7 +354,7 @@ void Buffer::_InsertAt(NSpan * line, Span * word, int pos, wchar_t * string, boo
     newword = new Span(word->prev, word->next, newstr, wcslen(newstr));
     wordBeingEdited = newword;
     if(writeundo)
-      stackUndo.push(new Range(word, word, false, line->nextline, line, false));
+      UndoPush(new Range(word, word, false, line->nextline, line, false, 0));
     _Insert(newword);
     line->ItersTranslate(word, newword, pos, wcslen(string));
     if(word->mark)
@@ -464,42 +464,40 @@ void Buffer::LoadFileAsync(wchar_t * filename)
   preload->firstLine = data->firstLine;
   preload->last = data->last;
   preload->lastLine = data->lastLine;
-  linecount = 0;
+  data->linecount = 0;
 }
 //---------------------------------------------------------------------------
 void Buffer::Redo()
 {
-  int test = 888;
+  UndoRedo(&stackRedo, &stackUndo);
 }
 //---------------------------------------------------------------------------
 void Buffer::Undo()
 {
+  UndoRedo(&stackUndo, &stackRedo);
+}
+//---------------------------------------------------------------------------
+void Buffer::UndoPush(Range * event)
+{
+   stackUndo.push(event);
+   while(stackRedo.size() > 0)
+   {
+     Range * redoevent = stackRedo.top();
+     stackRedo.pop();
+     redoevent->Free();
+     delete redoevent;
+   }
+}
+//---------------------------------------------------------------------------
+void Buffer::UndoRedo(std::stack<Range*> * stackUndo, std::stack<Range*> * stackRedo)
+{
 #ifdef DEBUG
   Write(String("undo called"));
 #endif
-  if(stackUndo.size() == 0)
+  if((*stackUndo).size() == 0)
     return;
-  Range * event = stackUndo.top();
-  stackUndo.pop();
-  /*
-  if(event->empty)
-  {
-    if(event->lineempty)
-      stackRedo.push(new Range(event->first->next, event->last->prev, false, event->firstLine->nextline, event->lastLine->prevline, false));
-    else
-      stackRedo.push(new Range(event->first->next, event->last->prev, false, event->firstLine->prevline->nextline, event->lastLine->nextline->prevline, true));
-  }
-  else
-  {
-    if(event->lineempty)
-      stackRedo.push(new Range(event->first->prev->next, event->last->next->prev, true, event->firstLine->nextline, event->lastLine->prevline, false));
-    else
-      stackRedo.push(new Range(event->first->prev->next, event->last->next->prev, true, event->firstLine->prevline->nextline, event->lastLine->nextline->prevline, true));
-   }*/
-
-#ifdef DEBUG
-  Write(String("setting pointers"));
-#endif
+  Range * event = (*stackUndo).top();
+  (*stackUndo).pop();
 
    //undo = lines that are gonna to be removed from buffer
    //rep = lines that are  gonna to be placed to buffer
@@ -508,25 +506,79 @@ void Buffer::Undo()
    NSpan * undoLineFirst = event->lineempty ? event->firstLine : event->firstLine->prevline;
    NSpan * replLineLast = event->lineempty ? event->firstLine : event->lastLine;
 
-   //stackRedo.push(new Range(event->first->next, event->last->prev, false, event->firstLine->nextline, event->lastLine->prevline, false));
 
-#ifdef DEBUG
-  Write(String("checking iters"));
-#endif
+  int linestoberemoved = 0;
+    NSpan * line = undoLineFirst;
+    Span * span = undoFirst;
   if(undoFirst->prev != undoLast)
   {
-   NSpan * line = undoLineFirst;
-   for(Span * span = undoFirst; span != undoLast; span = span->next)
-   {
-     line->ItersMove(span, replLineLast, undoLast, 0);
-     line->ItersTransmitAll(replLineLast); //no longer needed
-     if(*(span->string) == '\n')
-       line = (NSpan*)span;
+    for(; span != undoLast->next; span = span->next)
+    {
+      line->ItersTransmit(span, replLineLast);
+      replLineLast->ItersMove(span, replLineLast, undoLast->next, 0);
+      if(*(span->string) == '\n')
+      {
+        line = (NSpan*)span;
+        linestoberemoved++;
+      }
+    }
   }
-   }
-#ifdef DEBUG
-  Write(String("checked iters"));
-#endif
+    while(*(span->string) != '\n')
+    {
+      line->ItersTransmit(span, replLineLast);
+      span = span->next;
+    }
+    line->ItersTransmit(span, replLineLast); //we want even the last one
+  this->data->linecount = data->linecount - linestoberemoved + event->linecount;
+
+
+  {
+    Span * redoFirst;
+    Span * redoLast;
+    bool redoempty;
+    NSpan * redoFirstLine;
+    NSpan * redoLastLine;
+    bool redoemptyline;
+
+    if(event->empty)
+    {
+      redoFirst = event->first->next;
+      redoLast = event->last->prev;
+      redoempty = false;
+    }
+    else if(event->first->prev == event->last->next->prev)
+    {
+      redoFirst = event->first->prev;
+      redoLast = event->last->next;
+      redoempty = true;
+    }
+    else
+    {
+      redoFirst = event->first->prev->next;
+      redoLast = event->last->next->prev;
+      redoempty = false;
+    }
+
+    if(event->lineempty)
+    {
+      redoFirstLine = event->firstLine->nextline;
+      redoLastLine = event->lastLine->prevline;
+      redoemptyline = false;
+    }
+    else if(event->firstLine->prevline == event->lastLine->nextline->prevline)
+    {
+      redoFirstLine = event->firstLine->prevline;
+      redoLastLine = event->lastLine->nextline;
+      redoemptyline = true;
+    }
+    else
+    {
+      redoFirstLine = event->firstLine->prevline->nextline;
+      redoLastLine = event->lastLine->nextline->prevline;
+    }
+
+    (*stackRedo).push(new Range(redoFirst, redoLast, redoempty, redoFirstLine, redoLastLine, redoemptyline, linestoberemoved));
+  }
 
   if(event->empty)
   {
@@ -565,7 +617,7 @@ bool Buffer::Preload(int lines)
     int i;
     for(i = 0; i != lines && getline(*preloadFile,line); i++)
     {
-      linecount++;
+      data->linecount++;
       wchar_t * str;
       int wchars_num = 0;
       if(line.size() > 0)
@@ -618,10 +670,11 @@ void Buffer::FlushPreload()
   if(preload->first == data->first)
     return; //invalid file or whatever alike
   if(preload->first->prev->next == preload->last->next)
-    stackUndo.push(new Range(preload->first->prev, preload->last->next, true, preload->firstLine->prevline, preload->lastLine->nextline, true));
+    UndoPush(new Range(preload->first->prev, preload->last->next, true, preload->firstLine->prevline, preload->lastLine->nextline, true, 0));
   else
-    stackUndo.push(new Range(preload->first->prev->next, preload->last->next->prev, false, preload->firstLine->prevline->nextline, preload->lastLine->nextline->prevline, false));
+    UndoPush(new Range(preload->first->prev->next, preload->last->next->prev, false, preload->firstLine->prevline->nextline, preload->lastLine->nextline->prevline, false, 0));
 
+  int linesremoved = 0;
   NSpan * lastN = preload->firstLine->prevline;
   bool firstnl = true;
   lastN->ItersSplit(preload->first->prev->next, preload->first, preload->first->prev->next, 1, true, 0);
@@ -635,13 +688,18 @@ void Buffer::FlushPreload()
       
     if(*(span->string) == '\n')
     {
+    linesremoved++;
       while(((NSpan*)span)->ItrList.size() == 0 && span != preload->lastLine->nextline)
+      {
         span = ((NSpan*)span)->nextline;
+        linesremoved++;
+      }
 
       lastN = (NSpan*)span;
       firstnl = false;
     }
   }
+  stackUndo.top()->linecount = linesremoved;
   preload->firstLine->prevline->ItersTransmit( preload->lastLine->nextline, preload->lastLine); //to fix iters pointing to place, assumes endline just after end of insertion
 
   _Insert(preload->first);
@@ -677,6 +735,11 @@ wchar_t * Buffer::GetText(Iter * From, Iter* To)
   wchar_t * cstr = new wchar_t[str.length()+1];
   wcscpy(cstr, str.c_str());
   return cstr;
+}
+//---------------------------------------------------------------------------
+int Buffer::GetLineCount()
+{
+  return data->linecount;
 }
 //---------------------------------------------------------------------------
 int Buffer::CheckIntegrity(int& emptyCount)

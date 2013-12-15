@@ -141,7 +141,7 @@ void __fastcall Drawer::Execute()
             {
 
 #ifdef DEBUG
-   // Write("\n");
+    Write("\n");
 #endif
               HPos = parent->HBar->Position;
               x = 2-HPos;
@@ -150,7 +150,7 @@ void __fastcall Drawer::Execute()
             drawcanvas->TextOut(x, y, *(((DrawTaskText*)tasktoprocess)->text));
             x += drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text));
 #ifdef DEBUG
-    //Write(*(((DrawTaskText*)tasktoprocess)->text));
+    Write(*(((DrawTaskText*)tasktoprocess)->text));
 #endif
 
           }
@@ -203,7 +203,7 @@ void __fastcall Drawer::Execute()
           HPos = parent->HBar->Position;
           x = 2-HPos;
 #ifdef DEBUG
-   // Write("\n");
+    Write("\n");
 #endif
 
           break;
@@ -224,7 +224,7 @@ void __fastcall Drawer::Execute()
     parent->VBar->Repaint();
     parent->HBar->Repaint();
 #ifdef DEBUG
-    //Write(String("freeing everything"));
+    Write(String("freeing everything"));
 #endif
   }
 }

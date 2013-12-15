@@ -39,6 +39,9 @@ namespace SHEdit
 
       wchar_t * _ParseWord(wchar_t*& ptr, wchar_t*& ptrend);
 
+      void UndoRedo(std::stack<Range*> * stackUndo, std::stack<Range*> * stackRedo);
+      void UndoPush(Range * event);
+
 #ifdef DEBUG
       void Write(AnsiString message);
 #endif
@@ -71,7 +74,7 @@ namespace SHEdit
 
       int CheckIntegrity(int& emptyCount);
 
-      int linecount;
+      int GetLineCount();
 
       /*
          bool IsAl(wchar_t c);

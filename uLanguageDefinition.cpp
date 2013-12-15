@@ -213,6 +213,7 @@ beginning:
   if(item != item->nextTree)
   {
     item = item->nextTree;
+  //return item->type;
     if((int)c < (int)0x7F)
     {
       if(item->map[(int)comp])

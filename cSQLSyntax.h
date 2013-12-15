@@ -66,13 +66,14 @@ namespace SHEdit
       Iter * XYtoItr(int& x, int& y);
       void UpdateCursor();
       void ProcessMouseMove(int& x, int& y);
-      void ProcessMouseClear();
+      void ProcessMouseClear(bool redraw);
       Format * selectionFormat;
       bool mouseDown;
       bool mouseSelect;
       bool cursorsInInvOrder;
       int dx, dy; //down
       int cx, cy; //cursor
+      int mx, my; //mouse move  pos
       int cursorLeftOffset;
       int scrolldelta; //used by ms to treat smooth-scroll wheels...
 

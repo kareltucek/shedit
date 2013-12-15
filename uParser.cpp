@@ -189,8 +189,14 @@ void __fastcall Parser::Execute()
       Iter * itr = new Iter(line);
       state = itr->line->parserState;
       LanguageDefinition::TreeItem * searchtoken = langdef->GetSpecItem(state.statemask);
+
       tasklistprior.remove(line);  //has to be there! (cycle wont end if anything is invalid and task remains)
       tasklist.remove(line);
+
+      //  if(tasklistprior.size() > 0 && tasklistprior.front() == itr->line)
+      //    tasklistprior.pop_front();
+      //  if(tasklist.size() > 0 && tasklist.front() == itr->line)
+      //    tasklist.pop_front();
 
       while(itr->word->next && (first || itr->line->parserState != this->state))
       {
@@ -204,8 +210,12 @@ void __fastcall Parser::Execute()
         itr->line->parserState = this->state;
         tasklistprior.remove(itr->line);
         tasklist.remove(itr->line);
+        //if(tasklistprior.size() > 0 && tasklistprior.front() == itr->line)
+        //  tasklistprior.pop_front();
+        //if(tasklist.size() > 0 && tasklist.front() == itr->line)
+        //  tasklist.pop_front();
 #ifdef DEBUG
-    Write("going into parseline");
+    Write(String("going into parseline for line ")+String(linenum));
 #endif
         ParseLine(itr, searchtoken, linenum >= 0);
 #ifdef DEBUG
@@ -228,7 +238,7 @@ void __fastcall Parser::Execute()
         WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
 
         //if(!(linenum >= 0 && linenum <= parent->GetVisLineCount() && itr->line->parserState != this->state) && tasklistprior.size() > 0 )
-        if(linenum < 0 && tasklistprior.size() > 0)
+        if(false && linenum < 0 && tasklistprior.size() > 0)
         {
           if(itr->word->next)
             this->tasklist.push_back(itr->line);
@@ -260,14 +270,15 @@ void __fastcall Parser::Execute()
 //---------------------------------------------------------------------------
 void Parser::ParseFromLine(NSpan * line, int prior)
 {
+#ifdef DEBUG
+    Write("pushing line");
+#endif
   if(prior > 0)
   {
-    tasklistprior.remove(line);
     tasklistprior.push_back(line);
   }
   else
   {
-    tasklist.remove(line);
     tasklist.push_back(line);
   }
 }
@@ -293,28 +304,21 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
     case LangDefSpecType::NoEmpty:
     case LangDefSpecType::PairTag:
     case LangDefSpecType::LineTag:
-#ifdef DEBUG
-    Write(" normal switch");
-#endif
       while(*(itr->ptr) != '\n')
       {
-
-#ifdef DEBUG
-    Write("   while");
-#endif
         if(itr->word->mark)
           CheckMarkup(itr, paint);
 
-#ifdef DEBUG
-    Write("   markup checked");
-#endif
         lasttoken = searchtoken;
+#ifdef DEBUG
+        int type = langdef->Go(searchtoken, *(itr->ptr));
+        Write(String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String(searchtoken->type));
+        switch(type)
+#else
         switch(langdef->Go(searchtoken, *(itr->ptr)))
+#endif
         {
           case LangDefSpecType::Empty:
-#ifdef DEBUG
-    Write("   1");
-#endif
             if(paint)
             {
               *(actTask->text) += *(itr->ptr);
@@ -323,36 +327,21 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
             }
             break;
           case LangDefSpecType::NoEmpty:
-#ifdef DEBUG
-    Write("   2");
-#endif
             if(paint)
             {
               Flush();
               *(actTask->text) += *(itr->ptr);
               actTask->format = *(searchtoken->format);
             }
-#ifdef DEBUG
-    Write("   2e");
-#endif
             break;
           case LangDefSpecType::LineTag:
-#ifdef DEBUG
-    Write("   3");
-#endif
             linetag = true;
             lineback = lasttoken;
             goto paint;
           case LangDefSpecType::PairTag:
-#ifdef DEBUG
-    Write("   4");
-#endif
             Flush();
             state.statemask = searchtoken->mask;
           case LangDefSpecType::Normal:
-#ifdef DEBUG
-    Write("   5");
-#endif
 paint:
             if(paint)
             {
@@ -362,53 +351,34 @@ paint:
             }
             break;
           case LangDefSpecType::Nomatch:
-#ifdef DEBUG
-    Write("   6");
-#endif
             if(paint)
+            {
               *(actTask->text) += *(itr->ptr);
+              //actTask->format = *(searchtoken->format);//???
+#ifdef DEBUG
+    Write(String("   nomatch - outtask is ")+String((*outTask->text))+String(" acttask is ") + String(*actTask->text));
+#endif
+            }
             break;
           case LangDefSpecType::WordTag:
-#ifdef DEBUG
-    Write("   7");
-#endif
             if(paint)
               *(actTask->text) += *(itr->ptr);
             itr->GoChar();
             ParseLine(itr, searchtoken, paint);
             return;
           default:
-#ifdef DEBUG
-    Write("   muhaha");
-#endif
           break;
         }
-
-#ifdef DEBUG
-    Write("   gotta gochar");
-#endif
         itr->GoChar();
-#ifdef DEBUG
-    Write("   wentchar");
-#endif
       }
 
-#ifdef DEBUG
-    Write(" got through");
-#endif
       if(itr->word->mark)
         CheckMarkup(itr, paint);
       if(linetag)
         searchtoken = lineback;
-#ifdef DEBUG
-    Write(" returning");
-#endif
       return;
       break;
     case LangDefSpecType::WordTag:
-#ifdef DEBUG
-    Write(" wordtag switch");
-#endif
       actTask->format = *(searchtoken->format);
       while(langdef->IsAlNum(*(itr->ptr))) //IsAlNum should return true for \n //seems like accidental comment
       {
@@ -431,6 +401,9 @@ paint:
 
 void Parser::CheckMarkup(Iter * itr, bool paint)
 {
+#ifdef DEBUG
+    Write(" markup check");
+#endif
   Mark ** m = &(itr->word->mark);
   while(*m != NULL)
   {
@@ -444,6 +417,7 @@ void Parser::CheckMarkup(Iter * itr, bool paint)
       }
       else
       {
+        actTask->format = *(langdef->GetTree()->format);
         MarkupPop(&(state.markupStack), (*m)->format);
       }
     }
@@ -458,8 +432,14 @@ void Parser::SetLangDef(LanguageDefinition * langdef)
 //---------------------------------------------------------------------------
 void Parser::Flush()
 {
+#ifdef DEBUG
+    Write(" flush");
+#endif
   if(state.markupStack != NULL)
   {
+#ifdef DEBUG
+    Write("   formatted");
+#endif
     actTask->format = *(state.markupStack->format);
   }
 
@@ -472,6 +452,9 @@ void Parser::Flush()
     *(outTask->text) += *(actTask->text);
     actTask->text = new String("");
   }
+#ifdef DEBUG
+    Write(String("   outtask is ")+String((*outTask->text))+String(" acttask is ") + String(*actTask->text));
+#endif
 }
 //---------------------------------------------------------------------------
 void Parser::FlushAll()
@@ -489,6 +472,9 @@ void Parser::SendString()
 {
   if(!outTask->text->IsEmpty())
   {
+#ifdef DEBUG
+    Write(String("   sending ") + String(*(outTask->text)));
+#endif
     outTask->newline = newline;
     if(newline)
       newline = false;

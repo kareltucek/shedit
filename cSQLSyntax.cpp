@@ -266,6 +266,9 @@ void TSQLEdit::Scroll(int by)
           itrLine->RevLine();
           scrolled++;
         }
+        else
+          itrLine->linenum = 0;
+
         by--;
       }
       else
@@ -354,6 +357,7 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
           RepaintWindow(true);
           return;
         case VK_F5:
+          UpdateCursor();
           RepaintWindow(true);
           return;
         case VK_F6:
@@ -415,6 +419,7 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
               buffer->Redo();
             else
               buffer->Undo();
+            UpdateVBar();
             UpdateCursor();
             RepaintWindow(true);
 
@@ -584,13 +589,16 @@ void __fastcall TSQLEdit::MouseDown(TMouseButton Button, Classes::TShiftState Sh
   dx = X;
   dy = Y;
 
-  ProcessMouseClear();
+  ProcessMouseClear(true);
   delete itrCursor;
   itrCursor = XYtoItr(X, Y);
   cursorLeftOffset = itrCursor->GetLeftOffset();
 
   cx = X;
   cy = Y;
+
+  mx = cx;
+  my = cy;
 
   SetEvent(bufferChanged);
   WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
@@ -608,6 +616,7 @@ void __fastcall TSQLEdit::MouseMove(Classes::TShiftState Shift, int X, int Y)
     mouseSelect = true;
   if(!mouseSelect)
     return;
+
 #ifndef DEBUG_CURSOR
   ProcessMouseMove(X, Y);
 #endif
@@ -628,8 +637,15 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
   NSpan * ch = GetCursor() != NULL ? GetCursor()->line : NULL;
   NSpan * ch2 = GetCursorEnd() != NULL ? GetCursorEnd()->line : NULL;
 
-  ProcessMouseClear();
-  itrCursorSecond = XYtoItr(x, y);
+  Iter * tmp  = XYtoItr(x, y);
+  if(itrCursorSecond != NULL && *tmp == *itrCursorSecond)
+  {
+    delete tmp;
+    ReleaseMutex(bufferMutex);
+    return;
+  }
+  ProcessMouseClear(false);
+  itrCursorSecond = tmp;
   bool lastInvOrder = cursorsInInvOrder;
   cursorsInInvOrder = (y < cy || (y == cy && x < cx));
   if(*itrCursor != *itrCursorSecond)
@@ -639,21 +655,45 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
   }
   if(*itrCursor != *itrCursorSecond)
   {
-    if(cursorsInInvOrder)
+    if(my <= y && y <= cy)
+    {
+      if(ch) parser->ParseFromLine(ch, 2);
+      parser->ParseFromLine(GetCursor()->line, 2);
+      parser->ParseFromLine(GetCursorEnd()->line, 2);
+    }
+    else if(y <= my && my <= cy)
     {
       parser->ParseFromLine(GetCursor()->line, 2);
       if(ch) parser->ParseFromLine(ch, 2);
-      if(GetCursorEnd()) parser->ParseFromLine(GetCursorEnd()->line, 2);
+      parser->ParseFromLine(GetCursorEnd()->line, 2);
+    }
+    else if(y >= my && my >= cy)
+    {
+      parser->ParseFromLine(GetCursor()->line, 2);
+      if(ch2) parser->ParseFromLine(ch2, 2);
+      parser->ParseFromLine(GetCursorEnd()->line, 2);
+    }
+    else if(my >= y && y >= cy)
+    {
+      parser->ParseFromLine(GetCursor()->line, 2);
+      parser->ParseFromLine(GetCursorEnd()->line, 2);
       if(ch2) parser->ParseFromLine(ch2, 2);
     }
-    else
+    else if(my >= y && my >= cy && cy >= y)
+    {
+      parser->ParseFromLine(GetCursor()->line, 2);
+      parser->ParseFromLine(GetCursorEnd()->line, 2);
+      if(ch2) parser->ParseFromLine(ch2, 2);
+    }
+    else if(my <= y && my <= cy && cy <= y)
     {
       if(ch) parser->ParseFromLine(ch, 2);
       parser->ParseFromLine(GetCursor()->line, 2);
-      if(GetCursorEnd()) parser->ParseFromLine(GetCursorEnd()->line, 2);
-      if(ch2) parser->ParseFromLine(ch2, 2);
+      parser->ParseFromLine(GetCursorEnd()->line, 2);
     }
   }
+  mx = x;
+  my = y;
   if(!recmsg)
   {
     recmsg = true;
@@ -664,13 +704,13 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
   ReleaseMutex(bufferMutex);
 }
 //---------------------------------------------------------------------------
-void TSQLEdit::ProcessMouseClear()
+void TSQLEdit::ProcessMouseClear(bool redraw)
 {
-      WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
+    WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
   selectionFormat->RemoveAllMarks();
     if(itrCursorSecond)
   {
-    if(*itrCursor != *itrCursorSecond)
+    if(*itrCursor != *itrCursorSecond && redraw)
       parser->ParseFromLine(GetCursor()->line, 2);
     delete itrCursorSecond;
     cursorsInInvOrder = false;
@@ -683,12 +723,12 @@ Iter * TSQLEdit::GetCursor()
 {
     return cursorsInInvOrder ? itrCursorSecond : itrCursor;
   }
-  //---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 Iter * TSQLEdit::GetCursorEnd()
 {
-    return cursorsInInvOrder ? itrCursor : itrCursorSecond;
-  }
-  //---------------------------------------------------------------------------
+  return cursorsInInvOrder ? itrCursor : itrCursorSecond;
+}
+//---------------------------------------------------------------------------
 
 Iter * TSQLEdit::XYtoItr(int& x, int& y)
 {
@@ -859,13 +899,13 @@ void TSQLEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed
 //---------------------------------------------------------------------------
 void TSQLEdit::UpdateVBar()
 {
-  if(buffer->linecount > GetVisLineCount())
+  if(buffer->GetLineCount() > GetVisLineCount())
   {
     if(!VBar->Visible)
       VBar->Show();
     VBar->PageSize = GetVisLineCount();
     VBar->LargeChange = GetVisLineCount()-5;
-    VBar->Max = buffer->linecount+VBar->LargeChange;
+    VBar->Max = buffer->GetLineCount()+VBar->LargeChange;
     VBar->Position = itrLine->linenum;
   }
   else if(VBar->Visible)
