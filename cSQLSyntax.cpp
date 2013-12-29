@@ -79,7 +79,7 @@ TSQLEdit * SQLEditFocused; //callback musi jit na statickou metodu...
   itrCursor = buffer->End();
   itrCursorSecond = NULL;
 
-  this->DoubleBuffered = true;
+  //this->DoubleBuffered = true;
 
   this->Color = clWhite;
 
@@ -195,7 +195,6 @@ void __fastcall TSQLEdit::RepaintWindow(bool force)
     SetEvent(bufferChanged);
 
   }
-  this->SetAutoSize(false);
 }
 
 //---------------------------------------------------------------------------
@@ -352,6 +351,8 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
           WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
           buffer->LoadFile(L"test.txt");
           UpdateVBar();
+          parser->InvalidateAll();
+          parser->ParseFromLine(buffer->FirstLine(), 0);
           ReleaseMutex(bufferMutex);
           UpdateCursor();
           RepaintWindow(true);
@@ -660,36 +661,54 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
       if(ch) parser->ParseFromLine(ch, 2);
       parser->ParseFromLine(GetCursor()->line, 2);
       parser->ParseFromLine(GetCursorEnd()->line, 2);
+      #ifdef DEBUG
+      Log("1");
+      #endif
     }
     else if(y <= my && my <= cy)
     {
       parser->ParseFromLine(GetCursor()->line, 2);
       if(ch) parser->ParseFromLine(ch, 2);
       parser->ParseFromLine(GetCursorEnd()->line, 2);
+      #ifdef DEBUG
+      Log("2");
+      #endif
     }
     else if(y >= my && my >= cy)
     {
       parser->ParseFromLine(GetCursor()->line, 2);
       if(ch2) parser->ParseFromLine(ch2, 2);
       parser->ParseFromLine(GetCursorEnd()->line, 2);
+      #ifdef DEBUG
+      Log("3");
+      #endif
     }
     else if(my >= y && y >= cy)
     {
       parser->ParseFromLine(GetCursor()->line, 2);
       parser->ParseFromLine(GetCursorEnd()->line, 2);
       if(ch2) parser->ParseFromLine(ch2, 2);
+      #ifdef DEBUG
+      Log("4");
+      #endif
     }
     else if(my >= y && my >= cy && cy >= y)
     {
       parser->ParseFromLine(GetCursor()->line, 2);
       parser->ParseFromLine(GetCursorEnd()->line, 2);
       if(ch2) parser->ParseFromLine(ch2, 2);
+      #ifdef DEBUG
+      Log("5");
+      #endif
     }
     else if(my <= y && my <= cy && cy <= y)
     {
       if(ch) parser->ParseFromLine(ch, 2);
       parser->ParseFromLine(GetCursor()->line, 2);
       parser->ParseFromLine(GetCursorEnd()->line, 2);
+      #ifdef DEBUG
+      Log("6");
+      #endif
     }
   }
   mx = x;
@@ -899,7 +918,7 @@ void TSQLEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed
 //---------------------------------------------------------------------------
 void TSQLEdit::UpdateVBar()
 {
-  if(buffer->GetLineCount() > GetVisLineCount())
+  if(buffer->GetLineCount() >= GetVisLineCount())
   {
     if(!VBar->Visible)
       VBar->Show();
@@ -920,10 +939,10 @@ void TSQLEdit::UpdateHBar()
 {
   if(drawer->HMax > this->Width)
   {
-    HBar->PageSize = this->Width;
+    HBar->Max = drawer->HMax;
     HBar->LargeChange = this->Width - 50;
     HBar->SmallChange = 50;
-    HBar->Max = drawer->HMax;
+    HBar->PageSize = this->Width;
     if(!HBar->Visible)
       HBar->Show();
   }
@@ -973,14 +992,13 @@ void __fastcall TSQLEdit::OnVScroll(TObject *Sender, TScrollCode ScrollCode, int
     }
     else
     {
-      bool last = itrLine->line->parserState.parsed;
+      short last = itrLine->line->parserState.parseid;
       while(itrLine->linenum < ScrollPos)
       {
-        if(itrLine->line->parserState.parsed != last)
+        if(itrLine->line->parserState.parseid != last)
         {
-          if( !itrLine->line->parserState.parsed )
-            parser->ParseFromLine(itrLine->line, 0);
-          last = !last;
+          parser->ParseFromLine(itrLine->line, 0);
+          last = itrLine->line->parserState.parseid;
         }
         itrLine->GoLine();
       }
@@ -1020,6 +1038,10 @@ void TSQLEdit::Paste()
 void __fastcall TSQLEdit::OnResizeCallback(TObject * Sender)
 {
   UpdateHBar();
+  //WaitForSingleObject(drawerQueueMutex, WAIT_TIMEOUT_TIME);
+  drawer->Draw(new DrawTaskResize(this->Width-15, this->Height-15));
+  //ReleaseMutex(drawerQueueMutex);
+
 }
 //---------------------------------------------------------------------------
 bool __fastcall TSQLEdit::GetLineFirst(NSpan * line)
@@ -1038,6 +1060,8 @@ void __fastcall TSQLEdit::Log(String str)
 #ifdef DEBUG
 void TSQLEdit::Write(AnsiString message)
 {
+#ifdef DEBUG_LOGGING
   myfile << message.c_str() << std::endl;
+#endif
 }
 #endif

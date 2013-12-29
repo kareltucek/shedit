@@ -15,7 +15,7 @@ namespace SHEdit
   class TSQLEdit;
   class FontStyle;
   //---------------------------------------------------------------------------
-  enum DrawType {Text, Move, HMove, Cursor, Endline, Eof};
+  enum DrawType {Text, Move, HMove, Cursor, Endline, Eof, Resize};
   //---------------------------------------------------------------------------
   struct DrawTask
   {
@@ -45,6 +45,14 @@ namespace SHEdit
   {
     short linenum;
     DrawTaskEof();
+  };
+  //---------------------------------------------------------------------------
+
+  struct DrawTaskResize : public DrawTask
+  {
+    int width;
+    int height;
+    DrawTaskResize(int width, int height);
   };
   //---------------------------------------------------------------------------
 
@@ -84,6 +92,9 @@ namespace SHEdit
 
       TCanvas * canvas;
       TCanvas * drawcanvas;
+
+      //double buffer debug test
+      Graphics::TBitmap * bitmap;
 
       inline int RightBorder();
       inline int BottomBorder();

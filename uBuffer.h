@@ -70,6 +70,8 @@ namespace SHEdit
       Iter * First();
       Iter * End();
 
+      NSpan * FirstLine();
+
       bool IsPlainWord(wchar_t * string);
 
       int CheckIntegrity(int& emptyCount);

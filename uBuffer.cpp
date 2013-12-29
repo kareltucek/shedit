@@ -55,6 +55,11 @@ Iter * Buffer::First()   //technically shows wrong location - just if we NEED to
   return new Iter(1, data->first, data->firstLine);
 }
 //---------------------------------------------------------------------------
+NSpan * Buffer::FirstLine()
+{
+  return data->firstLine;
+}
+//---------------------------------------------------------------------------
 Iter * Buffer::End()
 {
   return new Iter(0, data->last, data->lastLine->prevline);
@@ -791,7 +796,9 @@ int Buffer::CheckIntegrity(int& emptyCount)
 #ifdef DEBUG
 void Buffer::Write(AnsiString message)
 {
+#ifdef DEBUG_LOGGING
   myfile << message.c_str() << std::endl;
+#endif
 }
 #endif
 //---------------------------------------------------------------------------

@@ -217,6 +217,8 @@ void Iter::MarkupBegin(SHEdit::Mark ** at, int pos, bool begin, SHEdit::Format *
 //---------------------------------------------------------------------------
 int Iter::GetLeftOffset()
 {
+  if(word->prev == NULL)
+    return 0;
   Span * w = this->word->prev;
   int count = this->offset;
   while(*(w->string) != '\n')

@@ -54,6 +54,13 @@ DrawTaskCursor::DrawTaskCursor()
   this->type = DrawType::Cursor;
 }
 //---------------------------------------------------------------------------
+DrawTaskResize::DrawTaskResize(int width, int height)
+{
+  this->width = width;
+  this->height = height;
+  this->type = DrawType::Resize;
+}
+//---------------------------------------------------------------------------
 DrawTaskCursor::DrawTaskCursor(int x, int y)
 {
   this->type = DrawType::Cursor;
@@ -74,16 +81,21 @@ DrawTaskMove::DrawTaskMove(short from, short to, short by)
   __fastcall Drawer::Drawer(TCanvas * canvas, TSQLEdit * parent, HANDLE drawerCanvasMutex, HANDLE drawerQueueMutex, HANDLE drawerTaskPending)
 : TThread(true)
 {
-  //bitmap = new Graphics::TBitmap();
-  //bitmap->SetSize(1000, 1000);
+#ifdef DOUBLE_BUFFERED
+  bitmap = new Graphics::TBitmap();
+  bitmap->SetSize(parent->Width, parent->Height);
+
+  drawcanvas = bitmap->Canvas;
+#else
   drawcanvas = canvas;
+#endif
   this->parent = parent;
   this->canvas = canvas;
   DuplicateHandle(GetCurrentProcess(), drawerQueueMutex, GetCurrentProcess(), &(this->drawerQueueMutex),  0, false, DUPLICATE_SAME_ACCESS);
   DuplicateHandle(GetCurrentProcess(), drawerCanvasMutex, GetCurrentProcess(), &(this->drawerCanvasMutex),  0, false, DUPLICATE_SAME_ACCESS);
   DuplicateHandle(GetCurrentProcess(), drawerTaskPending, GetCurrentProcess(), &(this->drawerTaskPending),  0, false, DUPLICATE_SAME_ACCESS);
 
-  HMax = 2;
+  HMax = 200;
   HPos = 0;
   x = 2;
   y = Y_OFF;
@@ -127,14 +139,18 @@ void __fastcall Drawer::Execute()
       ReleaseMutex(drawerQueueMutex);
       WaitForSingleObject(drawerCanvasMutex, WAIT_TIMEOUT_TIME);
       drawcanvas->Lock();
+#ifdef DEBUG
+          Write(String("=")+String(tasktoprocess->type)+String("="));
+
+#endif
       switch(tasktoprocess->type)
       {
         case DrawType::Text:
           {
 
-            if(((DrawTaskText*)tasktoprocess)->format.foreground)
+            if(((DrawTaskText*)tasktoprocess)->format.foreground != NULL)
               drawcanvas->Font->Color = *(((DrawTaskText*)tasktoprocess)->format.foreground);
-            if(((DrawTaskText*)tasktoprocess)->format.background)
+            if(((DrawTaskText*)tasktoprocess)->format.background != NULL)
               drawcanvas->Brush->Color = *(((DrawTaskText*)tasktoprocess)->format.background);
 
             if(((DrawTaskText*)tasktoprocess)->newline)
@@ -147,11 +163,19 @@ void __fastcall Drawer::Execute()
               x = 2-HPos;
             }
             y = Y_OFF+LINESIZE*((DrawTaskText*)tasktoprocess)->linenum;
-            drawcanvas->TextOut(x, y, *(((DrawTaskText*)tasktoprocess)->text));
-            x += drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text));
+
 #ifdef DEBUG
-    Write(*(((DrawTaskText*)tasktoprocess)->text));
+            drawcanvas->Rectangle(x, y,x+drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text)), y+LINESIZE);
+            this->Sleep(10);
+            DrawTaskText *dbg = ((DrawTaskText*)tasktoprocess);
+            Write((((DrawTaskText*)tasktoprocess)->format.background != NULL && *(((DrawTaskText*)tasktoprocess)->format.background) != (TColor)0xddffdd ? String("!") : String(" ")) + String((int)drawcanvas->Brush->Color) +String(" ")+ String(y) + String("(")+ String(x) + String(")<")+ String(drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text)))+ String(">:")+ *(((DrawTaskText*)tasktoprocess)->text));
 #endif
+            //SetTextColor(drawcanvas->Handle, 0x0);
+            //int dbg2 = TextOut(drawcanvas->Handle, x, y, (*(((DrawTaskText*)tasktoprocess)->text)).c_str(), (*(((DrawTaskText*)tasktoprocess)->text)).Length());
+            //drawcanvas->Font->Color = clRed;
+            drawcanvas->TextOut(x, y, *(((DrawTaskText*)tasktoprocess)->text));
+            x = drawcanvas->PenPos.x;
+            //x += drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text));
 
           }
           break;
@@ -190,12 +214,17 @@ void __fastcall Drawer::Execute()
           cy = ((DrawTaskCursor*)tasktoprocess)->y;
           //cursorBGcolor = canvas->Pixels[cx][cy];
           break;
+        case DrawType::Resize:
+#ifdef DOUBLE_BUFFERED
+          bitmap->SetSize(((DrawTaskResize*)tasktoprocess)->width, ((DrawTaskResize*)tasktoprocess)->height);
+#endif
+          break;
         case DrawType::Endline:
           drawcanvas->Pen->Color = (TColor)0xFFFFFF;
           drawcanvas->Brush->Color = (TColor)0xFFFFFF;
           y = Y_OFF+LINESIZE*((DrawTaskEndline*)tasktoprocess)->linenum;
           drawcanvas->Rectangle(x == 2 ? 0 : x, y,RightBorder(), y+LINESIZE);
-          if(x+HPos-2 > HMax)
+          if(x+HPos-2+200 > HMax)
           {
             HMax = x+HPos-2+200;
             Synchronize(UpdateHBar);
@@ -203,7 +232,7 @@ void __fastcall Drawer::Execute()
           HPos = parent->HBar->Position;
           x = 2-HPos;
 #ifdef DEBUG
-    Write("\n");
+   // Write("\n");
 #endif
 
           break;
@@ -214,17 +243,21 @@ void __fastcall Drawer::Execute()
     }
     con = !con;
     WaitForSingleObject(drawerCanvasMutex, WAIT_TIMEOUT_TIME);
+    drawcanvas->Lock();
     canvas->Lock();
-    //drawcanvas->Lock();
-    //canvas->Draw(0, 0, bitmap);
+#ifdef DOUBLE_BUFFERED
+    canvas->Draw(0, 0, bitmap);
+#endif
     DrawCursor();
-    //drawcanvas->Unlock();
     canvas->Unlock();
+    drawcanvas->Unlock();
     ReleaseMutex(drawerCanvasMutex);
     parent->VBar->Repaint();
     parent->HBar->Repaint();
 #ifdef DEBUG
-    Write(String("freeing everything"));
+    Write(String("\n"));
+    Write(String("freeing everything\n"));
+    Write(String("\n"));
 #endif
   }
 }
@@ -249,7 +282,11 @@ void Drawer::DrawCursor()
   if(con)
     canvas->Pen->Color = clBlack;
   else
+#ifdef DOUBLE_BUFFERED
+    return;
+#else
     canvas->Pen->Color = clWhite;
+#endif
   canvas->MoveTo(cx-HPos, cy);
   canvas->LineTo(cx-HPos, cy+LINESIZE-1);
   canvas->Pen->Color = clBlack;
@@ -299,7 +336,9 @@ void Drawer::QueueDump()
 #ifdef DEBUG
 void Drawer::Write(AnsiString message)
 {
+#ifdef DEBUG_LOGGING
   myfile << message.c_str();
+#endif
 }
 #endif
 //---------------------------------------------------------------------------

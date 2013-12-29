@@ -46,7 +46,7 @@ namespace SHEdit
         ParserState& operator=(const ParserState& p);
 
         short statemask;
-        bool parsed;
+        short parseid;
         Node * markupStack;
       };
 
@@ -65,6 +65,7 @@ namespace SHEdit
 
       bool newline;
       short linenum;
+      short currentparseid;
       /*
          String * outString;
          String * actString;
@@ -87,7 +88,7 @@ namespace SHEdit
 
       void ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, bool paint);
 #ifdef DEBUG
-      static bool Write(AnsiString message);
+      static void Write(AnsiString message);
 #endif
     public:
       static void MarkupPush(Node ** at, Format* format);
@@ -96,6 +97,8 @@ namespace SHEdit
       static bool MarkupEquals(Node * at, Node * bt);
 
       virtual void __fastcall Execute(void);
+
+      void InvalidateAll();
 
       __fastcall Parser(TSQLEdit * parent, Drawer * drawer, HANDLE bufferChanged, HANDLE bufferMutex, HANDLE drawerCanvasMutex, HANDLE drawerQueueMutex, HANDLE drawerTaskPending);
       virtual __fastcall ~Parser();

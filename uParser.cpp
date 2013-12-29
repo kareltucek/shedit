@@ -32,7 +32,7 @@ Parser::ParserState::ParserState()
 //---------------------------------------------------------------------------
 SHEdit::Parser::ParserState& Parser::ParserState::operator=(const SHEdit::Parser::ParserState& p)
 {
-  parsed = p.parsed;
+  parseid = p.parseid;
   statemask = p.statemask;
   while(markupStack != NULL)
   {
@@ -63,12 +63,12 @@ Parser::Node::Node(SHEdit::Format * format, SHEdit::Parser::Node * node)
 //---------------------------------------------------------------------------
 bool Parser::ParserState::operator==(const ParserState& state)
 {
-  return (this->statemask == state.statemask && this->parsed == state.parsed &&  MarkupEquals(markupStack, state.markupStack));
+  return (this->statemask == state.statemask && this->parseid == state.parseid &&  MarkupEquals(markupStack, state.markupStack));
 }
 //---------------------------------------------------------------------------
 bool Parser::ParserState::operator!=(const ParserState& state)
 {
-  return !(this->statemask == state.statemask && this->parsed == state.parsed && MarkupEquals(markupStack, state.markupStack));
+  return !(this->statemask == state.statemask && this->parseid == state.parseid && MarkupEquals(markupStack, state.markupStack));
 }
 //---------------------------------------------------------------------------
 void Parser::MarkupPush(SHEdit::Parser::Node ** at, SHEdit::Format * format)
@@ -190,13 +190,16 @@ void __fastcall Parser::Execute()
       state = itr->line->parserState;
       LanguageDefinition::TreeItem * searchtoken = langdef->GetSpecItem(state.statemask);
 
-      tasklistprior.remove(line);  //has to be there! (cycle wont end if anything is invalid and task remains)
-      tasklist.remove(line);
-
-      //  if(tasklistprior.size() > 0 && tasklistprior.front() == itr->line)
-      //    tasklistprior.pop_front();
-      //  if(tasklist.size() > 0 && tasklist.front() == itr->line)
-      //    tasklist.pop_front();
+#ifdef STRICT_PARSE
+        //has to be there! (cycle wont end if anything is invalid and record remains)
+        if(tasklistprior.size() > 0 && tasklistprior.front() == itr->line)
+          tasklistprior.pop_front();
+        if(tasklist.size() > 0 && tasklist.front() == itr->line)
+          tasklist.pop_front();
+#else
+        tasklistprior.remove(itr->line);
+        tasklist.remove(itr->line);
+#endif
 
       while(itr->word->next && (first || itr->line->parserState != this->state))
       {
@@ -208,17 +211,23 @@ void __fastcall Parser::Execute()
         first = false;
         //take care of line
         itr->line->parserState = this->state;
+
+
+#ifdef STRICT_PARSE
+        if(tasklistprior.size() > 0 && tasklistprior.front() == itr->line)
+          tasklistprior.pop_front();
+        if(tasklist.size() > 0 && tasklist.front() == itr->line)
+          tasklist.pop_front();
+#else
         tasklistprior.remove(itr->line);
         tasklist.remove(itr->line);
-        //if(tasklistprior.size() > 0 && tasklistprior.front() == itr->line)
-        //  tasklistprior.pop_front();
-        //if(tasklist.size() > 0 && tasklist.front() == itr->line)
-        //  tasklist.pop_front();
-#ifdef DEBUG
+#endif
+
+#ifdef DEBUG_PARSELINELOOP
     Write(String("going into parseline for line ")+String(linenum));
 #endif
         ParseLine(itr, searchtoken, linenum >= 0);
-#ifdef DEBUG
+#ifdef DEBUG_PARSELINELOOP
     Write("going out of parseline");
 #endif
         if(linenum >= 0)
@@ -233,12 +242,12 @@ void __fastcall Parser::Execute()
 
         ReleaseMutex(bufferMutex); //let buffer to push new task
 
-        this->state.parsed = true;
+        this->state.parseid = currentparseid;
 
         WaitForSingleObject(bufferMutex, WAIT_TIMEOUT_TIME);
 
         //if(!(linenum >= 0 && linenum <= parent->GetVisLineCount() && itr->line->parserState != this->state) && tasklistprior.size() > 0 )
-        if(false && linenum < 0 && tasklistprior.size() > 0)
+        if(linenum < 0 && tasklistprior.size() > 0)
         {
           if(itr->word->next)
             this->tasklist.push_back(itr->line);
@@ -271,7 +280,7 @@ void __fastcall Parser::Execute()
 void Parser::ParseFromLine(NSpan * line, int prior)
 {
 #ifdef DEBUG
-    Write("pushing line");
+    //Write("pushing line");
 #endif
   if(prior > 0)
   {
@@ -290,7 +299,7 @@ void Parser::ParseFromLine(NSpan * line, int prior)
 void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, bool paint)
 {
 #ifdef DEBUG
-    Write(" entering parseline");
+    //Write(" entering parseline");
 #endif
   wchar_t * ptr;
   LanguageDefinition::TreeItem * lineback;
@@ -312,7 +321,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
         lasttoken = searchtoken;
 #ifdef DEBUG
         int type = langdef->Go(searchtoken, *(itr->ptr));
-        Write(String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String(searchtoken->type));
+        //Write(String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String(searchtoken->type));
         switch(type)
 #else
         switch(langdef->Go(searchtoken, *(itr->ptr)))
@@ -356,7 +365,7 @@ paint:
               *(actTask->text) += *(itr->ptr);
               //actTask->format = *(searchtoken->format);//???
 #ifdef DEBUG
-    Write(String("   nomatch - outtask is ")+String((*outTask->text))+String(" acttask is ") + String(*actTask->text));
+    //Write(String("   nomatch - outtask is ")+String((*outTask->text))+String(" acttask is ") + String(*actTask->text));
 #endif
             }
             break;
@@ -402,7 +411,7 @@ paint:
 void Parser::CheckMarkup(Iter * itr, bool paint)
 {
 #ifdef DEBUG
-    Write(" markup check");
+    //Write(" markup check");
 #endif
   Mark ** m = &(itr->word->mark);
   while(*m != NULL)
@@ -433,12 +442,13 @@ void Parser::SetLangDef(LanguageDefinition * langdef)
 void Parser::Flush()
 {
 #ifdef DEBUG
-    Write(" flush");
+    //Write(" flush");
 #endif
   if(state.markupStack != NULL)
   {
 #ifdef DEBUG
-    Write("   formatted");
+    //Write("   formatted");
+    //state.markupStack->format->background += 8;
 #endif
     actTask->format = *(state.markupStack->format);
   }
@@ -453,7 +463,7 @@ void Parser::Flush()
     actTask->text = new String("");
   }
 #ifdef DEBUG
-    Write(String("   outtask is ")+String((*outTask->text))+String(" acttask is ") + String(*actTask->text));
+    //Write(String("   outtask is ")+String((*outTask->text))+String(" acttask is ") + String(*actTask->text));
 #endif
 }
 //---------------------------------------------------------------------------
@@ -473,7 +483,8 @@ void Parser::SendString()
   if(!outTask->text->IsEmpty())
   {
 #ifdef DEBUG
-    Write(String("   sending ") + String(*(outTask->text)));
+    //Write(String("   sending ") + String(*(outTask->text)));
+    Write((outTask->format.background != NULL && *(outTask->format.background) != (TColor)0xddffdd ? String("!") : String("")) + String(*(outTask->text)));
 #endif
     outTask->newline = newline;
     if(newline)
@@ -501,15 +512,21 @@ void Parser::SendEof()
   //ReleaseMutex(drawerQueueMutex);
 }
 //---------------------------------------------------------------------------
+void Parser::InvalidateAll()
+{
+  currentparseid++;
+}
+//---------------------------------------------------------------------------
 __fastcall Parser::~Parser()
 {
 }
 //---------------------------------------------------------------------------
 #ifdef DEBUG
-bool Parser::Write(AnsiString message)
+void Parser::Write(AnsiString message)
 {
+#ifdef DEBUG_LOGGING
   myfile << message.c_str() << std::endl;
-  return true;
+#endif
 }
 #endif
 //---------------------------------------------------------------------------
