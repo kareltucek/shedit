@@ -4,6 +4,7 @@
 #ifndef uParserH
 #define uParserH
 
+#include "uFormat.h"
 #include <vcl.h>
 #include <list>
 #include <uLanguageDefinition.h>
@@ -18,6 +19,7 @@ namespace SHEdit
   class Drawer;
   class Mark;
   class Format;
+  class FontStyle;
   class Iter;
   class DrawTaskText;
 
@@ -27,7 +29,7 @@ namespace SHEdit
 
 #define MODE_NORMAL 0
   //---------------------------------------------------------------------------
-  class Parser : public TThread
+  class Parser
   {
     private:
       struct Node
@@ -48,6 +50,16 @@ namespace SHEdit
         short statemask;
         short parseid;
         Node * markupStack;
+      };
+
+      struct ParseTask
+      {
+        ParseTask(NSpan * line, int linenum);
+        ParseTask();
+        NSpan * line;
+        short linenum;
+        bool operator==(const ParseTask & pt)const;
+        bool operator<(const ParseTask & pt)const;
       };
 
     private:
@@ -73,18 +85,17 @@ namespace SHEdit
          TColor * outColor;
          bool outMarked;
          bool actMarked; */
-      DrawTaskText * actTask;
-      DrawTaskText * outTask;
+      String actText;
+      FontStyle actFormat;
 
       void Flush();
       void FlushAll();
-      void SendString();
       void SendEof();
 
       void CheckMarkup(Iter * itr, bool paint);
 
-      std::list<NSpan*> tasklistprior;
-      std::list<NSpan*> tasklist;
+      std::list<ParseTask> tasklistprior;
+      std::list<ParseTask> tasklist;
 
       void ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, bool paint);
       void __fastcall Draw();
@@ -109,7 +120,7 @@ namespace SHEdit
 
       void SetLangDef(LanguageDefinition * langdef);
 
-      void ParseFromLine(NSpan * line, int prior);
+      void ParseFromLine(NSpan * line, int linenum, int prior);
   };
 }
 //---------------------------------------------------------------------------

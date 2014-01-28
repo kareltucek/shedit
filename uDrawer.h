@@ -15,76 +15,11 @@ namespace SHEdit
   class TSQLEdit;
   class FontStyle;
   //---------------------------------------------------------------------------
-  enum DrawType {Text, Move, HMove, Cursor, Endline, Eof, Resize};
-  //---------------------------------------------------------------------------
-  struct DrawTask
-  {
-    DrawType type;
-  };
-  //---------------------------------------------------------------------------
-
-  struct DrawTaskEndline : public DrawTask
-  {
-    short linenum;
-    DrawTaskEndline();
-  };
-  //---------------------------------------------------------------------------
-
-  struct DrawTaskText : public DrawTask
-  {
-    DrawTaskText();
-    ~DrawTaskText();
-    bool newline;
-    short linenum;
-    String * text;
-    FontStyle format;
-  };
-  //---------------------------------------------------------------------------
-
-  struct DrawTaskEof : public DrawTask
-  {
-    short linenum;
-    DrawTaskEof();
-  };
-  //---------------------------------------------------------------------------
-
-  struct DrawTaskResize : public DrawTask
-  {
-    int width;
-    int height;
-    DrawTaskResize(int width, int height);
-  };
-  //---------------------------------------------------------------------------
-
-  struct DrawTaskCursor : public DrawTask
-  {
-    int x;
-    int y;
-    DrawTaskCursor();
-    DrawTaskCursor(int x, int y);
-  };
-  //---------------------------------------------------------------------------
-
-  struct DrawTaskMove : public DrawTask
-  {
-    DrawTaskMove(short from, short to, short by);
-    DrawTaskMove();
-    short from;
-    short to;
-    short by;
-  };
-
-  //------------------------------------------------------------------------
-  struct DrawTaskHMove : public DrawTask
-  {
-    DrawTaskHMove();
-  };
   //---------------------------------------------------------------------------
   class Drawer
   {
     private:
       TSQLEdit * parent;
-      std::list<DrawTask*> tasklist;
 
       HANDLE drawerQueueMutex;
       HANDLE drawerCanvasMutex;
@@ -110,19 +45,24 @@ namespace SHEdit
       int HPos, HMax;
       void __fastcall UpdateHBar();
 
-
-      void DrawCursor();
 #ifdef DEBUG
       void Write(AnsiString message);
       void QueueDump();
 #endif
     public:
-      void __fastcall Execute(void);
 
       __fastcall Drawer(TCanvas * Canvas, TSQLEdit * parent, HANDLE drawerCanvasMutex, HANDLE drawerQueueMutex, HANDLE drawerTaskPending) ;
       virtual __fastcall ~Drawer();
 
-      void Draw(DrawTask* drawtask);
+            void DrawCursor();
+void __fastcall DrawText(String text, bool newline, short linenum, FontStyle format);
+void __fastcall DrawMove(int from, int to, int by);
+void __fastcall DrawEof(short linenum);
+void __fastcall UpdateCursor(int x, int y);
+void __fastcall DrawResize(int w, int h);
+void __fastcall DrawEndl(short linenum);
+void __fastcall Paint();
+
     public:
       friend class TSQLEdit;
   };

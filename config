@@ -6,6 +6,7 @@
 
 //define STRICT_PARSE
 #define DOUBLE_BUFFERED
+//define FULL_WIDTH_PAINT
 
 
 #define FONTSIZE 13

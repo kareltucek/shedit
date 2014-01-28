@@ -61,7 +61,7 @@ namespace SHEdit
       Iter * XYtoItr(int& x, int& y);
       void UpdateCursor();
       void ProcessMouseMove(int& x, int& y);
-      void ProcessMouseClear(bool redraw);
+      void ProcessMouseClear(bool redraw, bool deletecursord);
       Format * selectionFormat;
       bool mouseDown;
       bool mouseSelect;
