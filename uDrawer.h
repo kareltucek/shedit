@@ -80,7 +80,7 @@ namespace SHEdit
     DrawTaskHMove();
   };
   //---------------------------------------------------------------------------
-  class Drawer : public TThread
+  class Drawer
   {
     private:
       TSQLEdit * parent;
@@ -117,7 +117,7 @@ namespace SHEdit
       void QueueDump();
 #endif
     public:
-      virtual void __fastcall Execute(void); 
+      void __fastcall Execute(void);
 
       __fastcall Drawer(TCanvas * Canvas, TSQLEdit * parent, HANDLE drawerCanvasMutex, HANDLE drawerQueueMutex, HANDLE drawerTaskPending) ;
       virtual __fastcall ~Drawer();

@@ -172,12 +172,12 @@ LanguageDefinition::TreeItem* LanguageDefinition::FindOrCreateItem(TreeItem * it
   }
   if((int)comp < (int)0xEF)
   {
-    item->map[(int)comp] = new TreeItem(comp, LangDefSpecType::Nomatch, defFormat, at);
+    item->map[(int)comp] = new TreeItem(comp, LangDefSpecType::Nomatch, at->format, at);
     return item->map[(int)comp];
   }
   else
   {
-    item->items.push_back(new TreeItem(comp, LangDefSpecType::Nomatch, defFormat, at));
+    item->items.push_back(new TreeItem(comp, LangDefSpecType::Nomatch, at->format, at));
     return item->items.back();
   }
 }
@@ -187,7 +187,7 @@ LanguageDefinition::TreeItem* LanguageDefinition::GetTree()
   return tree;
 }
 //---------------------------------------------------------------------------
-LangDefSpecType LanguageDefinition::Go(TreeItem *& item, wchar_t c)
+LangDefSpecType LanguageDefinition::Go(TreeItem *& item, wchar_t c, bool & lookahead)
 {
   wchar_t comp = towupper(c);
 beginning:
@@ -195,6 +195,7 @@ beginning:
   {
     if(item->map[(int)comp])
     {
+      lookahead = false;
       item = item->map[(int)comp];
       return item->type;
     }
@@ -205,12 +206,13 @@ beginning:
     {
       if((*itr)->thisItem == comp)
       {
+        lookahead = false;
         item = *itr;
         return item->type;
       }
     }
   }
-  if(item != item->nextTree)
+  if(item != item->nextTree && lookahead)
   {
     item = item->nextTree;
   //return item->type;
@@ -219,7 +221,9 @@ beginning:
       if(item->map[(int)comp])
       {
         item = item->map[(int)comp];
-        return item->type == LangDefSpecType::Nomatch ? LangDefSpecType::NoEmpty : item->type;
+        //return item->type == LangDefSpecType::Nomatch ? LangDefSpecType::NoEmpty : item->type;
+        lookahead = true;
+        return item->type;
       }
     }
     else
@@ -229,7 +233,9 @@ beginning:
         if((*itr)->thisItem == comp)
         {
           item = *itr;
-          return item->type == LangDefSpecType::Nomatch ? LangDefSpecType::NoEmpty : item->type;
+          //return item->type == LangDefSpecType::Nomatch ? LangDefSpecType::NoEmpty : item->type;
+          lookahead = true;
+          return item->type;
         }
       }
     }

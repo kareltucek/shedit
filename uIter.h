@@ -33,6 +33,8 @@ namespace SHEdit
       bool GoChar();
       bool RevChar();
 
+      wchar_t GetNextChar();
+
       int GetLeftOffset();
       void GoBy(int chars);
 

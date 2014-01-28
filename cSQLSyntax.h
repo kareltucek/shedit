@@ -42,11 +42,6 @@ namespace SHEdit
 
       bool recmsg;  //used to synchronize message processing - all messages should be processed before passing job to parser
 
-#ifdef DEBUG
-      void __fastcall dbgIter();
-      void __fastcall Log(String str);
-      void Write(AnsiString message);
-#endif
 
       HANDLE bufferChanged;
       HANDLE bufferMutex;
@@ -102,6 +97,11 @@ namespace SHEdit
       void ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed);
 
     public:
+#ifdef DEBUG
+      void __fastcall dbgIter();
+      void __fastcall Log(String str);
+      void Write(AnsiString message);
+#endif
       friend class Drawer;
 
       TMemo * dbgLog;
@@ -113,6 +113,9 @@ namespace SHEdit
 
       Iter * GetCursor();
       Iter * GetCursorEnd();
+
+      void SelectAll();
+      void LoadFile(wchar_t * filename);
 
       virtual LRESULT CALLBACK ProcessKey(int code, WPARAM wParam, LPARAM lParam);
 

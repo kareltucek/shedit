@@ -9,6 +9,7 @@
 #include <string>
 #include <stdio.h>
 #include <list>
+#include <windows.h>
 
 using namespace SHEdit;
 
@@ -79,7 +80,6 @@ DrawTaskMove::DrawTaskMove(short from, short to, short by)
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
   __fastcall Drawer::Drawer(TCanvas * canvas, TSQLEdit * parent, HANDLE drawerCanvasMutex, HANDLE drawerQueueMutex, HANDLE drawerTaskPending)
-: TThread(true)
 {
 #ifdef DOUBLE_BUFFERED
   bitmap = new Graphics::TBitmap();
@@ -113,10 +113,8 @@ void __fastcall Drawer::Execute()
   drawcanvas->Font->Name = "Courier New";
   canvas->Font->Size = FONTSIZE;
   canvas->Font->Name = "Courier New";
-  this->Priority=tpLower;
   //parent->DoubleBuffered = true;
-  while(!Terminated)
-  {
+
 #ifdef DEBUG
     //Write("new cycle");
     jump:
@@ -165,8 +163,8 @@ void __fastcall Drawer::Execute()
             y = Y_OFF+LINESIZE*((DrawTaskText*)tasktoprocess)->linenum;
 
 #ifdef DEBUG
-            drawcanvas->Rectangle(x, y,x+drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text)), y+LINESIZE);
-            this->Sleep(10);
+            //drawcanvas->Rectangle(x, y,x+drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text)), y+LINESIZE);
+            Sleep(10);
             DrawTaskText *dbg = ((DrawTaskText*)tasktoprocess);
             Write((((DrawTaskText*)tasktoprocess)->format.background != NULL && *(((DrawTaskText*)tasktoprocess)->format.background) != (TColor)0xddffdd ? String("!") : String(" ")) + String((int)drawcanvas->Brush->Color) +String(" ")+ String(y) + String("(")+ String(x) + String(")<")+ String(drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text)))+ String(">:")+ *(((DrawTaskText*)tasktoprocess)->text));
 #endif
@@ -227,7 +225,7 @@ void __fastcall Drawer::Execute()
           if(x+HPos-2+200 > HMax)
           {
             HMax = x+HPos-2+200;
-            Synchronize(UpdateHBar);
+            parent->UpdateHBar();
           }
           HPos = parent->HBar->Position;
           x = 2-HPos;
@@ -259,7 +257,6 @@ void __fastcall Drawer::Execute()
     Write(String("freeing everything\n"));
     Write(String("\n"));
 #endif
-  }
 }
 
 //---------------------------------------------------------------------------

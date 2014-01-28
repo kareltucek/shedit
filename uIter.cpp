@@ -115,6 +115,14 @@ bool Iter::GoWord()
     return false;
 }
 //---------------------------------------------------------------------------
+wchar_t Iter::GetNextChar()
+{
+  GoChar();
+  wchar_t c = *ptr;
+  RevChar();
+  return c;
+}
+//---------------------------------------------------------------------------
 bool Iter::RevWord()
 {
   if(word->prev->prev)
@@ -154,6 +162,7 @@ bool Iter::GoChar()
 bool Iter::RevChar()
 {
   offset--;
+  ptr--;
   if(offset < 0)
   {
     if(!RevWord())

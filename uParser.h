@@ -87,10 +87,14 @@ namespace SHEdit
       std::list<NSpan*> tasklist;
 
       void ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, bool paint);
+      void __fastcall Draw();
 #ifdef DEBUG
       static void Write(AnsiString message);
 #endif
     public:
+#ifdef DEBUG
+      bool dbgLogging;
+#endif
       static void MarkupPush(Node ** at, Format* format);
       static void MarkupPop(Node ** at, Format * format);
       static bool MarkupContains(Node ** at, Format * format);

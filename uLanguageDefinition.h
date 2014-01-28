@@ -20,7 +20,7 @@
 namespace SHEdit
 {
   class FontStyle;
-  enum LangDefSpecType{Empty, Nomatch, Normal, PairTag, WordTag, LineTag, NoEmpty};
+  enum LangDefSpecType{Empty = 0x1, Nomatch = 0x2, Normal=0x4, PairTag=0x8, WordTag=0x10, LineTag=0x20, Lookahead = 0x40};
   //---------------------------------------------------------------------------
   class LanguageDefinition
   {
@@ -68,7 +68,7 @@ namespace SHEdit
       virtual bool IsWhite(wchar_t c);
 
       TreeItem* GetTree();
-      LangDefSpecType Go(TreeItem *& item, wchar_t c);
+      LangDefSpecType Go(TreeItem *& item, wchar_t c, bool & lookahead);
 
       TreeItem* GetSpecItem(short mask);
   };
