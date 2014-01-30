@@ -212,9 +212,9 @@ beginning:
       }
     }
   }
-  if(item != item->nextTree && lookahead)
+  item = item->nextTree;
+  if(lookahead)
   {
-    item = item->nextTree;
   //return item->type;
     if((int)c < (int)0x7F)
     {

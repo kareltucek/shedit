@@ -1,4 +1,4 @@
-//define DEBUG
+#define DEBUG
 //define DEBUG_LOGGING
 //define DEBUG_PARSELINELOOP
 //define DEBUG_CURSOR
@@ -7,6 +7,8 @@
 //define STRICT_PARSE
 #define DOUBLE_BUFFERED
 //define FULL_WIDTH_PAINT
+#define TAB_WIDTH 2
+#define ALLOW_TABS
 
 
 #define FONTSIZE 13

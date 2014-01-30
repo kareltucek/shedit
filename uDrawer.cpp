@@ -65,7 +65,7 @@ void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontS
             {
 
 #ifdef DEBUG
-    Write("\n");
+   // Write("\n");
 #endif
               HPos = parent->HBar->Position;
               x = 2-HPos;

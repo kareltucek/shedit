@@ -25,6 +25,8 @@ namespace SHEdit
       wchar_t * ptr;
 
       bool GoLine(bool allowEnd = false);
+      bool GoLineEnd();
+      bool GoLineStart();
       bool RevLine();
       bool RevLineBegin();
       bool GoWord();
@@ -36,6 +38,7 @@ namespace SHEdit
       wchar_t GetNextChar();
 
       int GetLeftOffset();
+      void GoByOffset(int chars);
       void GoBy(int chars);
 
       static void MarkupBegin(Mark ** at, int pos, bool begin, Format * format);

@@ -162,6 +162,8 @@ bool Parser::ParseTask::operator<(const Parser::ParseTask & pt)  const
 #endif
   this->parent = parent;
   this->drawer = drawer;
+
+  processAll = true;
   //DuplicateHandle(GetCurrentProcess(), bufferChanged, this->Handle, &(this->bufferChanged),  0, false, DUPLICATE_SAME_ACCESS);
 
   DuplicateHandle(GetCurrentProcess(), bufferChanged, GetCurrentProcess(), &(this->bufferChanged),  0, false, DUPLICATE_SAME_ACCESS);
@@ -211,13 +213,8 @@ void __fastcall Parser::Execute()
         tasklistprior.remove(pt);
         tasklist.remove(pt);
 
-#ifdef DEBUG_PARSELINELOOP
-    Write(String("going into parseline for line ")+String(linenum));
-#endif
         ParseLine(itr, searchtoken, linenum >= 0);
-#ifdef DEBUG_PARSELINELOOP
-    Write("going out of parseline");
-#endif
+
         if(linenum >= 0)
         {
           FlushAll();
@@ -238,8 +235,8 @@ void __fastcall Parser::Execute()
         this->state.parseid = currentparseid;
 
         #ifdef DEBUG
-        if(itr->line->prevline != NULL)
-          parent->Log("parsing line " + String(itr->line->prevline->next->string));
+        //if(itr->line->prevline != NULL)
+        //  parent->Log("parsing line " + String(itr->line->prevline->next->string));
           #endif
 
         //if(!(linenum >= 0 && linenum <= parent->GetVisLineCount() && itr->line->parserState != this->state) && tasklistprior.size() > 0 )
@@ -271,10 +268,11 @@ void __fastcall Parser::Execute()
       if(painted && tasklistprior.size() == 0)
       {
         drawer->Paint();
-        Application->ProcessMessages();
+        if(processAll)
+          Application->ProcessMessages();
       }
     }
-      drawer->Paint();
+    drawer->Paint();
 }
 //---------------------------------------------------------------------------
 void Parser::ParseFromLine(NSpan * line, int linenum, int prior)
@@ -313,6 +311,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
   LanguageDefinition::TreeItem * lineback;
   LanguageDefinition::TreeItem * lasttoken;
   bool linetag = false;
+  int pos = 0;
 
       while(*(itr->ptr) != '\n')
       {
@@ -329,7 +328,8 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
           lookahead = false;
           while(langdef->IsAlNum(*(itr->ptr)) && type == LangDefSpecType::Nomatch)
           {
-            actText += *(itr->ptr);
+            if(paint)
+                AddChar(itr, pos);
             itr->GoChar();
             if(itr->word->mark)
              CheckMarkup(itr,paint);
@@ -338,7 +338,8 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
           if(!langdef->IsAlNum(*(itr->ptr)))
           {
             searchtoken = lasttoken;
-            actFormat = *(searchtoken->format);
+            if(paint)
+              actFormat = *(searchtoken->format);
             Flush();
             type = langdef->Go(searchtoken, *(itr->ptr), lookahead);
             if(*(itr->ptr) == '\n')
@@ -356,11 +357,12 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
           type = langdef->Go(searchtoken, *(itr->ptr), lookahead);
         }
 #ifdef DEBUG
-        int dbgtype = type & !(LangDefSpecType::Lookahead);
-        const char* table[] = {"Empty", "Nomatch", "Normal", "PairTag", "WordTag", "LineTag", "NoEmpty"};
+
+        int dbgtype = type;
         if( dbgLogging )
-          parent->Log( String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String(table[searchtoken->type])+String((int)lookahead));
+          parent->Log( String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String((int)lookahead));
         //Write(String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String(searchtoken->type));
+
 #endif
           if(lookahead)
             Flush();
@@ -369,32 +371,23 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
           case LangDefSpecType::Empty:
             if(paint)
             {
-              actText += *(itr->ptr);
+                AddChar(itr, pos);
               actFormat = *(searchtoken->format);
               Flush();
             }
-
-            break;         /*
-          case LangDefSpecType::NoEmpty:
-            if(paint)
-            {
-              Flush();
-              actText += *(itr->ptr);
-              actTask->format = *(searchtoken->format);
-            }
-            break;       */
+            break;         
           case LangDefSpecType::LineTag:
             linetag = true;
             lineback = lasttoken;
             goto paint;
           case LangDefSpecType::PairTag:
-            Flush();
+            //Flush();
             state.statemask = searchtoken->mask;
           case LangDefSpecType::Normal:
 paint:
             if(paint)
             {
-              actText += *(itr->ptr);
+                AddChar(itr, pos);
               actFormat = *(searchtoken->format);
               Flush();
             }
@@ -402,7 +395,7 @@ paint:
           case LangDefSpecType::Nomatch:
             if(paint)
             {
-              actText += *(itr->ptr);
+                AddChar(itr, pos);
               actFormat = *(searchtoken->format);//if format remains, flush wont be done
 #ifdef DEBUG
     //Write(String("   nomatch - outtask is ")+String((*outTask->text))+String(" acttask is ") + String(*actTask->text));
@@ -412,7 +405,7 @@ paint:
           case LangDefSpecType::WordTag:
             if(paint)
             {
-              actText += *(itr->ptr);
+                AddChar(itr, pos);
               actFormat = *(searchtoken->format);
             }
             itr->GoChar();
@@ -421,7 +414,7 @@ paint:
               if(itr->word->mark)
                 CheckMarkup(itr,paint);
               if(paint)
-                actText += *(itr->ptr);
+                AddChar(itr, pos);
               itr->GoChar();
             }
             if(itr->word->mark)
@@ -446,6 +439,25 @@ paint:
         searchtoken = lineback;
       return;
 
+}
+//---------------------------------------------------------------------------
+void Parser::AddChar(Iter * itr, int & pos)
+{
+  if(*(itr->ptr) != '\t')
+  {
+    actText += *(itr->ptr);
+    pos++;
+    return;
+  }
+  else
+  {
+    for(int i = TAB_WIDTH - (pos+1)%TAB_WIDTH; i > 0; i--)
+    {
+      pos++;
+      actText += " ";
+    }
+    return;
+  }
 }
 //---------------------------------------------------------------------------
 

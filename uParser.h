@@ -91,6 +91,7 @@ namespace SHEdit
       void Flush();
       void FlushAll();
       void SendEof();
+      void AddChar(Iter * itr, int & pos);
 
       void CheckMarkup(Iter * itr, bool paint);
 
@@ -106,6 +107,7 @@ namespace SHEdit
 #ifdef DEBUG
       bool dbgLogging;
 #endif
+      bool processAll;
       static void MarkupPush(Node ** at, Format* format);
       static void MarkupPop(Node ** at, Format * format);
       static bool MarkupContains(Node ** at, Format * format);

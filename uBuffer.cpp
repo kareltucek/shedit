@@ -77,12 +77,12 @@ void Buffer::_Delete(Span * word)
 {
 
 #ifdef DEBUG
-  Write("delete words "+String((int)word->prev)+String(" ")+String((int)word->next));
+  //Write("delete words "+String((int)word->prev)+String(" ")+String((int)word->next));
 #endif
   word->next->prev = word->prev;
   word->prev->next = word->next;
 #ifdef DEBUG
-  Write("delete words returning");
+  //Write("delete words returning");
 #endif
 }
 //---------------------------------------------------------------------------
@@ -242,7 +242,7 @@ int Buffer::Delete(Iter * From, Iter * To)
   {
 
 #ifdef DEBUG
-    Write("Delete cycle");
+    //Write("Delete cycle");
 #endif
     Span * begin, * end;
     Span * undoBegin, * undoEnd;
@@ -497,7 +497,7 @@ void Buffer::UndoPush(Range * event)
 void Buffer::UndoRedo(std::stack<Range*> * stackUndo, std::stack<Range*> * stackRedo)
 {
 #ifdef DEBUG
-  Write(String("undo called"));
+  //Write(String("undo called"));
 #endif
   if((*stackUndo).size() == 0)
     return;
@@ -609,7 +609,7 @@ void Buffer::UndoRedo(std::stack<Range*> * stackUndo, std::stack<Range*> * stack
 
   delete event;
 #ifdef DEBUG
-  Write(String("undone"));
+  //Write(String("undone"));
 #endif
 }
 //---------------------------------------------------------------------------
@@ -742,6 +742,73 @@ wchar_t * Buffer::GetText(Iter * From, Iter* To)
   return cstr;
 }
 //---------------------------------------------------------------------------
+String Buffer::GetLine(Iter * line, bool replaceTabs)
+{
+  Iter * itr = line->Duplicate();
+  String str;
+  int pos = 0;
+  while(*(itr->ptr) != '\n')
+  {
+    if(*(itr->ptr) != '\t' || !replaceTabs)
+    {
+      str += *(itr->ptr);
+      pos++;
+    }
+    else
+    {
+      for(int i = TAB_WIDTH - (pos+1)%TAB_WIDTH; i > 0; i--)
+      {
+        pos++;
+        str += " ";
+      }
+    }
+    itr->GoChar();
+  }
+
+  delete itr;
+  return str;
+}
+//---------------------------------------------------------------------------
+String Buffer::GetLineTo(Iter* To, bool replaceTabs)
+{
+  Iter * itr = To->Duplicate();
+  itr->GoLineStart();
+#ifdef ALLOW_TABS
+  if(!replaceTabs)
+  {
+    String ret = GetText(itr, To);
+    delete itr;
+    return ret;
+  }
+  String str;
+  int pos = 0;
+  while(To->word != itr->word ||To->offset != itr->offset)
+  {
+    if(*(itr->ptr) != '\t' || !replaceTabs)
+    {
+      str += *(itr->ptr);
+      pos++;
+    }
+    else
+    {
+      for(int i = TAB_WIDTH - (pos+1)%TAB_WIDTH; i > 0; i--)
+      {
+        pos++;
+        str += " ";
+      }
+    }
+    itr->GoChar();
+  }
+
+  delete itr;
+  return str;
+#else
+  String ret = GetText(itr, To);
+  delete itr;
+  return ret;
+#endif
+}
+//---------------------------------------------------------------------------
 int Buffer::GetLineCount()
 {
   return data->linecount;
@@ -750,7 +817,7 @@ int Buffer::GetLineCount()
 int Buffer::CheckIntegrity(int& emptyCount)
 {
 #ifdef DEBUG
-  Write(String("checking integrity"));
+  //Write(String("checking integrity"));
 #endif
   emptyCount = 0;
   Span* lastword = data->first;
@@ -788,7 +855,7 @@ int Buffer::CheckIntegrity(int& emptyCount)
     word = word->next;
   }
 #ifdef DEBUG
-  Write(String("integrity check done"));
+  //Write(String("integrity check done"));
 #endif
   return 0;
 }

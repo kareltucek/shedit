@@ -10,3 +10,4 @@ call OpenObject("uFormat")
 call OpenObject("uMark")
 call OpenObject("uLanguageDefinition")
 call OpenObject("uLanguageDefinitionSQL")
+windo tabdo se scroll=8

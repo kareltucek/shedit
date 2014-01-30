@@ -59,6 +59,8 @@ namespace SHEdit
       int Delete(Iter * From, Iter * To);
 
       wchar_t* GetText(Iter * From, Iter * To);
+      String GetLine(Iter * line, bool replaceTabs);
+      String GetLineTo(Iter * To, bool replaceTabs);
 
       void SimpleLoadFile(wchar_t * filename);
       void LoadFile(wchar_t * filename);

@@ -72,6 +72,8 @@ namespace SHEdit
       int cursorLeftOffset;
       int scrolldelta; //used by ms to treat smooth-scroll wheels...
 
+      bool tabonce;
+
       void AdjustLine();
       void Scroll(int by);
       void __fastcall OnVScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);

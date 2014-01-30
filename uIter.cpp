@@ -71,6 +71,30 @@ bool Iter::GoLine(bool allowEnd)
   return false;
 }
 //---------------------------------------------------------------------------
+bool Iter::GoLineEnd()
+{
+  if(line->nextline)
+  {
+    word = line->nextline;
+    offset = 0;
+    Update();
+    return true;
+  }
+  return false;
+}
+//---------------------------------------------------------------------------
+bool Iter::GoLineStart()
+{
+  if(line->next)
+  {
+    word = line->next;
+    offset = 0;
+    Update();
+    return true;
+  }
+  return false;
+}
+//---------------------------------------------------------------------------
 bool Iter::RevLine()
 {
   if(linenum > 0)
@@ -226,6 +250,23 @@ void Iter::MarkupBegin(SHEdit::Mark ** at, int pos, bool begin, SHEdit::Format *
 //---------------------------------------------------------------------------
 int Iter::GetLeftOffset()
 {
+#ifdef ALLOW_TABS
+  if(this->word->prev == NULL || (*(word->prev->string) == '\n' && offset == 0))
+    return 0;
+  Iter * itr = this->Duplicate();
+  itr->GoLineStart();
+  int pos = 0;
+  while(itr->word != word || itr->offset != offset)
+  {
+    if(*(itr->ptr) == '\t')
+      pos += TAB_WIDTH - (pos+1)%TAB_WIDTH;
+    else
+      pos++;
+    itr->GoChar();
+  }
+  delete itr;
+  return pos;
+#else
   if(word->prev == NULL)
     return 0;
   Span * w = this->word->prev;
@@ -236,6 +277,25 @@ int Iter::GetLeftOffset()
     w = w->prev;
   }
   return count;
+#endif
+}
+//---------------------------------------------------------------------------
+
+void Iter::GoByOffset(int chars)
+{
+#ifdef ALLOW_TABS
+  int pos = 0;
+  while(pos < chars && *ptr != '\n')
+  {
+    if(*(ptr) == '\t')
+      pos += TAB_WIDTH - (pos+1)%TAB_WIDTH;
+    else
+      pos++;
+    GoChar();
+  }
+#else
+  GoBy(chars);
+#endif
 }
 //---------------------------------------------------------------------------
 void Iter::GoBy(int chars)
