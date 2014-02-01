@@ -1,4 +1,4 @@
-#define DEBUG
+//define DEBUG
 //define DEBUG_LOGGING
 //define DEBUG_PARSELINELOOP
 //define DEBUG_CURSOR
@@ -8,6 +8,9 @@
 #define DOUBLE_BUFFERED
 //define FULL_WIDTH_PAINT
 #define TAB_WIDTH 2
+#define DRAW_POS
+#define DRAW_LINENUM
+#define LINENUM_WIDTH 50
 #define ALLOW_TABS
 
 

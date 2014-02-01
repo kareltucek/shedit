@@ -36,8 +36,8 @@ Buffer::Buffer()
   tail->prev = head;
   tail->prevline = head;
 
-  data = new Range(head, tail, false, head, tail, false, 0);
-  preload = new Range(NULL, NULL, false, NULL, NULL, false, 0);
+  data = new Range(head, tail, false, head, tail, false, 1);
+  preload = new Range(NULL, NULL, false, NULL, NULL, false, 1);
 
 }
 //---------------------------------------------------------------------------
@@ -47,12 +47,12 @@ Buffer::~Buffer()
 //---------------------------------------------------------------------------
 Iter * Buffer::Begin()
 {
-  return new Iter(0, data->first->next, data->firstLine);
+  return new Iter(0, data->first->next, data->firstLine, this, 0);
 }
 //---------------------------------------------------------------------------
 Iter * Buffer::First()   //technically shows wrong location - just if we NEED to maintain a link to fist link no matter what gets inserted
 {
-  return new Iter(1, data->first, data->firstLine);
+  return new Iter(1, data->first, data->firstLine, this, 0);
 }
 //---------------------------------------------------------------------------
 NSpan * Buffer::FirstLine()
@@ -62,7 +62,7 @@ NSpan * Buffer::FirstLine()
 //---------------------------------------------------------------------------
 Iter * Buffer::End()
 {
-  return new Iter(0, data->last, data->lastLine->prevline);
+  return new Iter(0, data->last, data->lastLine->prevline, this, data->linecount-1);
 }
 //---------------------------------------------------------------------------
 void Buffer::_Insert(Span * word)
@@ -100,11 +100,11 @@ void Buffer::_Delete(NSpan * word)
 {
   word->prevline->ItersMove(word, word->prevline, word->next, 0); //some fix - not sure what i am doing
   word->ItersTransmitAll(word->prevline);
-  word->nextline->prevline = word->prevline;
+  //word->nextline->prevline = word->prevline;
 
   if(word->nextline != NULL);
-    word->nextline->prevline = word->prevline;
-  if(word->prevline)
+  word->nextline->prevline = word->prevline;
+  if(word->prevline != NULL)
     word->prevline->nextline = word->nextline;
 
   _Delete((Span*)word);
@@ -484,14 +484,14 @@ void Buffer::Undo()
 //---------------------------------------------------------------------------
 void Buffer::UndoPush(Range * event)
 {
-   stackUndo.push(event);
-   while(stackRedo.size() > 0)
-   {
-     Range * redoevent = stackRedo.top();
-     stackRedo.pop();
-     redoevent->Free();
-     delete redoevent;
-   }
+  stackUndo.push(event);
+  while(stackRedo.size() > 0)
+  {
+    Range * redoevent = stackRedo.top();
+    stackRedo.pop();
+    redoevent->Free();
+    delete redoevent;
+  }
 }
 //---------------------------------------------------------------------------
 void Buffer::UndoRedo(std::stack<Range*> * stackUndo, std::stack<Range*> * stackRedo)
@@ -504,17 +504,17 @@ void Buffer::UndoRedo(std::stack<Range*> * stackUndo, std::stack<Range*> * stack
   Range * event = (*stackUndo).top();
   (*stackUndo).pop();
 
-   //undo = lines that are gonna to be removed from buffer
-   //rep = lines that are  gonna to be placed to buffer
-   Span * undoFirst = event->empty ? event->first->next : event->first->prev->next;
-   Span * undoLast = event->empty ? event->last->prev : event->last->next->prev;
-   NSpan * undoLineFirst = event->lineempty ? event->firstLine : event->firstLine->prevline;
-   NSpan * replLineLast = event->lineempty ? event->firstLine : event->lastLine;
+  //undo = lines that are gonna to be removed from buffer
+  //rep = lines that are  gonna to be placed to buffer
+  Span * undoFirst = event->empty ? event->first->next : event->first->prev->next;
+  Span * undoLast = event->empty ? event->last->prev : event->last->next->prev;
+  NSpan * undoLineFirst = event->lineempty ? event->firstLine : event->firstLine->prevline;
+  NSpan * replLineLast = event->lineempty ? event->firstLine : event->lastLine;
 
 
   int linestoberemoved = 0;
-    NSpan * line = undoLineFirst;
-    Span * span = undoFirst;
+  NSpan * line = undoLineFirst;
+  Span * span = undoFirst;
   if(undoFirst->prev != undoLast)
   {
     for(; span != undoLast->next; span = span->next)
@@ -528,12 +528,12 @@ void Buffer::UndoRedo(std::stack<Range*> * stackUndo, std::stack<Range*> * stack
       }
     }
   }
-    while(*(span->string) != '\n')
-    {
-      line->ItersTransmit(span, replLineLast);
-      span = span->next;
-    }
-    line->ItersTransmit(span, replLineLast); //we want even the last one
+  while(*(span->string) != '\n')
+  {
+    line->ItersTransmit(span, replLineLast);
+    span = span->next;
+  }
+  line->ItersTransmit(span, replLineLast); //we want even the last one
   this->data->linecount = data->linecount - linestoberemoved + event->linecount;
 
 
@@ -690,10 +690,10 @@ void Buffer::FlushPreload()
       lastN->ItersTransmitAll(preload->lastLine);         //moves all references from their former NLs to last inserted NL    //do not copy this, generally incorrect, though here working
     else
       lastN->ItersTransmit(span, preload->lastLine);
-      
+
     if(*(span->string) == '\n')
     {
-    linesremoved++;
+      linesremoved++;
       while(((NSpan*)span)->ItrList.size() == 0 && span != preload->lastLine->nextline)
       {
         span = ((NSpan*)span)->nextline;
@@ -752,7 +752,7 @@ String Buffer::GetLine(Iter * line, bool replaceTabs)
     if(*(itr->ptr) != '\t' || !replaceTabs)
     {
       str += *(itr->ptr);
-      pos++;
+        pos++;
     }
     else
     {
@@ -787,7 +787,7 @@ String Buffer::GetLineTo(Iter* To, bool replaceTabs)
     if(*(itr->ptr) != '\t' || !replaceTabs)
     {
       str += *(itr->ptr);
-      pos++;
+        pos++;
     }
     else
     {
@@ -812,6 +812,16 @@ String Buffer::GetLineTo(Iter* To, bool replaceTabs)
 int Buffer::GetLineCount()
 {
   return data->linecount;
+}
+//---------------------------------------------------------------------------
+void Buffer::Register(Iter * itr)
+{
+  ItrList.push_back(itr);
+}
+//---------------------------------------------------------------------------
+void Buffer::Unregister(Iter * itr)
+{
+  ItrList.remove(itr);
 }
 //---------------------------------------------------------------------------
 int Buffer::CheckIntegrity(int& emptyCount)

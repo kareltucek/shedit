@@ -15,13 +15,16 @@ namespace SHEdit
   {
     public:
       Iter(NSpan * line);
-      Iter(int offset, Span * word, NSpan * line, int linenum = -1);
+      Iter(int offset, Span * word, NSpan * line, Buffer * buffer, int linenum = -1);
       ~Iter();
 
       Span * word;
       NSpan * line;
+      Buffer * buffer;
       int offset;
       int linenum;
+      int pos;
+      bool valid;
       wchar_t * ptr;
 
       bool GoLine(bool allowEnd = false);
@@ -48,6 +51,8 @@ namespace SHEdit
 
       Iter * Duplicate();
       void Update();
+      void UpdatePos();
+      void RecalcPos();
 
       bool operator==(const Iter& itr);
       bool operator!=(const Iter& itr);

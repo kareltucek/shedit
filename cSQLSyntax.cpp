@@ -137,7 +137,7 @@ void __fastcall TSQLEdit::RepaintWindow(bool force)
   if(!DEBUG_REPAINT || force)
   {
     NSpan * line = itrLine->line;
-    for(int i = GetVisLineCount(); i > 0; i--)
+    for(int j = GetVisLineCount(), i = 0; i < j; i++)
     {
       parser->ParseFromLine(line, itrLine->linenum+i, 2);
       if(line->nextline && line->nextline->nextline)
@@ -196,11 +196,11 @@ LRESULT CALLBACK TSQLEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
           wchar_t * str = new wchar_t[2];
           str[0] = '\t';
           str[1] = '\0';
-      AdjustLine();
-      Insert(str);
-      cursorLeftOffset = itrCursor->GetLeftOffset();
-      trap = true;
-
+          AdjustLine();
+          Insert(str);
+          cursorLeftOffset = itrCursor->GetLeftOffset();
+          trap = true;
+          
         }
         else
           return 1;
@@ -301,6 +301,7 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
             DeleteSel();
           cursorLeftOffset = itrCursor->GetLeftOffset();
           AdjustLine();
+          UpdateCursor();
 #ifdef DEBUG
           {
             Write("deleted");
@@ -325,20 +326,20 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
             int justbreaksomewhere = 666;
           }
           return;
-          #ifdef DEBUG
+#ifdef DEBUG
         case VK_F7:
           {
-              parser->dbgLogging = true;
-              parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 2);
-              parser->Execute();
+            parser->dbgLogging = true;
+            parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 2);
+            parser->Execute();
           }
           return;
         case VK_F8:
           {
-              parser->dbgLogging = false;
+            parser->dbgLogging = false;
           }
           return;
-          #endif
+#endif
         case VK_F9:
           {
             Iter * itr = itrLine->Duplicate();
@@ -414,16 +415,16 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
             RepaintWindow(true);
 
 #ifdef DEBUG
-/*
-            Write("Undone");
-            int empty = 0;
-            int eno = buffer->CheckIntegrity(empty);
-            if(empty)
-              Log(String("IntegrityCheck found ")+String(empty)+String(" null strings"));
-            if(errno)
-              Log(String("IntegrityCheck: ")+String(eno));
-            RepaintWindow(true);
-            */
+            /*
+               Write("Undone");
+               int empty = 0;
+               int eno = buffer->CheckIntegrity(empty);
+               if(empty)
+               Log(String("IntegrityCheck found ")+String(empty)+String(" null strings"));
+               if(errno)
+               Log(String("IntegrityCheck: ")+String(eno));
+               RepaintWindow(true);
+               */
 #endif
 
           }
@@ -498,7 +499,7 @@ void TSQLEdit::AdjustLine()
   }
   UpdateCursor();
   if(movingby != 0)
-    drawer->DrawMove(movingby < 0 ? -movingby : 0, GetVisLineCount(), -movingby);
+    drawer->DrawMove(0, GetVisLineCount(), -movingby);
   UpdateVBar();
   if(movingby < 0)
   {
@@ -530,9 +531,11 @@ void TSQLEdit::UpdateCursor()
   int lnum = GetLineNum(itrCursor->line);
   if(lnum >= 0)
   {
-    int x = 2, y = Y_OFF + LINESIZE*lnum;
+    int x = 2 + LINENUM_WIDTH, y = Y_OFF + LINESIZE*lnum;
 
-    x += this->Canvas->TextWidth(buffer->GetLineTo(itrCursor, true));
+    String str = buffer->GetLineTo(itrCursor, true);
+    if(!str.IsEmpty() && *(str.LastChar()) != '\0')           //null string is not an empty string... and null char gets drawn if it is only char in string
+      x += this->Canvas->TextWidth(str);
 
     cx = x;
     cy = y;
@@ -561,7 +564,8 @@ void __fastcall TSQLEdit::MouseDown(TMouseButton Button, Classes::TShiftState Sh
 
   UpdateCursor();
   drawer->UpdateCursor(cx,cy);
-  parser->Execute();
+  drawer->Paint();
+  //parser->Execute();
 
   mouseDown = true;
 }
@@ -609,9 +613,9 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
     GetCursorEnd()->MarkupEnd(selectionFormat);
   }
 
-    if(oldIter != NULL) parser->ParseFromLine(oldIter->line, oldIter->linenum, 2);
-    if(itrCursor != NULL) parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 2);
-    if(itrCursorSecond != NULL) parser->ParseFromLine(itrCursorSecond->line, itrCursorSecond->linenum, 2);
+  if(oldIter != NULL) parser->ParseFromLine(oldIter->line, oldIter->linenum, 2);
+  if(itrCursor != NULL) parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 2);
+  if(itrCursorSecond != NULL) parser->ParseFromLine(itrCursorSecond->line, itrCursorSecond->linenum, 2);
 
   mx = x;
   my = y; 
@@ -646,64 +650,64 @@ Iter * TSQLEdit::GetCursor()
 {
     return cursorsInInvOrder ? itrCursorSecond : itrCursor;
   }
-//---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
 Iter * TSQLEdit::GetCursorEnd()
 {
-  return cursorsInInvOrder ? itrCursor : itrCursorSecond;
-}
-//---------------------------------------------------------------------------
+    return cursorsInInvOrder ? itrCursor : itrCursorSecond;
+  }
+  //---------------------------------------------------------------------------
 
 Iter * TSQLEdit::XYtoItr(int& x, int& y)
 {             /*
-  Iter * itr = GetLineByNum(y/LINESIZE, false);
-  Span * stop = itr->line->nextline;
-  y = (itr->line->nextline->next) ? LINESIZE*(y/LINESIZE) : LINESIZE*GetLineNum(itr->line); //to normalize cursor position; to prevent problems with end of file; and to optimize both
-  int xSum = 2-HBar->Position;
-  int w = this->Canvas->TextWidth(String(itr->word->string).TrimRight());
-  while (xSum + w < x && itr->word != stop)
-  {
-    xSum += w;
-    itr->GoWord();
-    w = this->Canvas->TextWidth(String(itr->word->string));
-    if(!itr->word->next)
-      break;
-  }
-  if(itr->word != stop)
-  {
-    String str = String(itr->word->string); //jump to approximately good place, and then adjust
-    if(str == "\n")
-      str = "";
-    int offset = 0;
-    if(str.Length() > 0 && this->Canvas->TextWidth(str) > 0)
-    {
-      offset = itr->word->length * (x-xSum) / (this->Canvas->TextWidth(str));
-      while(xSum + this->Canvas->TextWidth(str.SubString(0, offset)) > x+5 && offset >= 0)
-        offset--;
-      while(xSum + this->Canvas->TextWidth(str.SubString(0, offset)) < x+5 && offset <= itr->word->length)
-        offset++;
-      offset--;
-      xSum += this->Canvas->TextWidth(str.SubString(0, offset));
-    }
-    if(offset == itr->word->length)
-      itr->GoWord();
-    else
-    {
-      itr->offset = offset;
-      itr->Update();
-    }
-  }
-  x = xSum+HBar->Position;
-  this->Canvas->Unlock();
+                 Iter * itr = GetLineByNum(y/LINESIZE, false);
+                 Span * stop = itr->line->nextline;
+                 y = (itr->line->nextline->next) ? LINESIZE*(y/LINESIZE) : LINESIZE*GetLineNum(itr->line); //to normalize cursor position; to prevent problems with end of file; and to optimize both
+                 int xSum = 2-HBar->Position;
+                 int w = this->Canvas->TextWidth(String(itr->word->string).TrimRight());
+                 while (xSum + w < x && itr->word != stop)
+                 {
+                 xSum += w;
+                 itr->GoWord();
+                 w = this->Canvas->TextWidth(String(itr->word->string));
+                 if(!itr->word->next)
+                 break;
+                 }
+                 if(itr->word != stop)
+                 {
+                 String str = String(itr->word->string); //jump to approximately good place, and then adjust
+                 if(str == "\n")
+                 str = "";
+                 int offset = 0;
+                 if(str.Length() > 0 && this->Canvas->TextWidth(str) > 0)
+                 {
+                 offset = itr->word->length * (x-xSum) / (this->Canvas->TextWidth(str));
+                 while(xSum + this->Canvas->TextWidth(str.SubString(0, offset)) > x+5 && offset >= 0)
+                 offset--;
+                 while(xSum + this->Canvas->TextWidth(str.SubString(0, offset)) < x+5 && offset <= itr->word->length)
+                 offset++;
+                 offset--;
+                 xSum += this->Canvas->TextWidth(str.SubString(0, offset));
+                 }
+                 if(offset == itr->word->length)
+                 itr->GoWord();
+                 else
+                 {
+                 itr->offset = offset;
+                 itr->Update();
+                 }
+                 }
+                 x = xSum+HBar->Position;
+                 this->Canvas->Unlock();
 
-  return itr;    */
+                 return itr;    */
 
   Iter * itr = GetLineByNum(y/LINESIZE, false);
-  int xSum = 2-HBar->Position;
+  int xSum = 2-HBar->Position+LINENUM_WIDTH;
   y = (itr->line->nextline->next) ? LINESIZE*(y/LINESIZE) : LINESIZE*GetLineNum(itr->line); //to normalize cursor position; to prevent problems with end of file; and to optimize both
   String line = buffer->GetLine(itr, true);
   int w = Canvas->TextWidth(line);
 
-  if(w+xSum < x)
+  if(w+xSum < x || w == 0)
   {
     x = xSum+w;
     itr->GoLineEnd();
@@ -712,9 +716,9 @@ Iter * TSQLEdit::XYtoItr(int& x, int& y)
   else
   {
     int offset = line.Length() * (x-xSum) / w;
-    while(xSum + this->Canvas->TextWidth(line.SubString(0, offset)) > x+3 && offset >= 0)
+    while(xSum + this->Canvas->TextWidth(line.SubString(0, offset)) > x+4 && offset >= 0)
       offset--;
-    while(xSum + this->Canvas->TextWidth(line.SubString(0, offset)) < x+3 && offset <= line.Length())
+    while(xSum + this->Canvas->TextWidth(line.SubString(0, offset)) < x+4 && offset <= line.Length())
       offset++;
     offset--;
     xSum += this->Canvas->TextWidth(line.SubString(0, offset));
@@ -771,9 +775,11 @@ int __fastcall TSQLEdit::GetLineNum(NSpan * line)
 //---------------------------------------------------------------------------
 void TSQLEdit::DeleteSel(bool allowsync)
 {
-  int linesMovedFrom = GetLineNum(GetCursorEnd()->line)+1;
+  int linesMovedFrom = (GetCursorEnd()->linenum-itrLine->linenum)+1;
 
   int linesMoved = -buffer->Delete(GetCursor(), GetCursorEnd());
+
+  bool needRepaint = GetCursor()->linenum < itrLine->linenum;
 
   NSpan* changed = itrCursor->line;
   selectionFormat->RemoveAllMarks();
@@ -781,7 +787,18 @@ void TSQLEdit::DeleteSel(bool allowsync)
   cursorsInInvOrder = false;
   itrCursorSecond = NULL;
 
-  ProcessChange(linesMovedFrom, linesMoved, changed);
+  if(needRepaint) //means that line iterator has been moved as well
+  {
+    delete itrLine;
+    itrLine = itrCursor->Duplicate();
+    for(int i = 0; i < 4; i++)
+      itrLine->RevLine();
+    RepaintWindow(true);
+  }
+  else
+  {
+    ProcessChange(linesMovedFrom < 0 ? 0 : linesMovedFrom, linesMoved, changed);
+  }
 }
 //---------------------------------------------------------------------------
 void TSQLEdit::Insert(wchar_t * text)
@@ -997,16 +1014,16 @@ void TSQLEdit::SelectAll()
 //---------------------------------------------------------------------------
 void TSQLEdit::LoadFile(wchar_t * filename)
 {
-          buffer->LoadFile(filename);
-          delete itrCursor;
-          delete itrLine;
-          itrCursor = buffer->Begin();
-          itrLine = buffer->Begin();
-          parser->InvalidateAll();
-          parser->ParseFromLine(buffer->FirstLine(), 0, 0);
-          UpdateCursor();
-          UpdateVBar();
-          RepaintWindow(true);
+  buffer->LoadFile(filename);
+  delete itrCursor;
+  delete itrLine;
+  itrCursor = buffer->Begin();
+  itrLine = buffer->Begin();
+  parser->InvalidateAll();
+  parser->ParseFromLine(buffer->FirstLine(), 0, 0);
+  UpdateCursor();
+  UpdateVBar();
+  RepaintWindow(true);
 }
 //---------------------------------------------------------------------------
 

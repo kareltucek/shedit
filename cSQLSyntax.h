@@ -3,6 +3,7 @@
 #ifndef cSQLSyntaxH
 #define cSQLSyntaxH
 //---------------------------------------------------------------------------
+#include "config"
 #include <SysUtils.hpp>
 #include <Classes.hpp>
 #include <Controls.hpp>

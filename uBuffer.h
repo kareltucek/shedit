@@ -26,6 +26,8 @@ namespace SHEdit
       std::stack<Range*> stackUndo;
       std::stack<Range*> stackRedo;
 
+      std::list<Iter*> ItrList;
+
       void _Insert(Span * word);
       void _Delete(Span * word);
       void _Insert(NSpan * word);
@@ -67,6 +69,9 @@ namespace SHEdit
       void LoadFileAsync(wchar_t * filename);
       bool Preload(int lines);
       void FlushPreload();
+
+      void Register(Iter * itr);
+      void Unregister(Iter * itr);
 
       Iter * Begin();
       Iter * First();

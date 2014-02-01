@@ -215,7 +215,7 @@ beginning:
   item = item->nextTree;
   if(lookahead)
   {
-  //return item->type;
+    //return item->type;
     if((int)c < (int)0x7F)
     {
       if(item->map[(int)comp])

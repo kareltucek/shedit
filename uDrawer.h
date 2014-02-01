@@ -61,6 +61,7 @@ void __fastcall DrawEof(short linenum);
 void __fastcall UpdateCursor(int x, int y);
 void __fastcall DrawResize(int w, int h);
 void __fastcall DrawEndl(short linenum);
+void __fastcall DrawLinenum();
 void __fastcall Paint();
 
     public:

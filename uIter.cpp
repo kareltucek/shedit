@@ -16,44 +16,54 @@ using namespace SHEdit;
 //---------------------------------------------------------------------------
 Iter::Iter(NSpan * line)
 {
-    this->offset = 0;
-    this->word = (Span*)line;
-    if(line->prevline)
-      this->line = line->prevline;
-    else
-      this->line = line;
-    line->Register(this);
-    if(word->next)
-      GoChar();
+  this->offset = 0;
+  this->pos = 0;
+  this->buffer = NULL;
+  this->word = (Span*)line;
+  if(line->prevline)
+    this->line = line->prevline;
+  else
+    this->line = line;
+  line->Register(this);
+  if(word->next)
+    GoChar();
 }
 //---------------------------------------------------------------------------
-Iter::Iter(int offset, Span * word, NSpan * line, int linenum)
+Iter::Iter(int offset, Span * word, NSpan * line, Buffer * buffer, int linenum)
 {
   this->offset = offset;
   this->word = word;
   this->line = line;
+  this->buffer = buffer;
   line->Register(this);
+  if(buffer != NULL)
+    buffer->Register(this);
   this->linenum = line->prevline ? linenum : 0;
+
+  RecalcPos();
+
   this->Update();
 }
 //---------------------------------------------------------------------------
 Iter::~Iter()
 {
-
+  if(buffer != NULL)
+    buffer->Unregister(this);
   line->Unregister(this);
 }
 //---------------------------------------------------------------------------
 bool Iter::GoLine(bool allowEnd)
 {
-  if(linenum >= 0)
-    linenum++;
   if(line->nextline && line->nextline->next)
   {
+    if(linenum >= 0)
+      linenum++;
     line->Unregister(this);
     line = line->nextline;
     line->Register(this);
     word = line->next;
     offset = 0;
+    pos = 0;
     Update();
     return true;
   }
@@ -64,6 +74,7 @@ bool Iter::GoLine(bool allowEnd)
       line = line->nextline;
       word = line;
       offset = 0;
+      RecalcPos();
       Update();
     }
     return false;
@@ -77,6 +88,7 @@ bool Iter::GoLineEnd()
   {
     word = line->nextline;
     offset = 0;
+    RecalcPos();
     Update();
     return true;
   }
@@ -89,6 +101,7 @@ bool Iter::GoLineStart()
   {
     word = line->next;
     offset = 0;
+    pos = 0;
     Update();
     return true;
   }
@@ -106,6 +119,7 @@ bool Iter::RevLine()
     line->Register(this);
     word = line->next;
     offset = 0;
+    pos = 0;
     Update();
     return true;
   }
@@ -117,11 +131,13 @@ bool Iter::GoWord()
 {
   if(word->next)
   {
+    pos += word->length - offset;
     if(*(word->string) == '\n')
     {
       line->Unregister(this);
       line = ((NSpan*)word);
       line->Register(this);
+      pos = 0;
       if(linenum >= 0)
         linenum++;
     }
@@ -151,6 +167,7 @@ bool Iter::RevWord()
 {
   if(word->prev->prev)
   {
+    pos -= offset + 1;
     word = word->prev;
     while(*(word->string) == '\0')
       word = word->prev;
@@ -162,6 +179,7 @@ bool Iter::RevWord()
       line->Register(this);
       if(linenum > 0)
         linenum--;
+      RecalcPos();
     }
     Update();
     return true;
@@ -177,6 +195,7 @@ bool Iter::GoChar()
     return GoWord();
   else
   {
+    pos++;
     offset++;
     ptr++;
   }
@@ -187,6 +206,7 @@ bool Iter::RevChar()
 {
   offset--;
   ptr--;
+  pos--;
   if(offset < 0)
   {
     if(!RevWord())
@@ -200,7 +220,7 @@ bool Iter::RevChar()
 //---------------------------------------------------------------------------
 Iter * Iter::Duplicate()
 {
-  return new Iter(offset, word, line, linenum);
+  return new Iter(offset, word, line, buffer, linenum);
 }
 //---------------------------------------------------------------------------
 void Iter::Update()
@@ -332,3 +352,19 @@ void Iter::MarkupRem(SHEdit::Format * format)
   }
 }
 //---------------------------------------------------------------------------
+void Iter::RecalcPos()
+{
+  this->pos = 0;
+  this->pos += offset;
+  if(word->prev)
+    for(Span * w = word->prev; *(w->string) != '\n'; w = w->prev)
+      this->pos += w->length;
+}
+//---------------------------------------------------------------------------
+void Iter::UpdatePos()
+{
+  int p = this->pos;
+  GoLineStart();
+    GoBy(p);
+}
+
