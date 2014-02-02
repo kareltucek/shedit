@@ -10,11 +10,13 @@ namespace SHEdit
   class Mark;
   class Format;
   class Buffer;
+
   //---------------------------------------------------------------------------
   class Iter
   {
     public:
       Iter(NSpan * line);
+      Iter(NSpan * line, int linenum, int pos, Buffer * buffer);
       Iter(int offset, Span * word, NSpan * line, Buffer * buffer, int linenum = -1);
       ~Iter();
 
@@ -24,7 +26,6 @@ namespace SHEdit
       int offset;
       int linenum;
       int pos;
-      bool valid;
       wchar_t * ptr;
 
       bool GoLine(bool allowEnd = false);

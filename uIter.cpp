@@ -19,14 +19,25 @@ Iter::Iter(NSpan * line)
   this->offset = 0;
   this->pos = 0;
   this->buffer = NULL;
+  this->linenum = -1;
   this->word = (Span*)line;
   if(line->prevline)
     this->line = line->prevline;
   else
     this->line = line;
-  line->Register(this);
   if(word->next)
     GoChar();
+}
+//---------------------------------------------------------------------------
+Iter::Iter(NSpan * line, int linenum, int pos, Buffer * buffer)
+{
+  this->pos = pos;
+  this->linenum = linenum;
+  this->line = line;
+  this->buffer = buffer;
+
+  UpdatePos();
+  Update();
 }
 //---------------------------------------------------------------------------
 Iter::Iter(int offset, Span * word, NSpan * line, Buffer * buffer, int linenum)
@@ -35,10 +46,9 @@ Iter::Iter(int offset, Span * word, NSpan * line, Buffer * buffer, int linenum)
   this->word = word;
   this->line = line;
   this->buffer = buffer;
-  line->Register(this);
   if(buffer != NULL)
     buffer->Register(this);
-  this->linenum = line->prevline ? linenum : 0;
+  this->linenum = line->prevline ? linenum : 1;
 
   RecalcPos();
 
@@ -49,7 +59,6 @@ Iter::~Iter()
 {
   if(buffer != NULL)
     buffer->Unregister(this);
-  line->Unregister(this);
 }
 //---------------------------------------------------------------------------
 bool Iter::GoLine(bool allowEnd)
@@ -58,9 +67,7 @@ bool Iter::GoLine(bool allowEnd)
   {
     if(linenum >= 0)
       linenum++;
-    line->Unregister(this);
     line = line->nextline;
-    line->Register(this);
     word = line->next;
     offset = 0;
     pos = 0;
@@ -114,9 +121,7 @@ bool Iter::RevLine()
     linenum--;
   if(line->prevline)
   {
-    line->Unregister(this);
     line = line->prevline;
-    line->Register(this);
     word = line->next;
     offset = 0;
     pos = 0;
@@ -134,9 +139,7 @@ bool Iter::GoWord()
     pos += word->length - offset;
     if(*(word->string) == '\n')
     {
-      line->Unregister(this);
       line = ((NSpan*)word);
-      line->Register(this);
       pos = 0;
       if(linenum >= 0)
         linenum++;
@@ -174,9 +177,7 @@ bool Iter::RevWord()
     offset = word->length-1;
     if(*(word->string) == '\n' && word->prev)
     {
-      line->Unregister(this);
       line = ((NSpan*)word)->prevline;
-      line->Register(this);
       if(linenum > 0)
         linenum--;
       RecalcPos();
@@ -326,7 +327,10 @@ void Iter::GoBy(int chars)
     GoWord();
   }
   if(*(word->string) != '\n')
+  {
     this->offset = chars;
+    this->pos += chars;
+  }
   Update();
 }
 

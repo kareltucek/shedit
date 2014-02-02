@@ -163,6 +163,9 @@ __fastcall Parser::Parser(TSQLEdit * parent, Drawer * drawer, HANDLE bufferChang
   this->parent = parent;
   this->drawer = drawer;
 
+  recurse = 0;
+  upperbound = PARSEINADVANCE;
+
   processAll = true;
   //DuplicateHandle(GetCurrentProcess(), bufferChanged, this->Handle, &(this->bufferChanged),  0, false, DUPLICATE_SAME_ACCESS);
 
@@ -175,12 +178,15 @@ __fastcall Parser::Parser(TSQLEdit * parent, Drawer * drawer, HANDLE bufferChang
 //---------------------------------------------------------------------------
 void __fastcall Parser::Execute()
 {
+  recurse++;
   NSpan* line=NULL;
   //parse lists
   tasklist.sort();
   tasklistprior.sort();
+  upperbound = parent->GetActLine() + PARSEINADVANCE;
 
-  while(tasklist.size() > 0 || tasklistprior.size() > 0)
+  int parsed = 0;
+  while(tasklistprior.size() > 0 || (tasklist.size() > 0 && tasklist.front().linenum < upperbound))
   {
     ParseTask pt;
     if(tasklistprior.size() > 0)
@@ -231,6 +237,7 @@ void __fastcall Parser::Execute()
         linenum = 0;
       }
       pt.linenum++;
+      parsed++;
 
       this->state.parseid = currentparseid;
 
@@ -240,17 +247,11 @@ void __fastcall Parser::Execute()
 #endif
 
       //if(!(linenum >= 0 && linenum <= parent->GetVisLineCount() && itr->line->parserState != this->state) && tasklistprior.size() > 0 )
-      if(linenum < 0 && tasklistprior.size() > 0 )
+      if(linenum < 0 && (tasklistprior.size() > 0 || pt.linenum > upperbound || parsed > 100))
       {
         if(itr->word->next != NULL && itr->line->parserState != this->state)
           this->tasklist.push_back(ParseTask(itr->line, linenum));
         itr->line->parserState = this->state;
-        break;
-      }
-      if(linenum < 0 && painted && itr->line->parserState != this->state)
-      {
-        itr->line->parserState = this->state;
-        itr->line->parserState.parseid--;
         break;
       }
     }
@@ -265,14 +266,22 @@ void __fastcall Parser::Execute()
 
     delete itr;
 
-    if(painted && tasklistprior.size() == 0)
+    if((painted || parsed > 100) && tasklistprior.size() == 0)
     {
-      drawer->Paint();
-      if(processAll)
+      if(painted)
+        drawer->Paint();
+      if(processAll && recurse < 2)
         Application->ProcessMessages();
+      if(recurse > 1)
+      {
+        recurse--;
+        return;
+      }
+      parsed = 0;
     }
   }
   drawer->Paint();
+  recurse--;
 }
 //---------------------------------------------------------------------------
 void Parser::ParseFromLine(NSpan * line, int linenum, int prior)

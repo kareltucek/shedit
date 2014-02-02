@@ -60,7 +60,7 @@ namespace SHEdit
       clock_t lastHBarUpdate;
 
       Iter * XYtoItr(int& x, int& y);
-      void UpdateCursor();
+      void UpdateCursor(bool paint);
       void ProcessMouseMove(int& x, int& y);
       void ProcessMouseClear(bool redraw, bool deletecursord);
       Format * selectionFormat;
@@ -72,10 +72,11 @@ namespace SHEdit
       int mx, my; //mouse move  pos
       int cursorLeftOffset;
       int scrolldelta; //used by ms to treat smooth-scroll wheels...
+      int lastscrollmessage;
 
       bool tabonce;
 
-      void AdjustLine();
+      void AdjustLine(bool paint);
       void Scroll(int by);
       void __fastcall OnVScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);
       void __fastcall OnHScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);
@@ -113,6 +114,7 @@ namespace SHEdit
       bool __fastcall GetLineFirst(NSpan * line);
       Iter * __fastcall GetLineByNum(int num, bool allowEnd);
       Iter * __fastcall GetLineByNum(int num);
+      int __fastcall GetActLine();
 
       Iter * GetCursor();
       Iter * GetCursorEnd();

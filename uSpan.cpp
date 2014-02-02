@@ -82,6 +82,7 @@ Span::Span(Span * prev, Span * next, wchar_t * string, short length)
   wcscpy(string, L"\n");
   length = 1;
 }
+/*
 //---------------------------------------------------------------------------
 void NSpan::ItersSplit(Span * from, Span * toFirst, Span * toSec, int byPos, bool custoff, int tooffset)
 {
@@ -191,7 +192,7 @@ void NSpan::Register(Iter* itr)
 void NSpan::Unregister(Iter* itr)
 {
   ItrList.remove(itr);
-}
+}     */
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -209,11 +210,40 @@ Range::Range(Span * first, Span * last, bool empty, NSpan * firstLine, NSpan * l
 //---------------------------------------------------------------------------
 Range::~Range()
 {
-
+  //nothing
 }
 //---------------------------------------------------------------------------
 void Range::Free()
 {
-
+  //todo
 }
 //---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+Action::Action(int fromlinenum, int tolinenum, int frompos, int topos, ActionType type)
+{
+  this->fromlinenum = fromlinenum;
+  this->tolinenum = tolinenum;
+  this->frompos = frompos;
+  this->topos = topos;
+  this->type = type;
+}
+//---------------------------------------------------------------------------
+Action::~Action()
+{
+  //nothing
+}
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+UndoTask::UndoTask(Action * action, Range * range)
+{
+  this->action = action;
+  this->range = range;
+}
+//---------------------------------------------------------------------------
+UndoTask::~UndoTask()
+{
+  delete range;
+  delete action;
+}

@@ -78,6 +78,8 @@ namespace SHEdit
       bool newline;
       short linenum;
       short currentparseid;
+
+      int upperbound;
       /*
          String * outString;
          String * actString;
@@ -87,6 +89,7 @@ namespace SHEdit
          bool actMarked; */
       String actText;
       FontStyle actFormat;
+      int recurse;
 
       void Flush();
       void FlushAll();
