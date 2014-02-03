@@ -9,11 +9,13 @@
 #include "uSpan.h"
 #include "uIter.h"
 #include "uMark.h"
+#include "uBuffer.h"
 #include "uFormat.h"
 #include <string>
 #include <stdio.h>
 #include <time.h>
 #include <list>
+#include <windows.h>
 
 using namespace SHEdit;
 
@@ -157,7 +159,7 @@ bool Parser::ParseTask::operator<(const Parser::ParseTask & pt)  const
 __fastcall Parser::Parser(TSQLEdit * parent, Drawer * drawer, HANDLE bufferChanged, HANDLE bufferMutex, HANDLE drawerCanvasMutex, HANDLE drawerQueueMutex, HANDLE drawerTaskPending)
 {
 #ifdef DEBUG
-  myfile.open("parser.txt", ios::out);
+  myfile.open("main.txt", ios::out);
   dbgLogging = false;
 #endif
   this->parent = parent;
@@ -165,6 +167,7 @@ __fastcall Parser::Parser(TSQLEdit * parent, Drawer * drawer, HANDLE bufferChang
 
   recurse = 0;
   upperbound = PARSEINADVANCE;
+  onidleset = false;
 
   processAll = true;
   //DuplicateHandle(GetCurrentProcess(), bufferChanged, this->Handle, &(this->bufferChanged),  0, false, DUPLICATE_SAME_ACCESS);
@@ -176,14 +179,16 @@ __fastcall Parser::Parser(TSQLEdit * parent, Drawer * drawer, HANDLE bufferChang
   DuplicateHandle(GetCurrentProcess(), drawerTaskPending, GetCurrentProcess(), &(this->drawerTaskPending),  0, false, DUPLICATE_SAME_ACCESS);
 }
 //---------------------------------------------------------------------------
-void __fastcall Parser::Execute()
+bool __fastcall Parser::Execute()
 {
-  recurse++;
+
   NSpan* line=NULL;
   //parse lists
   tasklist.sort();
   tasklistprior.sort();
   upperbound = parent->GetActLine() + PARSEINADVANCE;
+
+  bool painted = false;
 
   int parsed = 0;
   while(tasklistprior.size() > 0 || (tasklist.size() > 0 && tasklist.front().linenum < upperbound))
@@ -195,14 +200,16 @@ void __fastcall Parser::Execute()
     }
     else
     {
-      pt = tasklist.front(); //TODO handle linenum
+      pt = tasklist.front();
     }
     line = pt.line;
     linenum = parent->GetLineNum(line);
     bool first = true;
-    bool painted = linenum >= 0;
+    painted = linenum >= 0 | painted;
     Iter * itr = new Iter(line);
     state = itr->line->parserState;
+    state.parseid = currentparseid;
+
     LanguageDefinition::TreeItem * searchtoken = langdef->GetSpecItem(state.statemask);
 
     tasklistprior.remove(pt);
@@ -239,18 +246,13 @@ void __fastcall Parser::Execute()
       pt.linenum++;
       parsed++;
 
-      this->state.parseid = currentparseid;
-
-#ifdef DEBUG
-      //if(itr->line->prevline != NULL)
-      //  parent->Log("parsing line " + String(itr->line->prevline->next->string));
-#endif
-
       //if(!(linenum >= 0 && linenum <= parent->GetVisLineCount() && itr->line->parserState != this->state) && tasklistprior.size() > 0 )
-      if(linenum < 0 && (tasklistprior.size() > 0 || pt.linenum > upperbound || parsed > 100))
+      if(linenum < 0 && (tasklistprior.size() > 0 || pt.linenum > upperbound || parsed > PARSEINONEGO))
       {
         if(itr->word->next != NULL && itr->line->parserState != this->state)
-          this->tasklist.push_back(ParseTask(itr->line, linenum));
+        {
+          this->tasklist.push_front(ParseTask(itr->line, pt.linenum));
+        }
         itr->line->parserState = this->state;
         break;
       }
@@ -266,22 +268,37 @@ void __fastcall Parser::Execute()
 
     delete itr;
 
-    if((painted || parsed > 100) && tasklistprior.size() == 0)
+    if((painted || parsed > PARSEINONEGO) && tasklistprior.size() == 0)
     {
       if(painted)
-        drawer->Paint();
-      if(processAll && recurse < 2)
-        Application->ProcessMessages();
-      if(recurse > 1)
       {
-        recurse--;
-        return;
+        drawer->Paint();
+      }
+      if(parsed > PARSEINONEGO)
+      {
+        if(!onidleset)
+        {
+          oldidle = Application->OnIdle;
+          Application->OnIdle = OnIdle;
+          onidleset = true;
+        }
+        return false;
       }
       parsed = 0;
     }
   }
-  drawer->Paint();
-  recurse--;
+
+  return true;
+}
+//---------------------------------------------------------------------------
+void __fastcall Parser::OnIdle(TObject * Sender, bool & Done)
+{
+  if(Execute())
+  {
+    Application->OnIdle = oldidle;
+    onidleset = false;
+  }
+  Done = false;
 }
 //---------------------------------------------------------------------------
 void Parser::ParseFromLine(NSpan * line, int linenum, int prior)
@@ -507,7 +524,9 @@ void Parser::Flush()
   if(!actText.IsEmpty())
   {
     if(state.markupStack != NULL)
+    {
       actFormat = *(state.markupStack->format);
+    }
     drawer->DrawText(actText, newline, linenum, actFormat);
     newline = false;
     actText = "";

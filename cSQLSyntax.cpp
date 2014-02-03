@@ -84,6 +84,7 @@ TSQLEdit * SQLEditFocused; //callback musi jit na statickou metodu...
   this->Color = clWhite;
 
   scrolldelta = 0;
+  scrolldeltafontsize = 0;
   cursorLeftOffset = 0;
   lastscrollmessage = -1;
 
@@ -228,7 +229,7 @@ void TSQLEdit::Scroll(int by)
   int scrolled = 0;
   if(by < GetVisLineCount())
   {
-    while(by >= 1 || by <= -1)
+    while(by != 0)
     {
       if(by > 0)
       {
@@ -268,10 +269,27 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
   {
     case WM_MOUSEWHEEL:
       {
-        scrolldelta += (short)HIWORD(Message.WParam);
-        int scrolled = scrolldelta/120;
-        scrolldelta = scrolldelta-scrolled*120;
-        Scroll(scrolled*SCROLL_STEP);
+        int virtkey = GetKeyState(VK_CONTROL);
+        if (virtkey & 0x8000)
+        {
+          scrolldeltafontsize += (short)HIWORD(Message.WParam);
+          int scrolled = scrolldeltafontsize/120;
+          scrolldeltafontsize = scrolldeltafontsize-scrolled*120;
+          if(scrolled < 0 && drawer->GetFontsize()+scrolled >= 4)
+            drawer->SetFontsize(drawer->GetFontsize()+scrolled);
+          if(scrolled > 0 && drawer->GetFontsize()+scrolled <= 30)
+            drawer->SetFontsize(drawer->GetFontsize()+scrolled);
+          UpdateCursor(false);
+          drawer->UpdateLinenumWidth(buffer->GetLineCount());
+          RepaintWindow(true);
+        }
+        else
+        {
+          scrolldelta += (short)HIWORD(Message.WParam);
+          int scrolled = scrolldelta/120;
+          scrolldelta = scrolldelta-scrolled*120;
+          Scroll(scrolled*SCROLL_STEP);
+        }
       }
       return;
     case WM_KEYDOWN:
@@ -351,9 +369,9 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
           return;
         case VK_PRIOR:
         case VK_NEXT:
-          cy += LINESIZE * GetVisLineCount();
-          my += LINESIZE * GetVisLineCount();
-          dy += LINESIZE * GetVisLineCount();
+          cy += drawer->GetLinesize() * GetVisLineCount();
+          my += drawer->GetLinesize() * GetVisLineCount();
+          dy += drawer->GetLinesize() * GetVisLineCount();
           for(int i = GetVisLineCount(); i > 0; i--)
           {
             if(Message.WParam == VK_PRIOR)
@@ -364,6 +382,16 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
           UpdateCursor(false);
           UpdateVBar();
           RepaintWindow(true);
+          break;
+        case VK_HOME:
+          itrCursor->GoLineStart();
+          UpdateCursor(true);
+          AdjustLine(true);
+          break;
+        case VK_END:
+          itrCursor->GoLineEnd();
+          UpdateCursor(true);
+          AdjustLine(true);
           break;
         default:
           this->TControl::WndProc(Message);
@@ -471,12 +499,12 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
 void TSQLEdit::AdjustLine(bool paint)
 {
   int l = GetLineNum(itrCursor->line);
-  if(l >= 2 && l <= GetVisLineCount() - 4)
-    return;
-  if(l < 2 && itrLine->line->prevline == NULL)
-    return;
+
+  bool needsFullRepaint = false;
+  bool needsHAdjustment = ((cx-HBar->Position) < drawer->GetLinenumWidth()+MARGINS && HBar->Position != 0) || (cx-HBar->Position) > this->Width - MARGINS;
+
   int movingby = 0;
-  if(l >= 0 && l <= 2)
+  if(l >= 0 && l <= 2 && itrLine->line->prevline != NULL)
   {
     for(int i = 0; i < 2 - l; i++)
     {
@@ -498,44 +526,59 @@ void TSQLEdit::AdjustLine(bool paint)
       }
     }
   }
-  else
+  else if(l == -1)
   {
     delete itrLine;
     itrLine = itrCursor->Duplicate();
     for(int i = 0; i < 2; i++)
       itrLine->RevLine();
-    if(paint)
-      RepaintWindow(true);
-    UpdateVBar();
-    return;
+    needsFullRepaint = true;
   }
-  UpdateCursor(paint);
-  if(movingby != 0 && paint)
-    drawer->DrawMove(0, GetVisLineCount(), -movingby);
+  //UpdateCursor(paint);
   UpdateVBar();
-  if(!paint)
-    return;
-  if(movingby < 0)
+
+  if(paint && (needsFullRepaint || needsHAdjustment))
   {
-    Iter * itr = itrLine->Duplicate();
-    for(int i = movingby; i <= 0; i++)
+    if(needsHAdjustment)
     {
-      parser->ParseFromLine(itr->line, itr->linenum, 2);
-      itr->GoLine();
+      int hpos = 0;
+      if((cx-HBar->Position) < drawer->GetLinenumWidth()+MARGINS)
+        hpos = cx-drawer->GetLinenumWidth()-MARGINS;
+      else
+        hpos = cx - this->Width + MARGINS;
+      if(hpos < 0)
+        HBar->Position = 0;
+      else
+        HBar->Position = hpos;
     }
-    parser->Execute();
-    delete itr;
+    RepaintWindow(true);
   }
-  if(movingby > 0)
+  else if(paint && movingby != 0)
   {
-    Iter * itr = GetLineByNum(GetVisLineCount()-movingby);
-    for(int i = movingby; i >= 0; i--)
+    if(movingby != 0)
+      drawer->DrawMove(0, GetVisLineCount(), -movingby);
+    if(movingby < 0)
     {
-      parser->ParseFromLine(itr->line, itr->linenum, 2);
-      itr->RevLine();
+      Iter * itr = itrLine->Duplicate();
+      for(int i = movingby; i <= 0; i++)
+      {
+        parser->ParseFromLine(itr->line, itr->linenum, 2);
+        itr->GoLine();
+      }
+      parser->Execute();
+      delete itr;
     }
-    parser->Execute();
-    delete itr;
+    if(movingby > 0)
+    {
+      Iter * itr = GetLineByNum(GetVisLineCount()-movingby);
+      for(int i = movingby; i >= 0; i--)
+      {
+        parser->ParseFromLine(itr->line, itr->linenum, 2);
+        itr->RevLine();
+      }
+      parser->Execute();
+      delete itr;
+    }
   }
 }
 //---------------------------------------------------------------------------
@@ -545,7 +588,7 @@ void TSQLEdit::UpdateCursor(bool paint)
   int lnum = GetLineNum(itrCursor->line);
   if(lnum >= 0)
   {
-    int x = 2 + LINENUM_WIDTH, y = Y_OFF + LINESIZE*lnum;
+    int x = 2 + drawer->GetLinenumWidth(), y = Y_OFF + drawer->GetLinesize()*lnum;
 
     String str = buffer->GetLineTo(itrCursor, true);
     if(!str.IsEmpty() && *(str.LastChar()) != '\0')           //null string is not an empty string... and null char gets drawn if it is only char in string
@@ -554,10 +597,11 @@ void TSQLEdit::UpdateCursor(bool paint)
     cx = x;
     cy = y;
   }
+  cy = (+itrCursor->linenum-itrLine->linenum)*drawer->GetLinesize();
   drawer->UpdateCursor(cx,cy);
   if(paint)
   {
-  drawer->Paint();
+    drawer->Paint();
   }
 }
 //---------------------------------------------------------------------------
@@ -622,7 +666,6 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
   }
   ProcessMouseClear(false, false);
   itrCursorSecond = tmp;
-  bool lastInvOrder = cursorsInInvOrder;
   cursorsInInvOrder = (y < cy || (y == cy && x < cx));
   if(*itrCursor != *itrCursorSecond)
   {
@@ -635,15 +678,17 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
   if(itrCursorSecond != NULL) parser->ParseFromLine(itrCursorSecond->line, itrCursorSecond->linenum, 2);
 
   mx = x;
-  my = y; 
+  my = y;
+  delete oldIter;
+    parser->Execute();
+    /*
   if(!recmsg)
   {
-    delete oldIter;
     recmsg = true;
     Application->ProcessMessages();
     parser->Execute();
     recmsg = false;
-  }
+  }               */
 }
 //---------------------------------------------------------------------------
 void TSQLEdit::ProcessMouseClear(bool redraw, bool deleteiter)
@@ -718,9 +763,9 @@ Iter * TSQLEdit::XYtoItr(int& x, int& y)
 
                  return itr;    */
 
-  Iter * itr = GetLineByNum(y/LINESIZE, false);
-  int xSum = 2-HBar->Position+LINENUM_WIDTH;
-  y = (itr->line->nextline->next) ? LINESIZE*(y/LINESIZE) : LINESIZE*GetLineNum(itr->line); //to normalize cursor position; to prevent problems with end of file; and to optimize both
+  Iter * itr = GetLineByNum(y/drawer->GetLinesize(), false);
+  int xSum = 2-HBar->Position+drawer->GetLinenumWidth();
+  y = (itr->line->nextline->next) ? drawer->GetLinesize()*(y/drawer->GetLinesize()) : drawer->GetLinesize()*GetLineNum(itr->line); //to normalize cursor position; to prevent problems with end of file; and to optimize both
   String line = buffer->GetLine(itr, true);
   int w = Canvas->TextWidth(line);
 
@@ -762,7 +807,7 @@ Iter * __fastcall TSQLEdit::GetLineByNum(int no)
 //---------------------------------------------------------------------------
 int __fastcall TSQLEdit::GetVisLineCount()
 {
-  return this->Height/LINESIZE;
+  return this->Height/drawer->GetLinesize();
 }
 //---------------------------------------------------------------------------
 #ifdef DEBUG
@@ -804,6 +849,9 @@ void TSQLEdit::DeleteSel(bool allowsync)
   cursorsInInvOrder = false;
   itrCursorSecond = NULL;
 
+  if(linesMoved != 0)
+    needRepaint |= drawer->UpdateLinenumWidth(buffer->GetLineCount());
+
   if(needRepaint) //means that line iterator has been moved as well
   {
     delete itrLine;
@@ -827,16 +875,19 @@ void TSQLEdit::Insert(wchar_t * text)
   itrLine->GoLineStart();
   //itrCursor->linenum += linesMoved;
 
-  ProcessChange(linesMovedFrom, linesMoved, changed);
+  if(linesMoved != 0 && drawer->UpdateLinenumWidth(buffer->GetLineCount()))
+    RepaintWindow(true);
+  else
+    ProcessChange(linesMovedFrom, linesMoved, changed);
 }
 //---------------------------------------------------------------------------
 void TSQLEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed)
 {
-  if(linesMoved != 0)
+  cy += drawer->GetLinesize() *linesMoved;
+  my += drawer->GetLinesize() *linesMoved;
+  dy += drawer->GetLinesize() *linesMoved;
+  if(linesMoved != 0 && abs(linesMoved) < GetVisLineCount())
   {
-    cy += LINESIZE *linesMoved;
-    my += LINESIZE *linesMoved;
-    dy += LINESIZE *linesMoved;
     drawer->DrawMove(linesMovedFrom, GetVisLineCount(), linesMoved);
     if(linesMoved < 0)
     {
@@ -856,6 +907,13 @@ void TSQLEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed
     }
     UpdateVBar();
   }
+  else if(linesMoved != 0)
+  {
+    RepaintWindow(true);
+    UpdateVBar();
+  }
+
+
   if(changed)
   {
     UpdateCursor(false);
@@ -863,13 +921,15 @@ void TSQLEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed
     parser->ParseFromLine(changed, itrLine->linenum+linenum, linenum >= 0 ? 2 : 1);
     parser->ParseFromLine(itrCursor->line, itrCursor->linenum, linenum >= 0 ? 2 : 1);
   }
+    parser->Execute();
+  /*
   if(!recmsg)
   {
     recmsg = true;
     Application->ProcessMessages();
     parser->Execute();
     recmsg = false;
-  }
+  }        */
 }
 //---------------------------------------------------------------------------
 void TSQLEdit::UpdateVBar()
@@ -932,6 +992,8 @@ void __fastcall TSQLEdit::OnVScroll(TObject *Sender, TScrollCode ScrollCode, int
 {
   //if(ScrollCode != scEndScroll && (clock()-lastHBarUpdate)/((double)CLOCKS_PER_SEC)<0.1)    //do not update too often - on big files would be a problem...
   //  return;
+
+/*     //from tests it seems, that rarely happens that there are 2 scroll events in message queue
   if(lastscrollmessage != -1)
   {
     lastscrollmessage = ScrollPos;
@@ -941,42 +1003,36 @@ void __fastcall TSQLEdit::OnVScroll(TObject *Sender, TScrollCode ScrollCode, int
   {
     lastscrollmessage = ScrollPos;
     Application->ProcessMessages();
-  }
+  } */
+  lastscrollmessage = ScrollPos;
 
   lastHBarUpdate = clock();
   if(abs(lastscrollmessage-itrLine->linenum) < GetVisLineCount())
   {
-    Scroll(itrLine->linenum-lastscrollmessage);
+    int scpos = lastscrollmessage;
     lastscrollmessage = -1;
+    Scroll(itrLine->linenum-scpos);
   }
   else
   {
 
-    cy += LINESIZE * (itrLine->linenum - lastscrollmessage);
-    my += LINESIZE * (itrLine->linenum - lastscrollmessage);
-    dy += LINESIZE * (itrLine->linenum - lastscrollmessage);
+    cy += drawer->GetLinesize() * (itrLine->linenum - lastscrollmessage);
+    my += drawer->GetLinesize() * (itrLine->linenum - lastscrollmessage);
+    dy += drawer->GetLinesize() * (itrLine->linenum - lastscrollmessage);
     if(lastscrollmessage < itrLine->linenum)
     {
       if(lastscrollmessage > itrLine->linenum/2 && lastscrollmessage > 100)
-      {
-        while(itrLine->linenum > lastscrollmessage)
-          itrLine->RevLine();
-      }
+          itrLine->GoToLine(lastscrollmessage);
       else
       {
         delete itrLine;
         itrLine = buffer->Begin();
-        while(itrLine->linenum < lastscrollmessage)
-          itrLine->GoLine();
+        itrLine->GoToLine(lastscrollmessage);
       }
     }
     else
     {
-      short last = itrLine->line->parserState.parseid;
-      while(itrLine->linenum < lastscrollmessage)
-      {
-        itrLine->GoLine();
-      }
+        itrLine->GoToLine(lastscrollmessage);
     }
     lastscrollmessage = -1;
     drawer->UpdateCursor(cx, cy);
@@ -988,7 +1044,6 @@ void __fastcall TSQLEdit::OnHScroll(TObject *Sender, TScrollCode ScrollCode, int
 {
   if(ScrollCode == scEndScroll)
   {
-    UpdateHBar();
     RepaintWindow(true);
   }
 }

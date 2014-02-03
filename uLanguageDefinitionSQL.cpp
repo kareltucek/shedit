@@ -22,7 +22,7 @@ using namespace SHEdit;
   TColor * commentback = new TColor((TColor)0xddffdd);
   TColor * string = new TColor(clRed);
   TColor * variable = new TColor(clRed);
-  TColor * reserved = new TColor(clRed);
+  TColor * reserved = new TColor(clBlue);
   TColor * preprocessor = new TColor((TColor)0x55ff55);
 
   SetDefaultColor(foreground);

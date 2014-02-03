@@ -89,6 +89,27 @@ bool Iter::GoLine(bool allowEnd)
   return false;
 }
 //---------------------------------------------------------------------------
+void Iter::GoToLine(int line)
+{
+  while(line < linenum && this->line->prevline != NULL)
+  {
+    this->line = this->line->prevline;
+    linenum--;
+  }
+  while(line > linenum && this->line->nextline != NULL)
+  {
+    this->line = this->line->nextline;
+    linenum++;
+  }
+  if(this->line->nextline == NULL)
+  {
+    this->line = this->line->prevline;
+    linenum--;
+  }
+  GoLineStart();
+
+}
+//---------------------------------------------------------------------------
 bool Iter::GoLineEnd()
 {
   if(line->nextline)
@@ -117,10 +138,10 @@ bool Iter::GoLineStart()
 //---------------------------------------------------------------------------
 bool Iter::RevLine()
 {
-  if(linenum > 0)
-    linenum--;
   if(line->prevline)
   {
+    if(linenum >= 0)
+      linenum--;
     line = line->prevline;
     word = line->next;
     offset = 0;

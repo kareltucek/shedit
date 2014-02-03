@@ -1,4 +1,4 @@
-//define DEBUG
+#define DEBUG
 //define DEBUG_LOGGING
 //define DEBUG_PARSELINELOOP
 //define DEBUG_CURSOR
@@ -9,17 +9,23 @@
 //define FULL_WIDTH_PAINT
 #define TAB_WIDTH 2
 #define DRAW_POS
-#define DRAW_LINENUM
-#define LINENUM_WIDTH 50
 #define ALLOW_TABS
 
-#define PARSEINADVANCE 1000
+//define DRAW_LINENUM
+//define LINENUM_WIDTH 50
 
+#define MARGINS 50  //for horizontal adjustment
+
+#define PARSEINADVANCE 100000
+#define PARSEINONEGO 100
+
+
+#define DEFONTSIZE 8
 
 //define FONTSIZE 13
 //define LINESIZE 20
-#define FONTSIZE 8
-#define LINESIZE 14
+//define FONTSIZE 8
+//define LINESIZE 14
 #define WAIT_TIMEOUT_TIME INFINITE
 #define SCROLL_STEP 3
 #define Y_OFF 0

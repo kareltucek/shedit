@@ -72,7 +72,10 @@ namespace SHEdit
       int mx, my; //mouse move  pos
       int cursorLeftOffset;
       int scrolldelta; //used by ms to treat smooth-scroll wheels...
+      int scrolldeltafontsize; //used by ms to treat smooth-scroll wheels...
       int lastscrollmessage;
+
+      int HPos;
 
       bool tabonce;
 
@@ -107,6 +110,7 @@ namespace SHEdit
       void Write(AnsiString message);
 #endif
       friend class Drawer;
+      friend class Parser;
 
       TMemo * dbgLog;
       int __fastcall GetVisLineCount();
