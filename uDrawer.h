@@ -39,6 +39,12 @@ namespace SHEdit
       bool con;   //cursorOn
       TColor cursorBGcolor;
 
+      int fontsize;
+      int linesize;
+      int linenumwidth;
+
+      bool linenumsenabled;
+
       int debugtasks;
       int debugcount;
 
@@ -61,8 +67,15 @@ void __fastcall DrawEof(short linenum);
 void __fastcall UpdateCursor(int x, int y);
 void __fastcall DrawResize(int w, int h);
 void __fastcall DrawEndl(short linenum);
-void __fastcall DrawLinenum();
+void __fastcall DrawLinenum(int from);
 void __fastcall Paint();
+
+void __fastcall SetFontsize(int size);
+bool __fastcall UpdateLinenumWidth(int count);
+int __fastcall GetLinenumWidth();
+int __fastcall GetFontsize();
+int __fastcall GetLinesize();
+void __fastcall SetLinenumsEnabled(bool enable);
 
     public:
       friend class TSQLEdit;

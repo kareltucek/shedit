@@ -103,10 +103,17 @@ namespace SHEdit
       void Insert(wchar_t * text);
       void ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed);
 
+      int __fastcall GetLineNum(NSpan * line);
+      bool __fastcall GetLineFirst(NSpan * line);
+      Iter * __fastcall GetLineByNum(int num, bool allowEnd);
+      Iter * __fastcall GetLineByNum(int num);
+
     public:
 #ifdef DEBUG
       void __fastcall dbgIter();
       void __fastcall Log(String str);
+      void CheckIntegrity();
+      void CheckIterIntegrity(Iter * itr);
       void Write(AnsiString message);
 #endif
       friend class Drawer;
@@ -114,10 +121,8 @@ namespace SHEdit
 
       TMemo * dbgLog;
       int __fastcall GetVisLineCount();
-      int __fastcall GetLineNum(NSpan * line);
-      bool __fastcall GetLineFirst(NSpan * line);
-      Iter * __fastcall GetLineByNum(int num, bool allowEnd);
-      Iter * __fastcall GetLineByNum(int num);
+      int __fastcall GetLineCount();
+
       int __fastcall GetActLine();
 
       Iter * GetCursor();

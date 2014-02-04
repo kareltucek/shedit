@@ -11,6 +11,9 @@
 #define DRAW_POS
 #define ALLOW_TABS
 
+#define KEEP_VIS_TOP 2
+#define KEEP_VIS_BOTTOM 4
+
 //define DRAW_LINENUM
 //define LINENUM_WIDTH 50
 

@@ -57,7 +57,7 @@ namespace SHEdit
         ParseTask(NSpan * line, int linenum);
         ParseTask();
         NSpan * line;
-        short linenum;
+        int linenum;
         bool operator==(const ParseTask & pt)const;
         bool operator<(const ParseTask & pt)const;
       };
@@ -78,6 +78,10 @@ namespace SHEdit
       bool newline;
       short linenum;
       short currentparseid;
+
+      int dbgscb;
+      bool onidleset;
+      TIdleEvent oldidle;
 
       int upperbound;
       /*
@@ -110,13 +114,16 @@ namespace SHEdit
 #ifdef DEBUG
       bool dbgLogging;
 #endif
+      friend class TSQLEdit;
       bool processAll;
       static void MarkupPush(Node ** at, Format* format);
       static void MarkupPop(Node ** at, Format * format);
       static bool MarkupContains(Node ** at, Format * format);
       static bool MarkupEquals(Node * at, Node * bt);
 
-      virtual void __fastcall Execute(void);
+      void __fastcall OnIdle(TObject * Sender, bool& Done);
+
+      bool __fastcall Execute(void);
 
       void InvalidateAll();
 

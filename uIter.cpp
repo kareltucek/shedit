@@ -35,6 +35,8 @@ Iter::Iter(NSpan * line, int linenum, int pos, Buffer * buffer)
   this->linenum = linenum;
   this->line = line;
   this->buffer = buffer;
+  if(buffer != NULL)
+    buffer->Register(this);
 
   UpdatePos();
   Update();

@@ -901,6 +901,10 @@ void Buffer::ItersTranslateInsert(int linenum, int pos, int bylines, int topos, 
 {
   for (std::list<Iter*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
   {
+#ifdef DEBUG
+    int size = ItrList.size();
+    Iter *debug = *itr;
+#endif
     if((*itr)->linenum > linenum ||((*itr)->linenum == linenum && (*itr)->pos >= pos))
     {
       (*itr)->linenum += bylines;
@@ -922,23 +926,30 @@ void Buffer::ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, i
 {
   for (std::list<Iter*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
   {
-    Iter *dbg = (*itr);
+#ifdef DEBUG
+    int size = ItrList.size();
+    Iter *debug = *itr;
+#endif
     if((*itr)->linenum > fromlinenum || ((*itr)->linenum == fromlinenum && (*itr)->pos >= frompos))
     {
-      if((*itr)->linenum < tolinenum || ((*itr)->linenum == tolinenum && (*itr)->pos < topos))
+      if((*itr)->linenum < tolinenum || ((*itr)->linenum == tolinenum && (*itr)->pos <= topos))
       {
         (*itr)->line = toline;
         (*itr)->linenum = fromlinenum;
         (*itr)->pos = frompos;
       }
-      else if((*itr)->linenum == tolinenum && (*itr)->pos >= topos)
+      else if((*itr)->linenum == tolinenum && (*itr)->pos > topos)
       {
         (*itr)->line = toline;
         (*itr)->linenum = fromlinenum;
-        (*itr)->pos += frompos-topos;
+        (*itr)->pos = frompos+(*itr)->pos-topos;
+      }
+      else if((*itr)->linenum > tolinenum)
+      {
+        (*itr)->linenum += fromlinenum-tolinenum;
       }
     }
-    if((*itr)->linenum >= fromlinenum && (*itr)->linenum <= tolinenum)
+    if((*itr)->linenum == fromlinenum)
     {
       (*itr)->UpdatePos();
       (*itr)->Update();

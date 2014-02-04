@@ -167,6 +167,13 @@ LRESULT CALLBACK TSQLEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
   {
     switch(wParam)
     {
+    case VK_F10:
+          {
+            CheckIntegrity();
+            CheckIterIntegrity(itrCursor);
+          }
+          return 1;
+          break;
       case VK_LEFT:
         itrCursor->RevChar();
         AdjustLine(true);
@@ -193,7 +200,7 @@ LRESULT CALLBACK TSQLEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
         break;
       case VK_TAB:
         tabonce = !tabonce;
-        if(tabonce) //nessage is apparently called twice
+        if(tabonce || true) //nessage is apparently called twice  //ehm sometimes
         {
           wchar_t * str = new wchar_t[2];
           str[0] = '\t';
@@ -318,20 +325,11 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
           cursorLeftOffset = itrCursor->GetLeftOffset();
           AdjustLine(true);
           UpdateCursor(true);
-#ifdef DEBUG
-          {
-            Write("deleted");
-            int empty = 0;
-            int eno = buffer->CheckIntegrity(empty);
-            if(empty)
-              Log(String("IntegrityCheck found ")+String(empty)+String(" null strings"));
-            if(errno)
-              Log(String("IntegrityCheck: ")+String(eno));
-          }
-#endif
+          Log("deleting");
           break;
         case VK_F2:
           LoadFile(L"test.txt");
+          Log("loading new file");
           return;
         case VK_F5:
           UpdateCursor(false);
@@ -435,13 +433,24 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
             Iter * itr;
             Iter * itrbegin;
             if (virtkey & 0x8000)
+            {
               itr = buffer->Redo(itrbegin);
+              Log("redo");
+            }
             else
+            {
               itr = buffer->Undo(itrbegin);
+              Log("undo");
+            }
             if(itr != NULL)
             {
               delete itrCursor;
               itrCursor = itr;
+              if(buffer->GetLineCount() < GetVisLineCount())
+              {
+                delete itrLine;
+                itrLine = buffer->Begin();
+              }
               AdjustLine(false);
               if(itrbegin != NULL)
               {
@@ -482,7 +491,10 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
           {
             str[0] = '\n';
             linesMovedFrom = GetLineNum(changed)+1;
+            if(itrLine->line->prevline == NULL)    //prevent line iter from being moved by insertion
+              itrLine->pos = -1;
           }
+          Log(String("inserting ")+String(str));
           //linesMoved = buffer->Insert(itrCursor, str);
           AdjustLine(true);
           Insert(str);
@@ -504,9 +516,9 @@ void TSQLEdit::AdjustLine(bool paint)
   bool needsHAdjustment = ((cx-HBar->Position) < drawer->GetLinenumWidth()+MARGINS && HBar->Position != 0) || (cx-HBar->Position) > this->Width - MARGINS;
 
   int movingby = 0;
-  if(l >= 0 && l <= 2 && itrLine->line->prevline != NULL)
+  if(l >= 0 && l <= KEEP_VIS_TOP && itrLine->line->prevline != NULL)
   {
-    for(int i = 0; i < 2 - l; i++)
+    for(int i = 0; i < KEEP_VIS_TOP - l; i++)
     {
       if(itrLine->line->prevline)
       {
@@ -515,9 +527,9 @@ void TSQLEdit::AdjustLine(bool paint)
       }
     }
   }
-  else if(l >= GetVisLineCount()-4)
+  else if(l >= GetVisLineCount()-KEEP_VIS_BOTTOM)
   {
-    for(int i = l; i > GetVisLineCount() - 4; i--)
+    for(int i = l; i > GetVisLineCount() - KEEP_VIS_BOTTOM; i--)
     {
       if(itrLine->line->nextline)
       {
@@ -529,9 +541,17 @@ void TSQLEdit::AdjustLine(bool paint)
   else if(l == -1)
   {
     delete itrLine;
-    itrLine = itrCursor->Duplicate();
-    for(int i = 0; i < 2; i++)
-      itrLine->RevLine();
+    if(buffer->GetLineCount() <= GetVisLineCount())
+    {
+      itrLine = buffer->Begin();
+    }
+    else
+    {
+      itrLine = itrCursor->Duplicate();
+      itrLine->GoLineStart();
+      for(int i = 0; i < KEEP_VIS_TOP; i++)
+        itrLine->RevLine();
+    }
     needsFullRepaint = true;
   }
   //UpdateCursor(paint);
@@ -581,6 +601,49 @@ void TSQLEdit::AdjustLine(bool paint)
     }
   }
 }
+//---------------------------------------------------------------------------
+#ifdef DEBUG
+void TSQLEdit::CheckIntegrity()
+{
+  int empty = 0;
+  int eno = buffer->CheckIntegrity(empty);
+  if(empty)
+    Log(String("IntegrityCheck found ")+String(empty)+String(" null strings"));
+  if(errno)
+    Log(String("IntegrityCheck: ")+String(eno));
+}
+//---------------------------------------------------------------------------
+void TSQLEdit::CheckIterIntegrity(Iter * itr)
+{
+  Span * sp = itr->word->prev;
+  while(sp->string == NULL ||*(sp->string) != '\n')
+    sp = sp->prev;
+  if((Span*)itr->line != sp)
+    Log("IterIntegrityCheck - iter on bad line");
+  Iter * tmp = buffer->Begin();
+  NSpan * np = itr->line;
+  NSpan * dt = tmp->line;
+  int j = 1;
+  while(np->prevline != NULL)
+  {
+    if(dt->nextline == NULL)
+    {
+      Log("IterIntegrityCheck - iter out of buffer - null in forward seek");
+      break;
+    }
+    j++;
+    np = np->prevline;
+    dt = dt->nextline;
+  }
+  if(np != tmp->line)
+    Log("IterIntegrityCheck - backward seek fail");
+  if(dt != itr->line)
+    Log("IterIntegrityCheck - forward seek fail");
+  if(j != itr->linenum)
+    Log("IterIntegrityCheck - wrong linenum");
+  delete tmp;
+}
+#endif DEBUG
 //---------------------------------------------------------------------------
 void TSQLEdit::UpdateCursor(bool paint)
 {
@@ -810,6 +873,11 @@ int __fastcall TSQLEdit::GetVisLineCount()
   return this->Height/drawer->GetLinesize();
 }
 //---------------------------------------------------------------------------
+int __fastcall TSQLEdit::GetLineCount()
+{
+  return buffer->GetLineCount();
+}
+//---------------------------------------------------------------------------
 #ifdef DEBUG
 void __fastcall TSQLEdit::dbgIter()
 {
@@ -892,7 +960,8 @@ void TSQLEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed
     if(linesMoved < 0)
     {
       //scroll down (move image up)
-      Iter * it = GetLineByNum(GetVisLineCount()+linesMoved-1);
+      int barcorrection = HBar->Visible ? HBar->Height/drawer->GetLinesize()+1 : 1;
+      Iter * it = GetLineByNum(GetVisLineCount()+linesMoved-barcorrection);
       for(int i = linesMoved-1; i < 0 && it->line->nextline; i++, it->GoLine())
         parser->ParseFromLine(it->line, it->linenum, 2);
       delete it;

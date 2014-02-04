@@ -55,6 +55,8 @@ namespace SHEdit
       void UpdatePos();
       void RecalcPos();
 
+      void GoToLine(int line);
+
       bool operator==(const Iter& itr);
       bool operator!=(const Iter& itr);
       wchar_t& operator++();
