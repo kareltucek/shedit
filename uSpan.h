@@ -4,6 +4,7 @@
 #define uSpanH
 
 #include "uParser.h"
+#include "uStack.h"
 #include <wchar.h>
 #include <list>
 
@@ -18,13 +19,14 @@ namespace SHEdit
     Span(Iter * After);
     Span(Span * afterword);
     Span();
+    ~Span();
 
     Span* prev;
     Span* next;
 
     wchar_t* string;
     short length;
-    Mark* mark;
+    Stack<Mark> marks;
   };
   //---------------------------------------------------------------------------
   struct NSpan : Span
@@ -32,21 +34,22 @@ namespace SHEdit
     NSpan(Span* afterword, NSpan* afterline);
     NSpan(Iter * After);
     NSpan();
+    ~NSpan();
 
     NSpan * nextline;
     NSpan * prevline;
 
     /*
-    std::list<Iter*> ItrList;
-    void Register(Iter* itr);
-    void Unregister(Iter* itr);
+       std::list<Iter*> ItrList;
+       void Register(Iter* itr);
+       void Unregister(Iter* itr);
 
-    void Invalidate(Span * from);
-    void ItersSplit(Span * from, Span * toFirst, Span * toSec, int byPos, bool custoff = false, int tooffset = 0);
-    void ItersTranslate(Span * from, Span * to, int byPos, int inc = 1);
-    void ItersTransmitAll(NSpan * to);
-    void ItersTransmit(Span * from, NSpan * to);
-    void ItersMove(Span * from, NSpan * to, Span * toword, int offset);  */
+       void Invalidate(Span * from);
+       void ItersSplit(Span * from, Span * toFirst, Span * toSec, int byPos, bool custoff = false, int tooffset = 0);
+       void ItersTranslate(Span * from, Span * to, int byPos, int inc = 1);
+       void ItersTransmitAll(NSpan * to);
+       void ItersTransmit(Span * from, NSpan * to);
+       void ItersMove(Span * from, NSpan * to, Span * toword, int offset);  */
     Parser::ParserState parserState;
 
     //int GetPos();
@@ -70,7 +73,7 @@ namespace SHEdit
 
     int linecount;
   };
-//---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   struct Action
   {
     enum ActionType{deletion, insertion};
@@ -79,12 +82,12 @@ namespace SHEdit
     ~Action();
 
     ActionType type;
-    int fromlinenum;
-    int tolinenum;
-    int frompos;
-    int topos;
+      int fromlinenum;
+      int tolinenum;
+      int frompos;
+      int topos;
   };
-//---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   struct UndoTask
   {
     UndoTask(Action * action, Range * range);
@@ -93,7 +96,7 @@ namespace SHEdit
     Action * action;
     Range * range;
   };
-
+  
 };
 //---------------------------------------------------------------------------
 #endif

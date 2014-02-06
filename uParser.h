@@ -10,7 +10,7 @@
 #include <uLanguageDefinition.h>
 #include <windows.h>
 #include <queue>
-#include "config"
+#include "config.h"
 
 namespace SHEdit
 {
@@ -32,24 +32,25 @@ namespace SHEdit
   class Parser
   {
     private:
-      struct Node
+      /*struct Node
       {
         Node(Format * format, Node * node);
         Format * format;
         Node * node;
-      };
+      };*/
 
     public:
       struct ParserState
       {
         ParserState();
+        ~ParserState();
         bool operator==(const ParserState& state);
         bool operator!=(const ParserState& state);
         ParserState& operator=(const ParserState& p);
 
         short statemask;
         short parseid;
-        Node * markupStack;
+        Stack<Format*> markupStack;
       };
 
       struct ParseTask
@@ -69,12 +70,6 @@ namespace SHEdit
       TSQLEdit * parent;
       Drawer * drawer;
 
-      HANDLE bufferChanged;
-      HANDLE bufferMutex;
-      HANDLE drawerQueueMutex;
-      HANDLE drawerCanvasMutex;
-      HANDLE drawerTaskPending;
-
       bool newline;
       short linenum;
       short currentparseid;
@@ -93,7 +88,12 @@ namespace SHEdit
          bool actMarked; */
       String actText;
       FontStyle actFormat;
+      FontStyle actMarkupCombined;
+      FontStyle actMarkup;
+      FontStyle actIMarkup;
       int recurse;
+
+      void ReconstructMarkup();
 
       void Flush();
       void FlushAll();
@@ -115,11 +115,6 @@ namespace SHEdit
       bool dbgLogging;
 #endif
       friend class TSQLEdit;
-      bool processAll;
-      static void MarkupPush(Node ** at, Format* format);
-      static void MarkupPop(Node ** at, Format * format);
-      static bool MarkupContains(Node ** at, Format * format);
-      static bool MarkupEquals(Node * at, Node * bt);
 
       void __fastcall OnIdle(TObject * Sender, bool& Done);
 
@@ -127,12 +122,13 @@ namespace SHEdit
 
       void InvalidateAll();
 
-      __fastcall Parser(TSQLEdit * parent, Drawer * drawer, HANDLE bufferChanged, HANDLE bufferMutex, HANDLE drawerCanvasMutex, HANDLE drawerQueueMutex, HANDLE drawerTaskPending);
+      __fastcall Parser(TSQLEdit * parent, Drawer * drawer);
       virtual __fastcall ~Parser();
 
       void SetLangDef(LanguageDefinition * langdef);
 
       void ParseFromLine(NSpan * line, int linenum, int prior);
+      void ParseFromToLine(NSpan * line, int linenum, NSpan * toline, int prior);
   };
 }
 //---------------------------------------------------------------------------

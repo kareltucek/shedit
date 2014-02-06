@@ -6,7 +6,7 @@
 #include <windows.h>
 #include <vcl.h>
 #include <list>
-#include "config"
+#include "config.h"
 #include "uFormat.h"
 
 namespace SHEdit
@@ -42,6 +42,7 @@ namespace SHEdit
       int fontsize;
       int linesize;
       int linenumwidth;
+      int lastlinenumcount; //to be able to update lw automatically
 
       bool linenumsenabled;
 
@@ -57,25 +58,26 @@ namespace SHEdit
 #endif
     public:
 
-      __fastcall Drawer(TCanvas * Canvas, TSQLEdit * parent, HANDLE drawerCanvasMutex, HANDLE drawerQueueMutex, HANDLE drawerTaskPending) ;
+      __fastcall Drawer(TCanvas * Canvas, TSQLEdit * parent) ;
       virtual __fastcall ~Drawer();
 
-            void DrawCursor();
-void __fastcall DrawText(String text, bool newline, short linenum, FontStyle format);
-void __fastcall DrawMove(int from, int to, int by);
-void __fastcall DrawEof(short linenum);
-void __fastcall UpdateCursor(int x, int y);
-void __fastcall DrawResize(int w, int h);
-void __fastcall DrawEndl(short linenum);
-void __fastcall DrawLinenum(int from);
-void __fastcall Paint();
+      void DrawCursor();
+      void __fastcall DrawText(String text, bool newline, short linenum, FontStyle format);
+      void __fastcall DrawMove(int from, int to, int by);
+      void __fastcall DrawEof(short linenum);
+      void __fastcall UpdateCursor(int x, int y);
+      void __fastcall DrawResize(int w, int h);
+      void __fastcall DrawEndl(short linenum);
+      void __fastcall DrawLinenum(int from);
+      void __fastcall Paint();
 
-void __fastcall SetFontsize(int size);
-bool __fastcall UpdateLinenumWidth(int count);
-int __fastcall GetLinenumWidth();
-int __fastcall GetFontsize();
-int __fastcall GetLinesize();
-void __fastcall SetLinenumsEnabled(bool enable);
+      void __fastcall SetFontsize(int size);
+      bool __fastcall UpdateLinenumWidth(int count);
+      int __fastcall GetLinenumWidth();
+      int __fastcall GetFontsize();
+      int __fastcall GetLinesize();
+      void __fastcall SetLinenumsEnabled(bool enable);
+      bool __fastcall GetLinenumsEnabled();
 
     public:
       friend class TSQLEdit;

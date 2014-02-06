@@ -86,7 +86,6 @@ TSQLEdit * SQLEditFocused; //callback musi jit na statickou metodu...
   scrolldelta = 0;
   scrolldeltafontsize = 0;
   cursorLeftOffset = 0;
-  lastscrollmessage = -1;
 
   recmsg = false;
 
@@ -95,19 +94,8 @@ TSQLEdit * SQLEditFocused; //callback musi jit na statickou metodu...
 
   clipboard = Clipboard();
 
-  bufferChanged = CreateEvent(NULL, true, false, NULL);
-  bufferMutex = CreateMutex(NULL, false, NULL);
-  drawerCanvasMutex = CreateMutex(NULL, false, NULL);
-  drawerQueueMutex = CreateMutex(NULL, false, NULL);
-  drawerTaskPending = CreateEvent(NULL, true, false, NULL);
-#ifdef DEBUG
-  DWORD tst;
-  if(!GetHandleInformation(bufferMutex, &tst))
-    Write(String("gethandleinfo error ")+String(GetLastError()));
-#endif
-
-  drawer = new Drawer(this->Canvas, this, drawerCanvasMutex, drawerQueueMutex, drawerTaskPending) ;
-  parser = new Parser(this, drawer, bufferChanged, bufferMutex, drawerCanvasMutex, drawerQueueMutex, drawerTaskPending);
+  drawer = new Drawer(this->Canvas, this);
+  parser = new Parser(this, drawer);
   parser->SetLangDef(new LanguageDefinitionSQL());
 
   if(!ComponentState.Contains(csDesigning))
@@ -167,13 +155,15 @@ LRESULT CALLBACK TSQLEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
   {
     switch(wParam)
     {
-    case VK_F10:
-          {
-            CheckIntegrity();
-            CheckIterIntegrity(itrCursor);
-          }
-          return 1;
-          break;
+#ifdef DEBUG
+      case VK_F10:
+        {
+          CheckIntegrity();
+          CheckIterIntegrity(itrCursor);
+        }
+        return 1;
+        break;
+#endif
       case VK_LEFT:
         itrCursor->RevChar();
         AdjustLine(true);
@@ -199,8 +189,7 @@ LRESULT CALLBACK TSQLEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
         trap = true;
         break;
       case VK_TAB:
-        tabonce = !tabonce;
-        if(tabonce || true) //nessage is apparently called twice  //ehm sometimes
+        //if(tabonce || true) //nessage is apparently called twice  //ehm sometimes
         {
           wchar_t * str = new wchar_t[2];
           str[0] = '\t';
@@ -211,8 +200,6 @@ LRESULT CALLBACK TSQLEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
           trap = true;
           
         }
-        else
-          return 1;
         break;
     }
   }
@@ -300,6 +287,13 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
       }
       return;
     case WM_KEYDOWN:
+      if(FOnKeyPress != NULL)
+      {
+        bool ret = false;
+          FOnKeyPress(this, Message.WParam, ret);
+          if(ret)
+            break;
+      }
       switch(Message.WParam)
       {
         case VK_DELETE:
@@ -325,11 +319,9 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
           cursorLeftOffset = itrCursor->GetLeftOffset();
           AdjustLine(true);
           UpdateCursor(true);
-          Log("deleting");
           break;
         case VK_F2:
-          LoadFile(L"test.txt");
-          Log("loading new file");
+          LoadFile("test.txt");
           return;
         case VK_F5:
           UpdateCursor(false);
@@ -435,28 +427,26 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
             if (virtkey & 0x8000)
             {
               itr = buffer->Redo(itrbegin);
-              Log("redo");
             }
             else
             {
               itr = buffer->Undo(itrbegin);
-              Log("undo");
             }
             if(itr != NULL)
             {
               delete itrCursor;
-              itrCursor = itr;
-              if(buffer->GetLineCount() < GetVisLineCount())
-              {
-                delete itrLine;
-                itrLine = buffer->Begin();
-              }
+                itrCursor = itr;
+                if(buffer->GetLineCount() < GetVisLineCount())
+                {
+                  delete itrLine;
+                    itrLine = buffer->Begin();
+                }
               AdjustLine(false);
-              if(itrbegin != NULL)
-              {
-                parser->ParseFromLine(itrbegin->line, itrbegin->linenum, 0);
-                delete itrbegin;
-              }
+                if(itrbegin != NULL)
+                {
+                  parser->ParseFromLine(itrbegin->line, itrbegin->linenum, 0);
+                    delete itrbegin;
+                }
             }
             UpdateVBar();
             UpdateCursor(false);
@@ -494,7 +484,6 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
             if(itrLine->line->prevline == NULL)    //prevent line iter from being moved by insertion
               itrLine->pos = -1;
           }
-          Log(String("inserting ")+String(str));
           //linesMoved = buffer->Insert(itrCursor, str);
           AdjustLine(true);
           Insert(str);
@@ -562,14 +551,14 @@ void TSQLEdit::AdjustLine(bool paint)
     if(needsHAdjustment)
     {
       int hpos = 0;
-      if((cx-HBar->Position) < drawer->GetLinenumWidth()+MARGINS)
-        hpos = cx-drawer->GetLinenumWidth()-MARGINS;
-      else
-        hpos = cx - this->Width + MARGINS;
-      if(hpos < 0)
-        HBar->Position = 0;
-      else
-        HBar->Position = hpos;
+        if((cx-HBar->Position) < drawer->GetLinenumWidth()+MARGINS)
+          hpos = cx-drawer->GetLinenumWidth()-MARGINS;
+        else
+          hpos = cx - this->Width + MARGINS;
+            if(hpos < 0)
+              HBar->Position = 0;
+            else
+              HBar->Position = hpos;
     }
     RepaintWindow(true);
   }
@@ -743,15 +732,15 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
   mx = x;
   my = y;
   delete oldIter;
-    parser->Execute();
-    /*
-  if(!recmsg)
-  {
-    recmsg = true;
-    Application->ProcessMessages();
-    parser->Execute();
-    recmsg = false;
-  }               */
+  parser->Execute();
+  /*
+     if(!recmsg)
+     {
+     recmsg = true;
+     Application->ProcessMessages();
+     parser->Execute();
+     recmsg = false;
+     }               */
 }
 //---------------------------------------------------------------------------
 void TSQLEdit::ProcessMouseClear(bool redraw, bool deleteiter)
@@ -937,6 +926,9 @@ void TSQLEdit::Insert(wchar_t * text)
 {
   if(itrCursorSecond)
     DeleteSel(false);
+
+  parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 0);
+
   NSpan* changed = itrCursor->line;
   int linesMovedFrom = GetLineNum(itrCursor->line)+1;
   int linesMoved = buffer->Insert(itrCursor, text);
@@ -979,7 +971,7 @@ void TSQLEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed
   else if(linesMoved != 0)
   {
     RepaintWindow(true);
-    UpdateVBar();
+      UpdateVBar();
   }
 
 
@@ -990,15 +982,15 @@ void TSQLEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed
     parser->ParseFromLine(changed, itrLine->linenum+linenum, linenum >= 0 ? 2 : 1);
     parser->ParseFromLine(itrCursor->line, itrCursor->linenum, linenum >= 0 ? 2 : 1);
   }
-    parser->Execute();
+  parser->Execute();
   /*
-  if(!recmsg)
-  {
-    recmsg = true;
-    Application->ProcessMessages();
-    parser->Execute();
-    recmsg = false;
-  }        */
+     if(!recmsg)
+     {
+     recmsg = true;
+     Application->ProcessMessages();
+     parser->Execute();
+     recmsg = false;
+     }        */
 }
 //---------------------------------------------------------------------------
 void TSQLEdit::UpdateVBar()
@@ -1062,48 +1054,44 @@ void __fastcall TSQLEdit::OnVScroll(TObject *Sender, TScrollCode ScrollCode, int
   //if(ScrollCode != scEndScroll && (clock()-lastHBarUpdate)/((double)CLOCKS_PER_SEC)<0.1)    //do not update too often - on big files would be a problem...
   //  return;
 
-/*     //from tests it seems, that rarely happens that there are 2 scroll events in message queue
-  if(lastscrollmessage != -1)
-  {
-    lastscrollmessage = ScrollPos;
-    return;
-  }
-  else
-  {
-    lastscrollmessage = ScrollPos;
-    Application->ProcessMessages();
-  } */
-  lastscrollmessage = ScrollPos;
+  /*     //from tests it seems, that rarely happens that there are 2 scroll events in message queue
+         if(lastscrollmessage != -1)
+         {
+         lastscrollmessage = ScrollPos;
+         return;
+         }
+         else
+         {
+         lastscrollmessage = ScrollPos;
+         Application->ProcessMessages();
+         } */
 
-  lastHBarUpdate = clock();
-  if(abs(lastscrollmessage-itrLine->linenum) < GetVisLineCount())
+  if(abs(ScrollPos-itrLine->linenum) < GetVisLineCount())
   {
-    int scpos = lastscrollmessage;
-    lastscrollmessage = -1;
-    Scroll(itrLine->linenum-scpos);
+    Scroll(itrLine->linenum-ScrollPos);
   }
   else
   {
 
-    cy += drawer->GetLinesize() * (itrLine->linenum - lastscrollmessage);
-    my += drawer->GetLinesize() * (itrLine->linenum - lastscrollmessage);
-    dy += drawer->GetLinesize() * (itrLine->linenum - lastscrollmessage);
-    if(lastscrollmessage < itrLine->linenum)
+    cy += drawer->GetLinesize() * (itrLine->linenum - ScrollPos);
+    my += drawer->GetLinesize() * (itrLine->linenum - ScrollPos);
+    dy += drawer->GetLinesize() * (itrLine->linenum - ScrollPos);
+    if(ScrollPos < itrLine->linenum)
     {
-      if(lastscrollmessage > itrLine->linenum/2 && lastscrollmessage > 100)
-          itrLine->GoToLine(lastscrollmessage);
+      if(ScrollPos > itrLine->linenum/2 && ScrollPos > 100)
+        itrLine->GoToLine(ScrollPos);
       else
       {
         delete itrLine;
         itrLine = buffer->Begin();
-        itrLine->GoToLine(lastscrollmessage);
+        itrLine->GoToLine(ScrollPos);
       }
     }
     else
     {
-        itrLine->GoToLine(lastscrollmessage);
+      itrLine->GoToLine(ScrollPos);
     }
-    lastscrollmessage = -1;
+    ScrollPos = -1;
     drawer->UpdateCursor(cx, cy);
     RepaintWindow(true);
   }
@@ -1166,7 +1154,7 @@ void TSQLEdit::SelectAll()
   parser->Execute();
 }
 //---------------------------------------------------------------------------
-void TSQLEdit::LoadFile(wchar_t * filename)
+void TSQLEdit::LoadFile(char * filename)
 {
   buffer->SimpleLoadFile(filename);
   delete itrCursor;
@@ -1178,6 +1166,26 @@ void TSQLEdit::LoadFile(wchar_t * filename)
   UpdateCursor(false);
   UpdateVBar();
   RepaintWindow(true);
+}
+//---------------------------------------------------------------------------
+void __fastcall TSQLEdit::SetFontsize(int size)
+{
+  drawer->SetFontsize(size);
+}
+//---------------------------------------------------------------------------
+int __fastcall TSQLEdit::GetFontsize()
+{
+  return drawer->GetFontsize();
+}
+//---------------------------------------------------------------------------
+void __fastcall TSQLEdit::SetLinenumsEnabled(bool enabled)
+{
+  drawer->SetLinenumsEnabled(enabled);
+}
+//---------------------------------------------------------------------------
+bool __fastcall TSQLEdit::GetLinenumsEnabled()
+{
+  return drawer->GetLinenumsEnabled();
 }
 //---------------------------------------------------------------------------
 

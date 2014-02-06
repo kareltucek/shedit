@@ -6,20 +6,20 @@
 
 #include "uIter.h"
 #include "uSpan.h"
-#include "uMark.h"
+//#include "uMark.h"
 #include "uFormat.h"
 #include "uBuffer.h"
 
 using namespace SHEdit;
 
 #pragma package(smart_init)
+
 //---------------------------------------------------------------------------
 Iter::Iter(NSpan * line)
+  : IPos(NULL, line, -1, 0)
 {
+  this->type = IPType::iptIter;
   this->offset = 0;
-  this->pos = 0;
-  this->buffer = NULL;
-  this->linenum = -1;
   this->word = (Span*)line;
   if(line->prevline)
     this->line = line->prevline;
@@ -30,37 +30,26 @@ Iter::Iter(NSpan * line)
 }
 //---------------------------------------------------------------------------
 Iter::Iter(NSpan * line, int linenum, int pos, Buffer * buffer)
+  : IPos(buffer, line, linenum, pos)
 {
-  this->pos = pos;
-  this->linenum = linenum;
-  this->line = line;
-  this->buffer = buffer;
-  if(buffer != NULL)
-    buffer->Register(this);
-
+  this->type = IPType::iptIter;
   UpdatePos();
   Update();
 }
 //---------------------------------------------------------------------------
 Iter::Iter(int offset, Span * word, NSpan * line, Buffer * buffer, int linenum)
+  : IPos(buffer, line, linenum, 0)
 {
+  this->type = IPType::iptIter;
   this->offset = offset;
   this->word = word;
-  this->line = line;
-  this->buffer = buffer;
-  if(buffer != NULL)
-    buffer->Register(this);
-  this->linenum = line->prevline ? linenum : 1;
 
   RecalcPos();
-
   this->Update();
 }
 //---------------------------------------------------------------------------
 Iter::~Iter()
 {
-  if(buffer != NULL)
-    buffer->Unregister(this);
 }
 //---------------------------------------------------------------------------
 bool Iter::GoLine(bool allowEnd)
@@ -106,7 +95,7 @@ void Iter::GoToLine(int line)
   if(this->line->nextline == NULL)
   {
     this->line = this->line->prevline;
-    linenum--;
+      linenum--;
   }
   GoLineStart();
 
@@ -274,22 +263,14 @@ wchar_t& Iter::operator--()
   return *ptr;
 }
 //---------------------------------------------------------------------------
-void Iter::MarkupBegin( SHEdit::Format * format)
+SHEdit::Mark* Iter::MarkupBegin( SHEdit::Format * format)
 {
-  MarkupBegin(&(word->mark), offset, true, format);
+  format->Add( word->marks.Push(Mark(format, true, offset));
 }
 //---------------------------------------------------------------------------
-void Iter::MarkupEnd( SHEdit::Format * format)
+SHEdit::Mark* Iter::MarkupEnd( SHEdit::Format * format)
 {
-  MarkupBegin(&(word->mark), offset, false, format);
-}
-//---------------------------------------------------------------------------
-void Iter::MarkupBegin(SHEdit::Mark ** at, int pos, bool begin, SHEdit::Format * format)
-{
-  *at = new Mark(format, begin, pos, *at, at);
-  if((*at)->mark)
-    (*at)->mark->parent = &((*at)->mark);
-  format->Add(*at);
+  format->Add( word->marks.Push(Mark(format, true, offset));
 }
 //---------------------------------------------------------------------------
 int Iter::GetLeftOffset()
@@ -360,22 +341,16 @@ void Iter::GoBy(int chars)
 //---------------------------------------------------------------------------
 void Iter::MarkupRem(SHEdit::Format * format)
 {
-  if(word->mark != NULL)
+  Stack<Mark>::Node * n = word->marks.top;
+  while(n != NULL)
   {
-    Mark ** m = &(word->mark);
-    while(*m != NULL)
+    if(n->data.pos == offset && n->data.format == format)
     {
-      if((*m)->format == format && (*m)->pos == offset)
-      {
-        Mark *n = *m;
-        *m = (*m)->mark;
-        if(*m != NULL)
-          (*m)->parent = m;
-        format->Remove(n);
-        delete n;
-      }
-      m = &((*m)->mark);
+      n->data.format->Remove(n);
+      n = n->Remove();
     }
+    else
+      n = n->next;
   }
 }
 //---------------------------------------------------------------------------
@@ -394,4 +369,12 @@ void Iter::UpdatePos()
   GoLineStart();
     GoBy(p);
 }
+//---------------------------------------------------------------------------
+void Iter::UpdateNextImark()
+{
+  std::set<IPos*, IPos::compare>::iterator it = buffer->IMarkList.upper_bound(this);
+  nextimark = (*it)->pos;
+  nextimarkln = (*it)->linenum;
+}
+//---------------------------------------------------------------------------
 

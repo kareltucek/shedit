@@ -86,6 +86,10 @@
 				<DependentOn>$(BDS)\Projects\SQLSyntaxFS\SQLSyntax\uFormat.h</DependentOn>
 				<BuildOrder>12</BuildOrder>
 			</CppCompile>
+			<CppCompile Include="uIPos.cpp">
+				<DependentOn>uIPos.h</DependentOn>
+				<BuildOrder>13</BuildOrder>
+			</CppCompile>
 			<CppCompile Include="uIter.cpp">
 				<DependentOn>$(BDS)\Projects\SQLSyntaxFS\SQLSyntax\uIter.h</DependentOn>
 				<BuildOrder>6</BuildOrder>
@@ -109,6 +113,10 @@
 			<CppCompile Include="uSpan.cpp">
 				<DependentOn>$(BDS)\Projects\SQLSyntaxFS\SQLSyntax\uSpan.h</DependentOn>
 				<BuildOrder>4</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="uStack.cpp">
+				<DependentOn>uStack.h</DependentOn>
+				<BuildOrder>14</BuildOrder>
 			</CppCompile>
 			<PackageImport Include="vcl.bpi">
 				<BuildOrder>8</BuildOrder>

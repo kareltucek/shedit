@@ -3,16 +3,19 @@
 #ifndef uIterH
 #define uIterH
 
+#include "uIPos.h"
+
 namespace SHEdit
 {
   class Span;
   class NSpan;
   class Mark;
+  class IMark;
   class Format;
   class Buffer;
-
+  class FontStyle;
   //---------------------------------------------------------------------------
-  class Iter
+  class Iter : public IPos
   {
     public:
       Iter(NSpan * line);
@@ -21,12 +24,11 @@ namespace SHEdit
       ~Iter();
 
       Span * word;
-      NSpan * line;
-      Buffer * buffer;
       int offset;
-      int linenum;
-      int pos;
       wchar_t * ptr;
+
+      int nextimark;
+      int nextimarkln;
 
       bool GoLine(bool allowEnd = false);
       bool GoLineEnd();
@@ -45,15 +47,15 @@ namespace SHEdit
       void GoByOffset(int chars);
       void GoBy(int chars);
 
-      static void MarkupBegin(Mark ** at, int pos, bool begin, Format * format);
-      void MarkupBegin(SHEdit::Format * format);
-      void MarkupEnd(SHEdit::Format * format);
+      Mark* MarkupBegin(SHEdit::Format * format);
+      Mark* MarkupEnd(SHEdit::Format * format);
       void MarkupRem(SHEdit::Format * format);
 
       Iter * Duplicate();
-      void Update();
-      void UpdatePos();
-      void RecalcPos();
+      virtual void Update();
+      virtual void UpdatePos();
+      virtual void RecalcPos();
+      void UpdateNextImark();
 
       void GoToLine(int line);
 

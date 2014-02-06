@@ -22,7 +22,7 @@ std::ofstream myfile;
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-__fastcall Drawer::Drawer(TCanvas * canvas, TSQLEdit * parent, HANDLE drawerCanvasMutex, HANDLE drawerQueueMutex, HANDLE drawerTaskPending)
+__fastcall Drawer::Drawer(TCanvas * canvas, TSQLEdit * parent)
 {
 #ifdef DOUBLE_BUFFERED
   bitmap = new Graphics::TBitmap();
@@ -36,17 +36,19 @@ __fastcall Drawer::Drawer(TCanvas * canvas, TSQLEdit * parent, HANDLE drawerCanv
   this->canvas = canvas;
 
   linenumsenabled = true;
+  linesize = 11;
+  fontsize = DEFONTSIZE;
 
   drawcanvas->Font->Name = "Courier New";
   canvas->Font->Name = "Courier New";
-  SetFontsize(DEFONTSIZE);
+  SetFontsize(fontsize);
   UpdateLinenumWidth(1);
 
   HMax = 200;
   HPos = 0;
   x = 2;
   y = Y_OFF;
-  cx = 2+GetLinenumWidth();
+  cx = -2;
   cy = 2;
 #ifdef DEBUG
   myfile.open("drawer.txt", ios::out );
@@ -242,6 +244,8 @@ void __fastcall Drawer::DrawLinenum(int from)
 //---------------------------------------------------------------------------
 void __fastcall Drawer::SetFontsize(int size)
 {
+  if(size < 3 || size > 100)
+    return;
   canvas->Font->Size = size;
   drawcanvas->Font->Size = size;
   fontsize = size;
@@ -262,6 +266,8 @@ void __fastcall Drawer::SetFontsize(int size)
 
   drawcanvas->Font->Name = "Courier New";
   canvas->Font->Name = "Courier New";
+
+  UpdateLinenumWidth(lastlinenumcount);
 }
 //---------------------------------------------------------------------------
 int __fastcall Drawer::GetFontsize()
@@ -288,10 +294,16 @@ bool __fastcall Drawer::UpdateLinenumWidth(int count)
 int __fastcall Drawer::GetLinenumWidth()
 {
   return linenumsenabled ? linenumwidth : 0;
-}//---------------------------------------------------------------------------
+}
+//---------------------------------------------------------------------------
 void __fastcall Drawer::SetLinenumsEnabled(bool enable)
 {
   linenumsenabled = enable;
+}
+//---------------------------------------------------------------------------
+bool __fastcall Drawer::GetLinenumsEnabled()
+{
+  return linenumsenabled;
 }
 //---------------------------------------------------------------------------
 __fastcall Drawer::~Drawer()

@@ -45,26 +45,32 @@ Format::~Format()
   //you should definitely not do this
 };
 //---------------------------------------------------------------------------
-void Format::Remove(SHEdit::Mark* mark)
+void Format::Remove( Stack<Mark>::Node* mark)
 {
   marks.remove(mark);
 }
 //---------------------------------------------------------------------------
-void Format::Add(SHEdit::Mark* mark)
+void Format::Add(Stack<Mark>::Node* mark)
 {
   marks.push_front(mark);
 }
 //---------------------------------------------------------------------------
 void Format::RemoveAllMarks()
 {
-  while(marks.size() > 0)
+  while(!marks.empty())
   {
-    Mark * old = marks.front();
-    *(old->parent) = old->mark;
-    if(old->mark)
-      old->mark->parent = old->parent;
-    delete old;
+    marks.front()->Remove();
     marks.pop_front();
+  }
+  if(buffer == NULL)
+    return;
+
+  for(!set.empty())
+  {
+    std::set<IPos*, IMark::compare>::iterator it = imarks.begin();
+    IMark * m = (IMark*)*itr;
+    imarks.erase(it);
+    delete m;
   }
 }
 //---------------------------------------------------------------------------
@@ -78,11 +84,18 @@ bool Format::operator!=(const SHEdit::Format& f)
   return (*(this->foreground) != *(f.foreground) ||  *(this->background) != *(f.background));
 }
 //---------------------------------------------------------------------------
-SHEdit::Format& Format::operator=(const SHEdit::Format& f)
+SHEdit::Format& Format::operator+=(const SHEdit::Format& f)
 {
   if(f.foreground)
     this->foreground = f.foreground;
   if(f.background)
+    this->background = f.background;
+  return *this;
+}
+//---------------------------------------------------------------------------
+SHEdit::Format& Format::operator=(const SHEdit::Format& f)
+{
+    this->foreground = f.foreground;
     this->background = f.background;
   return *this;
 }
@@ -99,7 +112,7 @@ bool FontStyle::operator!=(const SHEdit::FontStyle& f)
   return !(*this == f);
 }
 //---------------------------------------------------------------------------
-SHEdit::FontStyle& FontStyle::operator=(const SHEdit::FontStyle& f)
+SHEdit::FontStyle& FontStyle::operator+=(const SHEdit::FontStyle& f)
 {
   if(f.foreground)
     this->foreground = f.foreground;
@@ -108,7 +121,7 @@ SHEdit::FontStyle& FontStyle::operator=(const SHEdit::FontStyle& f)
   return *this;
 }
 //---------------------------------------------------------------------------
-SHEdit::FontStyle& FontStyle::operator=(const SHEdit::Format& f)
+SHEdit::FontStyle& FontStyle::operator+=(const SHEdit::Format& f)
 {
   if(f.foreground)
     this->foreground = f.foreground;
@@ -116,3 +129,28 @@ SHEdit::FontStyle& FontStyle::operator=(const SHEdit::Format& f)
     this->background = f.background;
   return *this;
 }
+//---------------------------------------------------------------------------
+
+SHEdit::FontStyle& FontStyle::operator=(const SHEdit::FontStyle& f)
+{
+    this->foreground = f.foreground;
+    this->background = f.background;
+  return *this;
+}
+//---------------------------------------------------------------------------
+SHEdit::FontStyle& FontStyle::operator=(const SHEdit::Format& f)
+{
+    this->foreground = f.foreground;
+    this->background = f.background;
+  return *this;
+}
+//---------------------------------------------------------------------------
+IMark * Format::GetMarkBefore(IPos* ipos)
+{
+  std::set<IPos*, IMark::compare>::iterator it = imarks.upper_bound(ipos);
+  if(it == imarks.begin())
+    return NULL;
+  it--;
+  return (IMark*)*it;
+}
+//---------------------------------------------------------------------------

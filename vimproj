@@ -1,5 +1,7 @@
 se path=""
-se tags=~/.vim/ctags/SQL;/,~/.vim/ctags/xetags
+se tags=~/.vim/ctags/SQL
+o vimproj
+vsplit config.h
 call OpenObject("cSQLSyntax")
 call OpenObject("uBuffer")
 call OpenObject("uIter")
@@ -10,4 +12,5 @@ call OpenObject("uFormat")
 call OpenObject("uMark")
 call OpenObject("uLanguageDefinition")
 call OpenObject("uLanguageDefinitionSQL")
-windo tabdo se scroll=8
+tabdo windo se scroll=8
+

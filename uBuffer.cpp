@@ -43,6 +43,23 @@ Buffer::Buffer()
 //---------------------------------------------------------------------------
 Buffer::~Buffer()
 {
+  while(!ItrList.empty())
+  {
+    delete ItrList.front();
+    ItrList.pop_front();
+  }
+  while(!stackUndo.empty())
+  {
+    stackUndo.top()->range->Free();
+    delete stackUndo.top();
+    stackUndo.pop();
+  }
+  while(!stackRedo.empty())
+  {
+    stackRedo.top()->range->Free();
+    delete stackRedo.top();
+    stackRedo.pop();
+  }
 }
 //---------------------------------------------------------------------------
 Iter * Buffer::Begin()
@@ -112,9 +129,9 @@ Span* Buffer::_SplitBegin(Iter * At)
 
   if(At->word->mark)
   {
-    for(Mark ** m = &(At->word->mark); *m != NULL; m = &((*m)->mark))
-      if((*m)->pos < At->offset)
-        Iter::MarkupBegin(&(firstnew->mark), (*m)->pos, (*m)->begin, (*m)->format);
+    for(Stack<Mark>::Node * m = At->word->marks.top; m != NULL; m = m->next)
+      if(m->data.pos < At->offset)
+        m->data.format->Add( firstnew->marks.Push(m->data) );
   }
   return firstnew;
 }
@@ -127,9 +144,9 @@ Span* Buffer::_SplitEnd(Iter * At)
 
   if(At->word->mark)
   {
-    for(Mark ** m = &(At->word->mark); *m != NULL; m = &((*m)->mark))
-      if((*m)->pos >= At->offset)
-        Iter::MarkupBegin(&(secondnew->mark), (*m)->pos-At->offset, (*m)->begin, (*m)->format);
+    for(Stack<Mark>::Node * m = At->word->marks.top; m != NULL; m = m->next)
+      if(m->data.pos >= At->offset)
+        m->data.format->Add( secondnew->marks.Push(Mark(m->data.format, m->data.begin, m->data.pos-At->offset)));
   }
   return secondnew;
 }
@@ -323,8 +340,8 @@ Range * Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
       r = new Range(From->word, From->word, false, From->line->nextline, To->line, false, 0);
     _Insert(newword);
     if(From->word->mark)
-      for(Mark ** m = &(From->word->mark); *m != NULL; m = &((*m)->mark))
-        Iter::MarkupBegin(&(newword->mark), (*m)->pos, (*m)->begin, (*m)->format);
+      for(Stack<Mark>::Node * m = From->word->marks.top; m != NULL; m = mark->next)
+        m->data.format->Add( newword->marks.push(m->data));
   }
   else
   {
@@ -335,12 +352,12 @@ Range * Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
   }
   if(newword->mark)
   {
-    for(Mark ** m = &(newword->mark); *m != NULL; m = &((*m)->mark))
+    for(Stack<Mark>::Node * m = newword->mark.top; m != NULL; m = m->next)
     {
-      if((*m)->pos >= To->offset+length)
-        (*m)->pos -=length;
-      else if((*m)->pos >= To->offset)
-        (*m)->pos -= (*m)->pos - From->offset;
+      if(m->data.pos >= To->offset+length)
+        m->data.pos -=length;
+      else if(m->data.pos >= To->offset)
+        m->data.pos -= m->data.pos - From->offset;
     }
   }
   return r;
@@ -348,8 +365,8 @@ Range * Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
 
 //---------------------------------------------------------------------------
 /*!
-* returns range for undo event
-*/
+ * returns range for undo event
+ */
 Range * Buffer::_InsertAt(NSpan * line, Span * word, int pos, wchar_t * string, bool writeundo, bool forcenew)   //OK
 {
   //wchar_t* newstr = (wchar_t*) malloc((at->word->length+wcslen(string)+1) * sizeof(wchar_t));
@@ -369,8 +386,8 @@ Range * Buffer::_InsertAt(NSpan * line, Span * word, int pos, wchar_t * string, 
       r = new Range(word, word, false, line->nextline, line, false, 0);
     _Insert(newword);
     if(word->mark)
-      for(Mark ** m = &(word->mark); *m != NULL; m = &((*m)->mark))
-        Iter::MarkupBegin(&(newword->mark), (*m)->pos, (*m)->begin, (*m)->format);
+      for(Stack<Mark>::Node * m = word->marks.top; m != NULL; m = m->next)
+        m->data.formatAdd(newword->marks.Push(Mark(m->data));
   }
   else
   {
@@ -380,9 +397,9 @@ Range * Buffer::_InsertAt(NSpan * line, Span * word, int pos, wchar_t * string, 
     newword = word;
   }
   if(word->mark)
-    for(Mark ** m = &(newword->mark); *m != NULL; m = &((*m)->mark))
-      if((*m)->pos >= pos)
-        (*m)->pos += wcslen(string);
+    for(Stack<Mark>  m = newword->marks.top; m != NULL; m = mark->next)
+      if(m->data.pos >= pos)
+        m->data.pos += wcslen(string);
   return r;
 }
 
@@ -461,24 +478,24 @@ bool Buffer::IsPlainWord(wchar_t * string)                //OK
 }
 //---------------------------------------------------------------------------
 /*
-void Buffer::LoadFile(wchar_t * filename)
-{
-  LoadFileAsync(filename);
-  Preload(-1);
-  FlushPreload();
-}                     */
+   void Buffer::LoadFile(wchar_t * filename)
+   {
+   LoadFileAsync(filename);
+   Preload(-1);
+   FlushPreload();
+   }                     */
 //---------------------------------------------------------------------------
 /*
-void Buffer::LoadFileAsync(wchar_t * filename)
-{
-  preloadFile = new std::ifstream();
-  preloadFile->open("test.txt");
-  preload->first = data->first;
-  preload->firstLine = data->firstLine;
-  preload->last = data->last;
-  preload->lastLine = data->lastLine;
-  data->linecount = 0;
-}                        */
+   void Buffer::LoadFileAsync(wchar_t * filename)
+   {
+   preloadFile = new std::ifstream();
+   preloadFile->open("test.txt");
+   preload->first = data->first;
+   preload->firstLine = data->firstLine;
+   preload->last = data->last;
+   preload->lastLine = data->lastLine;
+   data->linecount = 0;
+   }                        */
 //---------------------------------------------------------------------------
 Iter * Buffer::Redo(Iter *& begin)
 {
@@ -520,34 +537,34 @@ Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*>
   NSpan * replLineLast = event->range->lineempty ? event->range->firstLine : event->range->lastLine;
 
   /*
-  int linestoberemoved = 0;
-  NSpan * line = undoLineFirst;
-  Span * span = undoFirst;
-  if(undoFirst->prev != undoLast)
-  {
-    for(; span != undoLast->next; span = span->next)
-    {
-      line->ItersTransmit(span, replLineLast);
-      replLineLast->ItersMove(span, replLineLast, undoLast->next, 0);
-      if(*(span->string) == '\n')
-      {
-        line = (NSpan*)span;
-        linestoberemoved++;
-      }
-    }
-  }
-  while(*(span->string) != '\n')
-  {
-    line->ItersTransmit(span, replLineLast);
-    span = span->next;
-  }
-  line->ItersTransmit(span, replLineLast); //we want even the last one
-  this->data->linecount = data->linecount - linestoberemoved + event->linecount;    */
+     int linestoberemoved = 0;
+     NSpan * line = undoLineFirst;
+     Span * span = undoFirst;
+     if(undoFirst->prev != undoLast)
+     {
+     for(; span != undoLast->next; span = span->next)
+     {
+     line->ItersTransmit(span, replLineLast);
+     replLineLast->ItersMove(span, replLineLast, undoLast->next, 0);
+     if(*(span->string) == '\n')
+     {
+     line = (NSpan*)span;
+     linestoberemoved++;
+     }
+     }
+     }
+     while(*(span->string) != '\n')
+     {
+     line->ItersTransmit(span, replLineLast);
+     span = span->next;
+     }
+     line->ItersTransmit(span, replLineLast); //we want even the last one
+     this->data->linecount = data->linecount - linestoberemoved + event->linecount;    */
 
   this->data->linecount = data->linecount + event->range->linecount;
 
-   //prepare new range
-   Range * range;
+  //prepare new range
+  Range * range;
   {
     Span * redoFirst;
     Span * redoLast;
@@ -624,15 +641,15 @@ Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*>
   if(event->action->type == Action::ActionType::deletion)
   {
     ItersTranslateInsert(event->action->fromlinenum, event->action->frompos, event->action->tolinenum - event->action->fromlinenum, event->action->topos, replLineLast);
-    action = new Action(event->action->fromlinenum, event->action->tolinenum - event->action->fromlinenum, event->action->frompos, event->action->topos, Action::ActionType::insertion);
-    itr = new Iter(replLineLast, event->action->tolinenum, event->action->topos, this);
+      action = new Action(event->action->fromlinenum, event->action->tolinenum - event->action->fromlinenum, event->action->frompos, event->action->topos, Action::ActionType::insertion);
+      itr = new Iter(replLineLast, event->action->tolinenum, event->action->topos, this);
     begin = new Iter(undoLineFirst, event->action->fromlinenum, event->action->frompos, this);
   }
   else
   {
     ItersTranslateDelete(event->action->fromlinenum, event->action->frompos, event->action->fromlinenum+event->action->tolinenum, event->action->topos, undoLineFirst);
-    action = new Action(event->action->fromlinenum,event->action->fromlinenum+event->action->tolinenum, event->action->frompos, event->action->topos, Action::ActionType::deletion);
-    itr = new Iter(undoLineFirst, event->action->fromlinenum, event->action->frompos, this);
+      action = new Action(event->action->fromlinenum,event->action->fromlinenum+event->action->tolinenum, event->action->frompos, event->action->topos, Action::ActionType::deletion);
+      itr = new Iter(undoLineFirst, event->action->fromlinenum, event->action->frompos, this);
     begin = NULL;
   }
 
@@ -645,10 +662,10 @@ Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*>
 #endif
 }
 //---------------------------------------------------------------------------
-void Buffer::SimpleLoadFile(wchar_t * filename)
+void Buffer::SimpleLoadFile(char * filename)
 {
   std::ifstream * file = new std::ifstream();
-  file->open("test.txt");
+  file->open(filename);
   if (file && file->is_open())
   {
     Iter * a = Begin();
@@ -686,108 +703,108 @@ void Buffer::SimpleLoadFile(wchar_t * filename)
 }
 //---------------------------------------------------------------------------
 /*
-bool Buffer::Preload(int lines)
-{
-  std::string line;
-  if (preloadFile && preloadFile->is_open())
-  {
-    using namespace std;
-    int i;
-    for(i = 0; i != lines && getline(*preloadFile,line); i++)
-    {
-      data->linecount++;
-      wchar_t * str;
-      int wchars_num = 0;
-      if(line.size() > 0)
-      {
-        wchars_num =  MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, NULL , 0 );
-        str = new wchar_t[wchars_num];
-        MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, str , wchars_num );
-      }
-      else
-      {
-        str = new wchar_t[1];
-        str[0] = '\0';
-      }
-      Span * text = new Span(preload->last, preload->lastLine, str, 0);
-      text->length = wcslen(str);
-      NSpan * line = new NSpan(text, preload->lastLine);
-      text->next = line;
-      if(i == 0)
-      {
-        text->prev = preload->first;
-        line->prevline = preload->firstLine;
-        preload->first = text;
-        preload->firstLine = line;
-        line->next = preload->last;
-        line->nextline = preload->lastLine;
-      }
-      else
-      {
-        line->next = preload->last->next;
-        line->nextline = preload->lastLine->nextline;
-        preload->last->next = text;
-        preload->lastLine->nextline = line;
-      }
-      preload->last = line;
-      preload->lastLine = line;
-    }
-    if(i != lines)
-    {
-      preloadFile->close();
-      delete preloadFile;
-    }
-    return true;
-  }
-  return false;
-}
+   bool Buffer::Preload(int lines)
+   {
+   std::string line;
+   if (preloadFile && preloadFile->is_open())
+   {
+   using namespace std;
+   int i;
+   for(i = 0; i != lines && getline(*preloadFile,line); i++)
+   {
+   data->linecount++;
+   wchar_t * str;
+   int wchars_num = 0;
+   if(line.size() > 0)
+   {
+   wchars_num =  MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, NULL , 0 );
+   str = new wchar_t[wchars_num];
+   MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, str , wchars_num );
+   }
+   else
+   {
+   str = new wchar_t[1];
+   str[0] = '\0';
+   }
+   Span * text = new Span(preload->last, preload->lastLine, str, 0);
+   text->length = wcslen(str);
+   NSpan * line = new NSpan(text, preload->lastLine);
+   text->next = line;
+   if(i == 0)
+   {
+   text->prev = preload->first;
+   line->prevline = preload->firstLine;
+   preload->first = text;
+   preload->firstLine = line;
+   line->next = preload->last;
+   line->nextline = preload->lastLine;
+   }
+   else
+   {
+   line->next = preload->last->next;
+   line->nextline = preload->lastLine->nextline;
+   preload->last->next = text;
+   preload->lastLine->nextline = line;
+   }
+   preload->last = line;
+   preload->lastLine = line;
+   }
+   if(i != lines)
+   {
+   preloadFile->close();
+   delete preloadFile;
+   }
+   return true;
+   }
+   return false;
+   }
 //---------------------------------------------------------------------------
 void Buffer::FlushPreload()
 {
-  //undo
-  if(preload->first == data->first)
-    return; //invalid file or whatever alike
-  if(preload->first->prev->next == preload->last->next)
-    UndoPush(new Range(preload->first->prev, preload->last->next, true, preload->firstLine->prevline, preload->lastLine->nextline, true, 0));
+//undo
+if(preload->first == data->first)
+return; //invalid file or whatever alike
+if(preload->first->prev->next == preload->last->next)
+UndoPush(new Range(preload->first->prev, preload->last->next, true, preload->firstLine->prevline, preload->lastLine->nextline, true, 0));
+else
+UndoPush(new Range(preload->first->prev->next, preload->last->next->prev, false, preload->firstLine->prevline->nextline, preload->lastLine->nextline->prevline, false, 0));
+
+int linesremoved = 0;
+NSpan * lastN = preload->firstLine->prevline;
+bool firstnl = true;
+lastN->ItersSplit(preload->first->prev->next, preload->first, preload->first->prev->next, 1, true, 0);
+for(Span * span = preload->first->prev->next; span && span != preload->last->next; span = span->next)
+{
+  lastN->ItersMove(span, preload->lastLine, preload->lastLine->next, 0);  //modifies all iterators to point to first word after deletion
+  if(!firstnl)
+    lastN->ItersTransmitAll(preload->lastLine);         //moves all references from their former NLs to last inserted NL    //do not copy this, generally incorrect, though here working
   else
-    UndoPush(new Range(preload->first->prev->next, preload->last->next->prev, false, preload->firstLine->prevline->nextline, preload->lastLine->nextline->prevline, false, 0));
+    lastN->ItersTransmit(span, preload->lastLine);
 
-  int linesremoved = 0;
-  NSpan * lastN = preload->firstLine->prevline;
-  bool firstnl = true;
-  lastN->ItersSplit(preload->first->prev->next, preload->first, preload->first->prev->next, 1, true, 0);
-  for(Span * span = preload->first->prev->next; span && span != preload->last->next; span = span->next)
+  if(*(span->string) == '\n')
   {
-    lastN->ItersMove(span, preload->lastLine, preload->lastLine->next, 0);  //modifies all iterators to point to first word after deletion
-    if(!firstnl)
-      lastN->ItersTransmitAll(preload->lastLine);         //moves all references from their former NLs to last inserted NL    //do not copy this, generally incorrect, though here working
-    else
-      lastN->ItersTransmit(span, preload->lastLine);
-
-    if(*(span->string) == '\n')
+    linesremoved++;
+    while(((NSpan*)span)->ItrList.size() == 0 && span != preload->lastLine->nextline)
     {
+      span = ((NSpan*)span)->nextline;
       linesremoved++;
-      while(((NSpan*)span)->ItrList.size() == 0 && span != preload->lastLine->nextline)
-      {
-        span = ((NSpan*)span)->nextline;
-        linesremoved++;
-      }
-
-      lastN = (NSpan*)span;
-      firstnl = false;
     }
-  }
-  stackUndo.top()->linecount = linesremoved;
-  preload->firstLine->prevline->ItersTransmit( preload->lastLine->nextline, preload->lastLine); //to fix iters pointing to place, assumes endline just after end of insertion
 
-  _Insert(preload->first);
-  _Insert(preload->firstLine);
-  _Insert(preload->lastLine);
-  _Insert(preload->last); //??probably wrong - added later
-  preload->first = preload->last;
-  preload->firstLine = preload->lastLine;
-  preload->last = preload->last->next;
-  preload->lastLine = preload->lastLine->nextline;
+    lastN = (NSpan*)span;
+    firstnl = false;
+  }
+}
+stackUndo.top()->linecount = linesremoved;
+preload->firstLine->prevline->ItersTransmit( preload->lastLine->nextline, preload->lastLine); //to fix iters pointing to place, assumes endline just after end of insertion
+
+_Insert(preload->first);
+_Insert(preload->firstLine);
+_Insert(preload->lastLine);
+_Insert(preload->last); //??probably wrong - added later
+preload->first = preload->last;
+preload->firstLine = preload->lastLine;
+preload->last = preload->last->next;
+preload->lastLine = preload->lastLine->nextline;
 }               */
 //---------------------------------------------------------------------------
 wchar_t * Buffer::GetText(Iter * From, Iter* To)
@@ -887,19 +904,19 @@ int Buffer::GetLineCount()
   return data->linecount;
 }
 //---------------------------------------------------------------------------
-void Buffer::Register(Iter * itr)
+void Buffer::Register(IPos * itr)
 {
   ItrList.push_back(itr);
 }
 //---------------------------------------------------------------------------
-void Buffer::Unregister(Iter * itr)
+void Buffer::Unregister(IPos * itr)
 {
   ItrList.remove(itr);
 }
 //---------------------------------------------------------------------------
 void Buffer::ItersTranslateInsert(int linenum, int pos, int bylines, int topos, NSpan * toline)
 {
-  for (std::list<Iter*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
+  for (std::list<IPos*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
   {
 #ifdef DEBUG
     int size = ItrList.size();
@@ -924,7 +941,7 @@ void Buffer::ItersTranslateInsert(int linenum, int pos, int bylines, int topos, 
 //---------------------------------------------------------------------------
 void Buffer::ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, int topos, NSpan * toline)
 {
-  for (std::list<Iter*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
+  for (std::list<IPos*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
   {
 #ifdef DEBUG
     int size = ItrList.size();
@@ -935,14 +952,14 @@ void Buffer::ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, i
       if((*itr)->linenum < tolinenum || ((*itr)->linenum == tolinenum && (*itr)->pos <= topos))
       {
         (*itr)->line = toline;
-        (*itr)->linenum = fromlinenum;
-        (*itr)->pos = frompos;
+          (*itr)->linenum = fromlinenum;
+          (*itr)->pos = frompos;
       }
       else if((*itr)->linenum == tolinenum && (*itr)->pos > topos)
       {
         (*itr)->line = toline;
-        (*itr)->linenum = fromlinenum;
-        (*itr)->pos = frompos+(*itr)->pos-topos;
+          (*itr)->linenum = fromlinenum;
+          (*itr)->pos = frompos+(*itr)->pos-topos;
       }
       else if((*itr)->linenum > tolinenum)
       {

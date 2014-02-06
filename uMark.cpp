@@ -3,17 +3,32 @@
 
 
 #include "uMark.h"
+#include "uBuffer.h"
 
 using namespace SHEdit;
 
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
-Mark::Mark(Format * format, bool begin, short pos, Mark * newchild, Mark ** parent)
+Mark::Mark(SHEdit::Format * format, bool begin, int pos)
 {
   this->format = format;
   this->begin = begin;
   this->pos = pos;
-  this->parent = parent;
-  mark = newchild;
 }
+//---------------------------------------------------------------------------
 
+IMark::IMark(SHEdit::Format * format, bool begin, IPos * itr)
+  : IPos(itr->buffer, itr->line, itr->linenum, itr->pos)
+{
+  this->type = IPType::iptMark;
+  this->format = format;
+  this->begin = begin;
+  buffer->RegisterIM(this);
+  buffer->RegisterF(format);
+}
+//---------------------------------------------------------------------------
+IMark::~IMark()
+{
+  buffer->UnregisterIM(this);
+}
+//---------------------------------------------------------------------------

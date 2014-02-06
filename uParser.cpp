@@ -27,111 +27,33 @@ std::ofstream myfile;
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
 Parser::ParserState::ParserState()
+  : marks()
 {
   statemask = 0;
-  markupStack = NULL;
+}
+//---------------------------------------------------------------------------
+Parser::ParserState::~ParserState()
+{
+  marks.Erase();
 }
 //---------------------------------------------------------------------------
 SHEdit::Parser::ParserState& Parser::ParserState::operator=(const SHEdit::Parser::ParserState& p)
 {
   parseid = p.parseid;
   statemask = p.statemask;
-  while(markupStack != NULL)
-  {
-    Node *n = markupStack;
-    markupStack = markupStack->node;
-    delete n;
-  }
-  if(p.markupStack != NULL)
-  {
-    Node * m = p.markupStack;
-    Node ** n = &markupStack;
-    while(m != NULL)
-    {
-      MarkupPush(n, m->format);
-      n = &((*n)->node);
-      m = m->node;
-    }
-  }
+  marks = p.marks;
+
   return *this;
 }
 //---------------------------------------------------------------------------
-Parser::Node::Node(SHEdit::Format * format, SHEdit::Parser::Node * node)
-{
-  this->format = format;
-  this->node = node;
-}
-
-//---------------------------------------------------------------------------
 bool Parser::ParserState::operator==(const ParserState& state)
 {
-  return (this->statemask == state.statemask && this->parseid == state.parseid &&  MarkupEquals(markupStack, state.markupStack));
+  return (this->statemask == state.statemask && this->parseid == state.parseid &&  markupStack == state.markupStack);
 }
 //---------------------------------------------------------------------------
 bool Parser::ParserState::operator!=(const ParserState& state)
 {
-  return !(this->statemask == state.statemask && this->parseid == state.parseid && MarkupEquals(markupStack, state.markupStack));
-}
-//---------------------------------------------------------------------------
-void Parser::MarkupPush(SHEdit::Parser::Node ** at, SHEdit::Format * format)
-{
-  *at = new Node(format, *at);
-}
-//---------------------------------------------------------------------------
-bool Parser::MarkupContains(SHEdit::Parser::Node ** at, SHEdit::Format * format)
-{
-  if(*at != NULL)
-  {
-    Node ** m = at;
-    while(*m != NULL)
-    {
-      if((*m)->format == format)
-      {
-        return true;
-      }
-      m = &((*m)->node);
-    }
-  }
-  return false;
-}
-//---------------------------------------------------------------------------
-bool Parser::MarkupEquals(SHEdit::Parser::Node * at, SHEdit::Parser::Node * bt)
-{
-  if(at != NULL && bt != NULL)
-  {
-    Node * a = at;
-    Node * b = bt;
-    while(a != NULL && b != NULL)
-    {
-      if(a->format != b->format)
-      {
-        return false;
-      }
-      a = a->node;
-      b = b->node;
-    }
-    return (b == a);
-  }
-  return (at == NULL && bt == NULL);
-}
-//---------------------------------------------------------------------------
-void Parser::MarkupPop(SHEdit::Parser::Node ** at, SHEdit::Format * format)
-{
-  if(*at != NULL)
-  {
-    Node ** m = at;
-    while(*m != NULL)
-    {
-      if((*m)->format == format)
-      {
-        Node *n = *m;
-        *m = (*m)->node;
-        delete n;
-      }
-      else
-        m = &((*m)->node);
-    }
-  }
+  return !(this->statemask == state.statemask && this->parseid == state.parseid && markupStack == state.markupStack);
 }
 //---------------------------------------------------------------------------
 Parser::ParseTask::ParseTask(NSpan * l, int ln)
@@ -156,7 +78,7 @@ bool Parser::ParseTask::operator<(const Parser::ParseTask & pt)  const
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-__fastcall Parser::Parser(TSQLEdit * parent, Drawer * drawer, HANDLE bufferChanged, HANDLE bufferMutex, HANDLE drawerCanvasMutex, HANDLE drawerQueueMutex, HANDLE drawerTaskPending)
+__fastcall Parser::Parser(TSQLEdit * parent, Drawer * drawer)
 {
 #ifdef DEBUG
   myfile.open("main.txt", ios::out);
@@ -171,12 +93,6 @@ __fastcall Parser::Parser(TSQLEdit * parent, Drawer * drawer, HANDLE bufferChang
 
   processAll = true;
   //DuplicateHandle(GetCurrentProcess(), bufferChanged, this->Handle, &(this->bufferChanged),  0, false, DUPLICATE_SAME_ACCESS);
-
-  DuplicateHandle(GetCurrentProcess(), bufferChanged, GetCurrentProcess(), &(this->bufferChanged),  0, false, DUPLICATE_SAME_ACCESS);
-  DuplicateHandle(GetCurrentProcess(), bufferMutex, GetCurrentProcess(), &(this->bufferMutex),  0, false, DUPLICATE_SAME_ACCESS);
-  DuplicateHandle(GetCurrentProcess(), drawerQueueMutex, GetCurrentProcess(), &(this->drawerQueueMutex),  0, false, DUPLICATE_SAME_ACCESS);
-  DuplicateHandle(GetCurrentProcess(), drawerCanvasMutex, GetCurrentProcess(), &(this->drawerCanvasMutex),  0, false, DUPLICATE_SAME_ACCESS);
-  DuplicateHandle(GetCurrentProcess(), drawerTaskPending, GetCurrentProcess(), &(this->drawerTaskPending),  0, false, DUPLICATE_SAME_ACCESS);
 }
 //---------------------------------------------------------------------------
 bool __fastcall Parser::Execute()
@@ -280,7 +196,7 @@ bool __fastcall Parser::Execute()
         {
           oldidle = Application->OnIdle;
           Application->OnIdle = OnIdle;
-          onidleset = true;
+            onidleset = true;
         }
         return false;
       }
@@ -296,24 +212,29 @@ void __fastcall Parser::OnIdle(TObject * Sender, bool & Done)
   if(Execute())
   {
     Application->OnIdle = oldidle;
-    onidleset = false;
+      onidleset = false;
   }
   Done = false;
 }
 //---------------------------------------------------------------------------
 void Parser::ParseFromLine(NSpan * line, int linenum, int prior)
 {
-#ifdef DEBUG
-  //Write("pushing line");
-#endif
   if(prior > 0)
-  {
     tasklistprior.push_back(ParseTask(line, linenum));
-  }
   else
-  {
     tasklist.push_back(ParseTask(line, linenum));
-  }
+}
+
+//---------------------------------------------------------------------------
+void Parser::ParseFromLine(NSpan * line, int linenum, NSpan * toline, int prior)
+{
+    for(NSpan * l = line; l != NULL && l != toline->nextline; l = l->nextline, linenum++)
+    {
+  if(prior > 0)
+      tasklistprior.push_back(ParseTask(line, linenum));
+  else
+    tasklist.push_back(ParseTask(line, linenum));
+    }
 }
 
 //---------------------------------------------------------------------------
@@ -341,7 +262,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
 
   while(*(itr->ptr) != '\n')
   {
-    if(itr->word->mark)
+    if(itr->word->marks.top)
       CheckMarkup(itr, paint);
 
     lasttoken = searchtoken->nextTree;
@@ -357,7 +278,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
         if(paint)
           AddChar(itr, pos);
         itr->GoChar();
-        if(itr->word->mark)
+        if(itr->word->marks.tops.top)
           CheckMarkup(itr,paint);
         type = langdef->Go(searchtoken, *(itr->ptr), lookahead);
       }
@@ -365,7 +286,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
       {
         searchtoken = lasttoken;
         if(paint)
-          actFormat = *(searchtoken->format);
+          actFormat += *(searchtoken->format);
         Flush();
         type = langdef->Go(searchtoken, *(itr->ptr), lookahead);
         if(*(itr->ptr) == '\n')
@@ -398,7 +319,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
         if(paint)
         {
           AddChar(itr, pos);
-          actFormat = *(searchtoken->format);
+          actFormat += *(searchtoken->format);
           Flush();
         }
         break;         
@@ -414,7 +335,7 @@ paint:
         if(paint)
         {
           AddChar(itr, pos);
-          actFormat = *(searchtoken->format);
+          actFormat += *(searchtoken->format);
           Flush();
         }
         break;
@@ -422,7 +343,7 @@ paint:
         if(paint)
         {
           AddChar(itr, pos);
-          actFormat = *(searchtoken->format);//if format remains, flush wont be done
+          actFormat += *(searchtoken->format);//if format remains, flush wont be done
 #ifdef DEBUG
           //Write(String("   nomatch - outtask is ")+String((*outTask->text))+String(" acttask is ") + String(*actTask->text));
 #endif
@@ -437,17 +358,17 @@ paint:
         itr->GoChar();
         while(langdef->IsAlNum(*(itr->ptr)))
         {
-          if(itr->word->mark)
+          if(itr->word->marks.top)
             CheckMarkup(itr,paint);
           if(paint)
             AddChar(itr, pos);
           itr->GoChar();
         }
-        if(itr->word->mark)
+        if(itr->word->marks.top)
           CheckMarkup(itr,paint);
         if(paint)
         {
-          actFormat = *(searchtoken->format);
+          actFormat += *(searchtoken->format);
           Flush();
         }
         searchtoken = searchtoken->nextTree;
@@ -459,7 +380,7 @@ paint:
     itr->GoChar();
   }
 
-  if(itr->word->mark)
+  if(itr->word->marks.top)
     CheckMarkup(itr, paint);
   if(linetag)
     searchtoken = lineback;
@@ -492,25 +413,68 @@ void Parser::CheckMarkup(Iter * itr, bool paint)
 #ifdef DEBUG
   //Write(" markup check");
 #endif
-  Mark ** m = &(itr->word->mark);
-  while(*m != NULL)
+  if(itr->word->marks.top != NULL)
   {
-    if((*m)->pos == itr->offset)
+    Stack<Mark>::Node * m = itr->word->marks.top;
+    while(m != NULL)
     {
-      if(paint)
-        Flush();
-      if((*m)->begin)
+      if(m->data.pos == itr->offset)
       {
-        MarkupPush(&(state.markupStack), (*m)->format);
+        if(m->.begin)
+        {
+          state.markupStack.Push(m->data.format);
+          if(paint)
+          {
+            Flush();
+            actMarkup += *(m->data.format);
+            actMarkupCombined = actMarkup;
+            actMarkupCombined += actIMarkup;
+          }
+        }
+        else
+        {
+          //actTask->format = *(langdef->GetTree()->format);
+         // Flush(); //it should not be here - should it?
+          //MarkupPop(&(state.markupStack), (*m)->format);
+          state.markupStack.Remove(m->data.format);
+          if(paint)
+          {
+            Flush();
+            ReconstructMarkup();
+            actMarkupCombined = actMarkup;
+            actMarkupCombined += actIMarkup;
+          }
+        }
       }
-      else
-      {
-        //actTask->format = *(langdef->GetTree()->format);
-        Flush();
-        MarkupPop(&(state.markupStack), (*m)->format);
-      }
+      m = m->next;
     }
-    m = &((*m)->mark);
+  }
+  if(itr->pos == itr->nextimark && itr->linenum == itr->nextimarkln)
+  {
+    actIMarkup = itr->ReconstructIMarkFontStyle();
+    actMarkupCombined = actMarkup;
+    actMarkupCombined += actIMarkup;
+    itr->UpdateNextImark();
+  }
+}
+//---------------------------------------------------------------------------
+void Parser::ReconstructMarkup()
+{
+  Stack<Format*> formats();
+  Stack<Format*>::Node * m = state.markupStack.top;
+  actMarkup = FontStyle();
+
+  while(m != NULL)
+  {
+    formats.Push(m->data);
+    m = m->next;
+  }
+
+  m = formats.top;
+  while(m != NULL))
+  {
+    actMarkup += *(m->data);
+    m = m->next;
   }
 }
 //---------------------------------------------------------------------------
@@ -525,7 +489,7 @@ void Parser::Flush()
   {
     if(state.markupStack != NULL)
     {
-      actFormat = *(state.markupStack->format);
+      actFormat += *(state.markupStack->format);
     }
     drawer->DrawText(actText, newline, linenum, actFormat);
     newline = false;

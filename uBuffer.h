@@ -26,7 +26,9 @@ namespace SHEdit
       std::stack<UndoTask*> stackUndo;
       std::stack<UndoTask*> stackRedo;
 
-      std::list<Iter*> ItrList;
+      std::list<IPos*> ItrList;
+      std::list<Format*> FormatList;
+      std::set<IMark*, IMark::compare> IMarkList;
 
       void _Insert(Span * word);
       void _Delete(Span * word);
@@ -56,6 +58,7 @@ namespace SHEdit
       ~Buffer();
 
       friend class Iter;
+      friend class IPos;
 
       Iter * Undo(Iter *& begin);
       Iter * Redo(Iter *& begin);
@@ -67,15 +70,21 @@ namespace SHEdit
       String GetLine(Iter * line, bool replaceTabs);
       String GetLineTo(Iter * To, bool replaceTabs);
 
-      void SimpleLoadFile(wchar_t * filename);
+      void SimpleLoadFile(char * filename);
       /*
-      void LoadFile(wchar_t * filename);
-      void LoadFileAsync(wchar_t * filename);
-      bool Preload(int lines);
-      void FlushPreload();    */
+         void LoadFile(wchar_t * filename);
+         void LoadFileAsync(wchar_t * filename);
+         bool Preload(int lines);
+         void FlushPreload();    */
 
-      void Register(Iter * itr);
-      void Unregister(Iter * itr);
+      void RegisterIP(IPos * itr);
+      void UnregisterIP(IPos * itr);
+
+      void RegisterIM(IMark * itr);
+      void UnregisterIM(IMark * itr);
+
+      void RegisterF(Format * form);
+      void UnregisterF(Format * form);
 
       Iter * Begin();
       Iter * First();

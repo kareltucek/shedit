@@ -15,36 +15,49 @@ using namespace SHEdit;
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
 Span::Span(Iter * After)
+  : marks()
 {
   prev = After->word;
   next = After->word->next;
   string = NULL;
-  mark = NULL;
   length = 0;
 }
 //---------------------------------------------------------------------------
 Span::Span(Span * afterword)
+  : marks()
 {
   prev = afterword;
   if(afterword)
     next = afterword->next;
   string = NULL;
-  mark = NULL;
   length = 0;
 }
 //---------------------------------------------------------------------------
 Span::Span()
+  : marks()
 {
   prev = NULL;
   next = NULL;
   string = NULL;
-  mark = NULL;
   length = 0;
 }
 //---------------------------------------------------------------------------
-Span::Span(Span * prev, Span * next, wchar_t * string, short length)
+Span::~Span()
 {
-  mark = NULL;
+  if(string != NULL)
+    delete [] string;
+
+  Stack<Mark>::Node * n = marks.top;
+  while(n != NULL)
+  {
+    n->data.format->Remove(n);
+    n = n->Remove();
+  }
+}
+//---------------------------------------------------------------------------
+Span::Span(Span * prev, Span * next, wchar_t * string, short length)
+  : marks();
+{
   this->prev = prev;
   this->next = next;
   this->string = string;
@@ -82,76 +95,80 @@ Span::Span(Span * prev, Span * next, wchar_t * string, short length)
   wcscpy(string, L"\n");
   length = 1;
 }
+//---------------------------------------------------------------------------
+NSpan::~NSpan()
+{
+}
 /*
 //---------------------------------------------------------------------------
 void NSpan::ItersSplit(Span * from, Span * toFirst, Span * toSec, int byPos, bool custoff, int tooffset)
 {
-  for (std::list<Iter*>::const_iterator itr = ItrList.begin(); itr != ItrList.end(); ++itr)
-  {
-    if((*itr)->word == from)
-    {
-      if((*itr)->offset < byPos)
-      {
-        (*itr)->word = toFirst;
-      }
-      else
-      {
-        (*itr)->word = toSec;
-        if(custoff)
-          (*itr)->offset = tooffset;
-        else
-          (*itr)->offset -= byPos;
-      }
-      (*itr)->Update();
-    }
-  }
+for (std::list<Iter*>::const_iterator itr = ItrList.begin(); itr != ItrList.end(); ++itr)
+{
+if((*itr)->word == from)
+{
+if((*itr)->offset < byPos)
+{
+(*itr)->word = toFirst;
+}
+else
+{
+(*itr)->word = toSec;
+if(custoff)
+(*itr)->offset = tooffset;
+else
+(*itr)->offset -= byPos;
+}
+(*itr)->Update();
+}
+}
 }
 //---------------------------------------------------------------------------
 void NSpan::Invalidate(Span * from)
 {
-  for (std::list<Iter*>::const_iterator itr = ItrList.begin(); itr != ItrList.end(); ++itr)
-  {
-    if((*itr)->word == from)
-    {
-      (*itr)->Update();
-    }
-  }
+for (std::list<Iter*>::const_iterator itr = ItrList.begin(); itr != ItrList.end(); ++itr)
+{
+if((*itr)->word == from)
+{
+(*itr)->Update();
+}
+}
 }
 //---------------------------------------------------------------------------
 void NSpan::ItersTranslate(Span * from, Span * to, int byPos, int inc)
 {
-  for (std::list<Iter*>::const_iterator itr = ItrList.begin(); itr != ItrList.end(); ++itr)
-  {
-    if((*itr)->word == from)
-    {
-      (*itr)->word = to;
-      if((*itr)->offset >= byPos)
-      {
-        if(inc >0)  //for insertions
-          (*itr)->offset += inc;
-        else        //for deletions - case when iterator is in the middle of delet has to be handled
-        {
-          if((*itr)->offset < byPos-inc)
-            (*itr)->offset = byPos;
-          else
-            (*itr)->offset += inc;
-        }
-      }
-      (*itr)->Update();
-    }
-  }
+for (std::list<Iter*>::const_iterator itr = ItrList.begin(); itr != ItrList.end(); ++itr)
+{
+if((*itr)->word == from)
+{
+(*itr)->word = to;
+if((*itr)->offset >= byPos)
+{
+if(inc >0)  //for insertions
+(*itr)->offset += inc;
+else        //for deletions - case when iterator is in the middle of delet has to be handled
+{
+if((*itr)->offset < byPos-inc)
+(*itr)->offset = byPos;
+else
+(*itr)->offset += inc;
+}
+}
+(*itr)->Update();
+}
+}
 }
 //---------------------------------------------------------------------------
 void NSpan::ItersTransmitAll(NSpan * to)
 {
-  if(to == this)
-    return;
-  while(ItrList.size() > 0)
-  {
-    to->Register(ItrList.front());
-    ItrList.front()->line = to;
-    ItrList.pop_front();
-  }
+if(to == this)
+return;
+while(ItrList.size() > 0)
+{
+to->Register(ItrList.front());
+ItrList.front()->line = to;
+ItrList.pop_front();
+}
 }
 //---------------------------------------------------------------------------
 void NSpan::ItersTransmit(Span * from, NSpan * to)
@@ -215,7 +232,23 @@ Range::~Range()
 //---------------------------------------------------------------------------
 void Range::Free()
 {
-  //todo
+  if(!empty && first != last->next)
+  {
+    Span * word = first;
+      Span * nextptr;
+      while(word != NULL)
+      {
+        nextptr = word->next;
+          if(word->string != NULL && *(word->string) == '\n')
+            delete (NSpan*)word;
+          else
+            delete word;
+              
+              if(word == last)
+                break;
+                  word = nextptr;
+      }
+  }
 }
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -223,10 +256,10 @@ void Range::Free()
 Action::Action(int fromlinenum, int tolinenum, int frompos, int topos, ActionType type)
 {
   this->fromlinenum = fromlinenum;
-  this->tolinenum = tolinenum;
-  this->frompos = frompos;
-  this->topos = topos;
-  this->type = type;
+    this->tolinenum = tolinenum;
+    this->frompos = frompos;
+    this->topos = topos;
+    this->type = type;
 }
 //---------------------------------------------------------------------------
 Action::~Action()
@@ -239,11 +272,11 @@ Action::~Action()
 UndoTask::UndoTask(Action * action, Range * range)
 {
   this->action = action;
-  this->range = range;
+    this->range = range;
 }
 //---------------------------------------------------------------------------
 UndoTask::~UndoTask()
 {
   delete range;
-  delete action;
+    delete action;
 }
