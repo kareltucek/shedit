@@ -3,7 +3,7 @@
 
 #pragma hdrstop
 
-#include "uStack.h"
+//include "uStack.h"
 
 //---------------------------------------------------------------------------
 template <class T_data>
@@ -19,7 +19,7 @@ Stack<T_data>::~Stack()
 }
 //---------------------------------------------------------------------------
 template <class T_data>
-Stack<T_data>::Node* Stack<T_data>::Push(T_data d)
+Stack<T_data>::Node* Stack<T_data>::Push(const T_data& d)
 {
   Node * n = new Node();
   n->data = d;
@@ -43,7 +43,7 @@ void Stack<T_data>::Pop()
 }
 //---------------------------------------------------------------------------
 template <class T_data>
-void Stack<T_data>::Node::Remove()
+Stack<T_data>::Node* Stack<T_data>::Node::Remove()
 {
   Node * ret = next;
   (*prev)->next = next;
@@ -51,7 +51,7 @@ void Stack<T_data>::Node::Remove()
     next->prev = prev;
 
   delete this;
-  return next;
+  return ret;
 }
 //---------------------------------------------------------------------------
 template <class T_data>
@@ -81,7 +81,7 @@ void Stack<T_data>::Erase()
 }
 //---------------------------------------------------------------------------
 template <class T_data>
-Stack<T_data>& Stack<T_data> operator=(const Stack<T_data>& stack)
+Stack<T_data>& Stack<T_data>::operator=(const Stack<T_data>& stack)
 {
   if(&stack == this)
     return *this;
@@ -96,7 +96,7 @@ Stack<T_data>& Stack<T_data> operator=(const Stack<T_data>& stack)
 }
 //---------------------------------------------------------------------------
 template <class T_data>
-bool Stack<T_data> operator==(const Stack<T_data>& stack)
+bool Stack<T_data>::operator==(const Stack<T_data>& stack)
 {
   Node * n = top;
   Node * m = stack.top;
@@ -111,7 +111,7 @@ bool Stack<T_data> operator==(const Stack<T_data>& stack)
 }
 //---------------------------------------------------------------------------
 template <class T_data>
-void Stack<T_data>::Contains(data d)
+void Stack<T_data>::Contains(T_data d)
 {
   Node *m = top;
   while(m != NULL)

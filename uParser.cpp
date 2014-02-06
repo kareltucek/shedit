@@ -27,21 +27,21 @@ std::ofstream myfile;
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
 Parser::ParserState::ParserState()
-  : marks()
+  : markupStack()
 {
   statemask = 0;
 }
 //---------------------------------------------------------------------------
 Parser::ParserState::~ParserState()
 {
-  marks.Erase();
+  markupStack.Erase();
 }
 //---------------------------------------------------------------------------
 SHEdit::Parser::ParserState& Parser::ParserState::operator=(const SHEdit::Parser::ParserState& p)
 {
   parseid = p.parseid;
   statemask = p.statemask;
-  marks = p.marks;
+  markupStack = p.markupStack;
 
   return *this;
 }
@@ -91,7 +91,6 @@ __fastcall Parser::Parser(TSQLEdit * parent, Drawer * drawer)
   upperbound = PARSEINADVANCE;
   onidleset = false;
 
-  processAll = true;
   //DuplicateHandle(GetCurrentProcess(), bufferChanged, this->Handle, &(this->bufferChanged),  0, false, DUPLICATE_SAME_ACCESS);
 }
 //---------------------------------------------------------------------------
@@ -226,7 +225,7 @@ void Parser::ParseFromLine(NSpan * line, int linenum, int prior)
 }
 
 //---------------------------------------------------------------------------
-void Parser::ParseFromLine(NSpan * line, int linenum, NSpan * toline, int prior)
+void Parser::ParseFromToLine(NSpan * line, int linenum, NSpan * toline, int prior)
 {
     for(NSpan * l = line; l != NULL && l != toline->nextline; l = l->nextline, linenum++)
     {
@@ -278,7 +277,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::TreeItem *& searchtoken, 
         if(paint)
           AddChar(itr, pos);
         itr->GoChar();
-        if(itr->word->marks.tops.top)
+        if(itr->word->marks.top)
           CheckMarkup(itr,paint);
         type = langdef->Go(searchtoken, *(itr->ptr), lookahead);
       }
@@ -420,7 +419,7 @@ void Parser::CheckMarkup(Iter * itr, bool paint)
     {
       if(m->data.pos == itr->offset)
       {
-        if(m->.begin)
+        if(m->data.begin)
         {
           state.markupStack.Push(m->data.format);
           if(paint)
@@ -460,7 +459,7 @@ void Parser::CheckMarkup(Iter * itr, bool paint)
 //---------------------------------------------------------------------------
 void Parser::ReconstructMarkup()
 {
-  Stack<Format*> formats();
+  Stack<Format*> formats;
   Stack<Format*>::Node * m = state.markupStack.top;
   actMarkup = FontStyle();
 
@@ -471,7 +470,7 @@ void Parser::ReconstructMarkup()
   }
 
   m = formats.top;
-  while(m != NULL))
+  while(m != NULL)
   {
     actMarkup += *(m->data);
     m = m->next;
@@ -487,10 +486,8 @@ void Parser::Flush()
 {
   if(!actText.IsEmpty())
   {
-    if(state.markupStack != NULL)
-    {
-      actFormat += *(state.markupStack->format);
-    }
+    if(state.markupStack.top != NULL)
+      actFormat += actMarkupCombined;
     drawer->DrawText(actText, newline, linenum, actFormat);
     newline = false;
     actText = "";

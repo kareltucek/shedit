@@ -7,6 +7,7 @@
 #include "uSpan.h"
 #include "uIter.h"
 #include "uMark.h"
+#include "uFormat.h"
 #include <stack>
 #include <wchar.h>
 #include <stdio.h>
@@ -127,7 +128,7 @@ Span* Buffer::_SplitBegin(Iter * At)
   Span * firstnew = new Span(At->word->prev, NULL, firstnewstr, At->offset);
   firstnew->string[At->offset] = '\0';
 
-  if(At->word->mark)
+  if(At->word->marks.top)
   {
     for(Stack<Mark>::Node * m = At->word->marks.top; m != NULL; m = m->next)
       if(m->data.pos < At->offset)
@@ -142,7 +143,7 @@ Span* Buffer::_SplitEnd(Iter * At)
   wcscpy( secnewstr, At->word->string+At->offset);
   Span * secondnew = new Span(NULL, At->word->next, secnewstr, At->word->length-At->offset);
 
-  if(At->word->mark)
+  if(At->word->marks.top)
   {
     for(Stack<Mark>::Node * m = At->word->marks.top; m != NULL; m = m->next)
       if(m->data.pos >= At->offset)
@@ -339,9 +340,9 @@ Range * Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
     if(writeundo)
       r = new Range(From->word, From->word, false, From->line->nextline, To->line, false, 0);
     _Insert(newword);
-    if(From->word->mark)
-      for(Stack<Mark>::Node * m = From->word->marks.top; m != NULL; m = mark->next)
-        m->data.format->Add( newword->marks.push(m->data));
+    if(From->word->marks.top)
+      for(Stack<Mark>::Node * m = From->word->marks.top; m != NULL; m = m->next)
+        m->data.format->Add( newword->marks.Push(m->data));
   }
   else
   {
@@ -350,9 +351,9 @@ Range * Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
     From->word->length = wcslen(newstr);
     newword = From->word;
   }
-  if(newword->mark)
+  if(newword->marks.top)
   {
-    for(Stack<Mark>::Node * m = newword->mark.top; m != NULL; m = m->next)
+    for(Stack<Mark>::Node * m = newword->marks.top; m != NULL; m = m->next)
     {
       if(m->data.pos >= To->offset+length)
         m->data.pos -=length;
@@ -385,9 +386,9 @@ Range * Buffer::_InsertAt(NSpan * line, Span * word, int pos, wchar_t * string, 
     if(writeundo)
       r = new Range(word, word, false, line->nextline, line, false, 0);
     _Insert(newword);
-    if(word->mark)
+    if(word->marks.top)
       for(Stack<Mark>::Node * m = word->marks.top; m != NULL; m = m->next)
-        m->data.formatAdd(newword->marks.Push(Mark(m->data));
+        m->data.format->Add(newword->marks.Push(Mark(m->data)));
   }
   else
   {
@@ -396,8 +397,8 @@ Range * Buffer::_InsertAt(NSpan * line, Span * word, int pos, wchar_t * string, 
     word->length = wcslen(newstr);
     newword = word;
   }
-  if(word->mark)
-    for(Stack<Mark>  m = newword->marks.top; m != NULL; m = mark->next)
+  if(word->marks.top)
+    for(Stack<Mark>::Node * m = newword->marks.top; m != NULL; m = m->next)
       if(m->data.pos >= pos)
         m->data.pos += wcslen(string);
   return r;
@@ -904,14 +905,34 @@ int Buffer::GetLineCount()
   return data->linecount;
 }
 //---------------------------------------------------------------------------
-void Buffer::Register(IPos * itr)
+void Buffer::RegisterIP(IPos * itr)
 {
   ItrList.push_back(itr);
 }
 //---------------------------------------------------------------------------
-void Buffer::Unregister(IPos * itr)
+void Buffer::UnregisterIP(IPos * itr)
 {
   ItrList.remove(itr);
+}
+//---------------------------------------------------------------------------
+void Buffer::RegisterF(SHEdit::Format * f)
+{
+  FormatList.push_back(f);
+}
+//---------------------------------------------------------------------------
+void Buffer::UnregisterF(SHEdit::Format * f)
+{
+  FormatList.remove(f);
+}
+//---------------------------------------------------------------------------
+void Buffer::RegisterIM(IMark * itr)
+{
+  IMarkList.insert(itr);
+}
+//---------------------------------------------------------------------------
+void Buffer::UnregisterIM(IMark * itr)
+{
+  IMarkList.erase(itr);
 }
 //---------------------------------------------------------------------------
 void Buffer::ItersTranslateInsert(int linenum, int pos, int bylines, int topos, NSpan * toline)

@@ -33,7 +33,7 @@ namespace SHEdit
   class Format : public FontStyle
   {
     private:
-      std::list<Stack<Mark>::Node*> marks;
+      std::list< Stack<Mark >::Node* > marks;
       std::set<IPos*, IMark::compare> imarks; //Actually stores IMark pointers casted to pos for comparison
 
     public:

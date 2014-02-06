@@ -47,8 +47,8 @@ namespace SHEdit
       void GoByOffset(int chars);
       void GoBy(int chars);
 
-      Mark* MarkupBegin(SHEdit::Format * format);
-      Mark* MarkupEnd(SHEdit::Format * format);
+      void MarkupBegin(SHEdit::Format * format);
+      void MarkupEnd(SHEdit::Format * format);
       void MarkupRem(SHEdit::Format * format);
 
       Iter * Duplicate();

@@ -263,14 +263,14 @@ wchar_t& Iter::operator--()
   return *ptr;
 }
 //---------------------------------------------------------------------------
-SHEdit::Mark* Iter::MarkupBegin( SHEdit::Format * format)
+void Iter::MarkupBegin( SHEdit::Format * format)
 {
-  format->Add( word->marks.Push(Mark(format, true, offset));
+  format->Add( word->marks.Push(Mark(format, true, offset)));
 }
 //---------------------------------------------------------------------------
-SHEdit::Mark* Iter::MarkupEnd( SHEdit::Format * format)
+void Iter::MarkupEnd( SHEdit::Format * format)
 {
-  format->Add( word->marks.Push(Mark(format, true, offset));
+  format->Add( word->marks.Push(Mark(format, true, offset)));
 }
 //---------------------------------------------------------------------------
 int Iter::GetLeftOffset()
@@ -372,7 +372,7 @@ void Iter::UpdatePos()
 //---------------------------------------------------------------------------
 void Iter::UpdateNextImark()
 {
-  std::set<IPos*, IPos::compare>::iterator it = buffer->IMarkList.upper_bound(this);
+  std::set<IPos*, IPos::compare>::iterator it = buffer->IMarkList.upper_bound((IPos*)this);
   nextimark = (*it)->pos;
   nextimarkln = (*it)->linenum;
 }

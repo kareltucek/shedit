@@ -9,7 +9,7 @@ using namespace SHEdit;
 
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
-Mark::Mark(SHEdit::Format * format, bool begin, int pos)
+Mark::Mark(SHEdit::Format * format, bool begin, short pos)
 {
   this->format = format;
   this->begin = begin;

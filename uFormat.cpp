@@ -45,12 +45,12 @@ Format::~Format()
   //you should definitely not do this
 };
 //---------------------------------------------------------------------------
-void Format::Remove( Stack<Mark>::Node* mark)
+void Format::Remove( Stack<SHEdit::Mark>::Node* mark)
 {
   marks.remove(mark);
 }
 //---------------------------------------------------------------------------
-void Format::Add(Stack<Mark>::Node* mark)
+void Format::Add(Stack<SHEdit::Mark>::Node* mark)
 {
   marks.push_front(mark);
 }
@@ -62,13 +62,11 @@ void Format::RemoveAllMarks()
     marks.front()->Remove();
     marks.pop_front();
   }
-  if(buffer == NULL)
-    return;
 
-  for(!set.empty())
+  while(!imarks.empty())
   {
     std::set<IPos*, IMark::compare>::iterator it = imarks.begin();
-    IMark * m = (IMark*)*itr;
+    IMark * m = (IMark*)(*it);
     imarks.erase(it);
     delete m;
   }

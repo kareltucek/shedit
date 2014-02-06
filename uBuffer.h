@@ -10,6 +10,7 @@
 #include <fstream>
 namespace SHEdit
 {
+  class Format;
   //---------------------------------------------------------------------------
   class Buffer
   {
@@ -28,7 +29,7 @@ namespace SHEdit
 
       std::list<IPos*> ItrList;
       std::list<Format*> FormatList;
-      std::set<IMark*, IMark::compare> IMarkList;
+      std::set<IPos*, IPos::compare> IMarkList;
 
       void _Insert(Span * word);
       void _Delete(Span * word);

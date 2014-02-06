@@ -6,6 +6,7 @@
 
 #include "uSpan.h"
 #include "uIter.h"
+#include "uStack.h"
 #include <string>
 #include <stdio.h>
 #include <list>
@@ -56,7 +57,7 @@ Span::~Span()
 }
 //---------------------------------------------------------------------------
 Span::Span(Span * prev, Span * next, wchar_t * string, short length)
-  : marks();
+  : marks()
 {
   this->prev = prev;
   this->next = next;

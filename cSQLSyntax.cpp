@@ -150,7 +150,6 @@ LRESULT CALLBACK SHEdit::ProcessKeyCall(int code, WPARAM wParam, LPARAM lParam)
 LRESULT CALLBACK TSQLEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
 {
   bool trap = false;
-  parser->processAll = false;
   if((lParam & 2147483648) == 0)
   {
     switch(wParam)
@@ -206,12 +205,10 @@ LRESULT CALLBACK TSQLEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
   if(trap)
   {
     UpdateCursor(true);
-    parser->processAll = true;
     return 1;
   }
   else
   {
-    parser->processAll = true;
     return 0;
   }
 }
