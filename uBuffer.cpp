@@ -214,7 +214,7 @@ int Buffer::Insert(Iter * At, wchar_t * string)
   int pos = At->pos;
   while(ptr < ptrend)
   {
-    wchar_t * word = _ParseWord(ptr, ptrend) ;    
+    wchar_t * word = _ParseWord(ptr, ptrend) ;
     if(*word == '\n')
     {
       prevN = new NSpan(prev, prevN);
@@ -434,13 +434,18 @@ wchar_t* Buffer::_ParseWord(wchar_t*& ptr, wchar_t*& ptrend)             //OK
      ptr ++;
      }*/
 #else
+  if(*ptr == '\r')
+  {
+    ptrstart++;
+    ptr++;
+  }
   if(*ptr == '\n')
   {
     ptr ++;
   }
   else
   {
-    while(*ptr != '\n' && *ptr != '\0')
+    while(*ptr != '\r' && *ptr != '\n' && *ptr != '\0')
       ptr ++;
   }
 #endif
@@ -917,12 +922,12 @@ void Buffer::UnregisterIP(IPos * itr)
 //---------------------------------------------------------------------------
 void Buffer::RegisterF(SHEdit::Format * f)
 {
-  FormatList.push_back(f);
+  FormatList.insert(f);
 }
 //---------------------------------------------------------------------------
 void Buffer::UnregisterF(SHEdit::Format * f)
 {
-  FormatList.remove(f);
+  FormatList.erase(f);
 }
 //---------------------------------------------------------------------------
 void Buffer::RegisterIM(IMark * itr)
@@ -941,7 +946,7 @@ void Buffer::ItersTranslateInsert(int linenum, int pos, int bylines, int topos, 
   {
 #ifdef DEBUG
     int size = ItrList.size();
-    Iter *debug = *itr;
+    IPos *debug = *itr;
 #endif
     if((*itr)->linenum > linenum ||((*itr)->linenum == linenum && (*itr)->pos >= pos))
     {
@@ -966,7 +971,7 @@ void Buffer::ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, i
   {
 #ifdef DEBUG
     int size = ItrList.size();
-    Iter *debug = *itr;
+    IPos *debug = *itr;
 #endif
     if((*itr)->linenum > fromlinenum || ((*itr)->linenum == fromlinenum && (*itr)->pos >= frompos))
     {

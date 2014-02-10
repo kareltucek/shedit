@@ -55,6 +55,16 @@ void Format::Add(Stack<SHEdit::Mark>::Node* mark)
   marks.push_front(mark);
 }
 //---------------------------------------------------------------------------
+void Format::RemoveIM( IMark * mark)
+{
+  imarks.erase(mark);
+}
+//---------------------------------------------------------------------------
+void Format::AddIM(IMark * mark)
+{
+  imarks.insert(mark);
+}
+//---------------------------------------------------------------------------
 void Format::RemoveAllMarks()
 {
   while(!marks.empty())
@@ -145,9 +155,9 @@ SHEdit::FontStyle& FontStyle::operator=(const SHEdit::Format& f)
 //---------------------------------------------------------------------------
 IMark * Format::GetMarkBefore(IPos* ipos)
 {
-  std::set<IPos*, IMark::compare>::iterator it = imarks.upper_bound(ipos);
-  if(it == imarks.begin())
+  if(imarks.empty())
     return NULL;
+  std::set<IPos*, IMark::compare>::iterator it = imarks.upper_bound(ipos);
   it--;
   return (IMark*)*it;
 }

@@ -23,6 +23,7 @@ IMark::IMark(SHEdit::Format * format, bool begin, IPos * itr)
   this->type = IPType::iptMark;
   this->format = format;
   this->begin = begin;
+  format->AddIM(this);
   buffer->RegisterIM(this);
   buffer->RegisterF(format);
 }
@@ -30,5 +31,6 @@ IMark::IMark(SHEdit::Format * format, bool begin, IPos * itr)
 IMark::~IMark()
 {
   buffer->UnregisterIM(this);
+  format->RemoveIM(this);
 }
 //---------------------------------------------------------------------------

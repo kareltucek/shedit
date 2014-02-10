@@ -12,21 +12,56 @@ using namespace SHEdit;
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-LanguageDefinition::TreeItem::TreeItem(wchar_t c, LangDefSpecType type, SHEdit::FontStyle * format, SHEdit::LanguageDefinition::TreeItem * at)
+LanguageDefinition::TreeItem::TreeItem(wchar_t c, LangDefSpecType type, SHEdit::FontStyle * format)
 {
   this->thisItem = c;
   this->type = type;
   this->format = format;
-  this->nextTree = at == NULL ? this : at;
+  this->jumpcount = 0;
+  this->popmask = 0;
   for(int i = 0; i < 128; i++)
     map[i] = NULL;
 }
 //---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-__fastcall LanguageDefinition::LanguageDefinition()
+bool LanguageDefinition::SearchIt::operator==(const SearchIt& sit)
 {
-  masksUsed = 0;
+  return (this->base == sit.base && this->mask == sit.mask);
+}
+
+//---------------------------------------------------------------------------
+bool LanguageDefinition::SearchIt::operator!=(const SearchIt& sit)
+{
+  return (this->base != sit.base || this->mask != sit.mask);
+}
+
+//---------------------------------------------------------------------------
+LanguageDefinition::Jump::Jump(short _pushmask, short _newmask, TreeItem * _next)
+  : pushmask(_pushmask), newmask(_newmask), nextTree(_next)
+{
+ }
+
+//---------------------------------------------------------------------------
+LanguageDefinition::Jump::Jump()
+  : pushmask(0), newmask(0), nextTree(NULL)
+{
+ }
+
+//---------------------------------------------------------------------------
+void LanguageDefinition::TreeItem::AddJump(short pushmask, short newmask, TreeItem * to)
+{
+  Jump * newarray = new Jump[jumpcount+1];
+  for(int i = 0; i < jumpcount; i++)
+    newarray[i] = jumps[i];
+  newarray[jumpcount] = Jump(pushmask, newmask, to);
+  delete [] jumps;
+  jumps = newarray;
+  jumpcount++;
+}
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+LanguageDefinition::LanguageDefinition()
+{
   defFormat = new Format();
   defFormat->foreground = new TColor(clBlack);
   defFormat->background = new TColor(clWhite);
@@ -125,19 +160,19 @@ LanguageDefinition::TreeItem* LanguageDefinition::AddPair(wchar_t * opening, wch
     at = tree;
   TreeItem * newTree = AddNewTree(format);
 
-  AddJump(opening, format, LangDefSpecType::PairTag, at, newTree);
-  AddJump(closing, format, LangDefSpecType::PairTag, newTree, at);
+  AddJump(opening, format, LangDefSpecType::Jump, at, newTree);
+  AddJump(closing, format, LangDefSpecType::Jump, newTree, at);
 
   return newTree;
 }
 //---------------------------------------------------------------------------
 LanguageDefinition::TreeItem * LanguageDefinition::AddNewTree(FontStyle * format)
 {
-  TreeItem * newTree = new TreeItem('\0', LangDefSpecType::Empty, format, NULL);
+  TreeItem * newTree = new TreeItem('\0', LangDefSpecType::Empty, format);
   newTree->format = format;
-  newTree->mask = masksUsed;
-  masksUsed++;
-  specItems.push_back(newTree);
+  //newTree->id = idsUsed;
+  //idsUsed++;
+  //specItems.push_back(newTree);
   return newTree;
 }
 //---------------------------------------------------------------------------
@@ -156,8 +191,46 @@ void LanguageDefinition::AddJump(wchar_t * string, FontStyle * format, LangDefSp
   }
   item->type = type;
   item->format = format;
-  item->nextTree = to;
-  item->mask = to->mask;
+  item->AddJump(0, 0, to);
+  //item->id = to->id;
+}
+//---------------------------------------------------------------------------
+void LanguageDefinition::AddPush(wchar_t * string, FontStyle * format, TreeItem * at, TreeItem * to, short pushmask, short newmask)
+{
+  if(at == NULL)
+    at = tree;
+  if(to == NULL)
+    to = tree;
+  wchar_t * ptr = string;
+  TreeItem * item = at;
+  while(*ptr != ' ' && *ptr != '\0')
+  {
+    item = FindOrCreateItem(item, *ptr, at);
+    ptr++;
+  }
+  item->type = LangDefSpecType::PushPop;
+  if(format != NULL)
+    item->format = format;
+  item->AddJump(pushmask, newmask, to);
+  //item->id = to->id;
+}
+//---------------------------------------------------------------------------
+void LanguageDefinition::AddPop(wchar_t * string, FontStyle * format, TreeItem * at, short popmask)
+{
+  if(at == NULL)
+    at = tree;
+  wchar_t * ptr = string;
+  TreeItem * item = at;
+  while(*ptr != ' ' && *ptr != '\0')
+  {
+    item = FindOrCreateItem(item, *ptr, at);
+    ptr++;
+  }
+  item->type = LangDefSpecType::PushPop;
+  if(format != NULL)
+    item->format = format;
+  item->popmask = item->popmask | popmask;
+  //item->id = to->id;
 }
 //---------------------------------------------------------------------------
 LanguageDefinition::TreeItem* LanguageDefinition::FindOrCreateItem(TreeItem * item, wchar_t c, TreeItem * at)
@@ -172,12 +245,12 @@ LanguageDefinition::TreeItem* LanguageDefinition::FindOrCreateItem(TreeItem * it
   }
   if((int)comp < (int)0xEF)
   {
-    item->map[(int)comp] = new TreeItem(comp, LangDefSpecType::Nomatch, at->format, at);
+    item->map[(int)comp] = new TreeItem(comp, LangDefSpecType::Nomatch, at->format);
     return item->map[(int)comp];
   }
   else
   {
-    item->items.push_back(new TreeItem(comp, LangDefSpecType::Nomatch, at->format, at));
+    item->items.push_back(new TreeItem(comp, LangDefSpecType::Nomatch, at->format));
     return item->items.back();
   }
 }
@@ -187,72 +260,82 @@ LanguageDefinition::TreeItem* LanguageDefinition::GetTree()
   return tree;
 }
 //---------------------------------------------------------------------------
-LangDefSpecType LanguageDefinition::Go(TreeItem *& item, wchar_t c, bool & lookahead)
+LangDefSpecType LanguageDefinition::Go(SearchIter& item, wchar_t c, bool & lookahead)
 {
   wchar_t comp = towupper(c);
 beginning:
   if((int)c < (int)0x7F)
   {
-    if(item->map[(int)comp])
+    if(item.current->map[(int)comp])
     {
       lookahead = false;
-      item = item->map[(int)comp];
-      return item->type;
+      item.current = item.current->map[(int)comp];
+      return item.current->type;
     }
   }
   else
   {
-    for (std::list<TreeItem*>::const_iterator itr = item->items.begin(); itr != item->items.end(); ++itr)
+    for (std::list<TreeItem*>::const_iterator itr = item.current->items.begin(); itr != item.current->items.end(); ++itr)
     {
       if((*itr)->thisItem == comp)
       {
         lookahead = false;
-        item = *itr;
-        return item->type;
+        item.current = *itr;
+        return item.current->type;
       }
     }
   }
-  item = item->nextTree;
+  item.current = item.base;
   if(lookahead)
   {
     //return item->type;
     if((int)c < (int)0x7F)
     {
-      if(item->map[(int)comp])
+      if(item.current->map[(int)comp])
       {
-        item = item->map[(int)comp];
+        item.current = item.current->map[(int)comp];
         //return item->type == LangDefSpecType::Nomatch ? LangDefSpecType::NoEmpty : item->type;
         lookahead = true;
-        return item->type;
+        return item.current->type;
       }
     }
     else
     {
-      for (std::list<TreeItem*>::const_iterator itr = item->items.begin(); itr != item->items.end(); ++itr)
+      for (std::list<TreeItem*>::const_iterator itr = item.current->items.begin(); itr != item.current->items.end(); ++itr)
       {
         if((*itr)->thisItem == comp)
         {
-          item = *itr;
+          item.current = *itr;
           //return item->type == LangDefSpecType::Nomatch ? LangDefSpecType::NoEmpty : item->type;
           lookahead = true;
-          return item->type;
+          return item.current->type;
         }
       }
     }
   }
-  return item->type;
+  return item.current->type;
 }
 //---------------------------------------------------------------------------
-LanguageDefinition::TreeItem * LanguageDefinition::GetSpecItem(short mask)
+LanguageDefinition::SearchIter LanguageDefinition::GetDefSC()
+{
+  SearchIter st;
+  st.current = GetTree();
+  st.base = GetTree();
+  //mask = 0;
+  return st;
+}
+//---------------------------------------------------------------------------
+/*
+LanguageDefinition::TreeItem * LanguageDefinition::GetSpecItem(short id)
 {
 
   for (std::list<TreeItem*>::const_iterator itr = specItems.begin(); itr != specItems.end(); ++itr)
   {
-    if((*itr)->mask == mask)
+    if((*itr)->id == id)
       return *itr;
   }
   return this->tree;
-}
+}                                   */
 //---------------------------------------------------------------------------
 LanguageDefinition::~LanguageDefinition()
 {

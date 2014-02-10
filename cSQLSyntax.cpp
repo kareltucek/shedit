@@ -96,7 +96,7 @@ TSQLEdit * SQLEditFocused; //callback musi jit na statickou metodu...
 
   drawer = new Drawer(this->Canvas, this);
   parser = new Parser(this, drawer);
-  parser->SetLangDef(new LanguageDefinitionSQL());
+  parser->SetLangDef(new LanguageDefinition());
 
   if(!ComponentState.Contains(csDesigning))
   {
@@ -273,6 +273,8 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
           UpdateCursor(false);
           drawer->UpdateLinenumWidth(buffer->GetLineCount());
           RepaintWindow(true);
+          UpdateVBar();
+          UpdateHBar();
         }
         else
         {
@@ -413,6 +415,10 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
         case 0x03:
           Copy();
           break;
+        case 0x18:
+          Copy();
+          DeleteSel();
+          break;
         case 0x01:
           SelectAll();
           break;
@@ -468,8 +474,8 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
           Paste();
           break;
         default:
-          //(Message.WParam < 0x1F)
-          //  break;
+          if(Message.WParam < 0x20 && Message.WParam != '\r')
+            break;
           changed = itrCursor->line;
           wchar_t * str = new wchar_t[2];
           str[0] = Message.WParam;
@@ -548,10 +554,8 @@ void TSQLEdit::AdjustLine(bool paint)
     if(needsHAdjustment)
     {
       int hpos = 0;
-        if((cx-HBar->Position) < drawer->GetLinenumWidth()+MARGINS)
-          hpos = cx-drawer->GetLinenumWidth()-MARGINS;
-        else
-          hpos = cx - this->Width + MARGINS;
+          hpos = cx-drawer->GetLinenumWidth() - this->Width/2;
+
             if(hpos < 0)
               HBar->Position = 0;
             else
@@ -718,13 +722,18 @@ void TSQLEdit::ProcessMouseMove(int &x, int &y)
   cursorsInInvOrder = (y < cy || (y == cy && x < cx));
   if(*itrCursor != *itrCursorSecond)
   {
-    GetCursor()->MarkupBegin(selectionFormat);
-    GetCursorEnd()->MarkupEnd(selectionFormat);
+    GetCursor()->IMarkupBegin(selectionFormat);
+    GetCursorEnd()->IMarkupEnd(selectionFormat);
   }
 
+  /*
   if(oldIter != NULL) parser->ParseFromLine(oldIter->line, oldIter->linenum, 2);
   if(itrCursor != NULL) parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 2);
-  if(itrCursorSecond != NULL) parser->ParseFromLine(itrCursorSecond->line, itrCursorSecond->linenum, 2);
+  if(itrCursorSecond != NULL) parser->ParseFromLine(itrCursorSecond->line, itrCursorSecond->linenum, 2);    */
+  if(oldIter == NULL)
+    ParseScreenBetween(itrCursor, itrCursorSecond);
+  else
+    ParseScreenBetween(oldIter, itrCursorSecond);
 
   mx = x;
   my = y;
@@ -747,7 +756,7 @@ void TSQLEdit::ProcessMouseClear(bool redraw, bool deleteiter)
   {
     if(*itrCursor != *itrCursorSecond && redraw)
     {
-      parser->ParseFromLine(GetCursor()->line, GetCursor()->linenum, 2);
+      ParseScreenBetween(GetCursor(), GetCursorEnd());
       parser->Execute();
     }
     if(deleteiter)
@@ -922,7 +931,7 @@ void TSQLEdit::DeleteSel(bool allowsync)
 void TSQLEdit::Insert(wchar_t * text)
 {
   if(itrCursorSecond)
-    DeleteSel(false);
+     DeleteSel(false);
 
   parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 0);
 
@@ -1092,6 +1101,9 @@ void __fastcall TSQLEdit::OnVScroll(TObject *Sender, TScrollCode ScrollCode, int
     drawer->UpdateCursor(cx, cy);
     RepaintWindow(true);
   }
+
+  if(ScrollCode == scEndScroll)
+    this->SetFocus();
 }
 //---------------------------------------------------------------------------
 void __fastcall TSQLEdit::OnHScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos)
@@ -1099,6 +1111,7 @@ void __fastcall TSQLEdit::OnHScroll(TObject *Sender, TScrollCode ScrollCode, int
   if(ScrollCode == scEndScroll)
   {
     RepaintWindow(true);
+    this->SetFocus();
   }
 }
 //---------------------------------------------------------------------------
@@ -1143,10 +1156,9 @@ void TSQLEdit::SelectAll()
   delete itrCursor;
   itrCursor = buffer->Begin();
   itrCursorSecond = buffer->End();
-  itrCursor->MarkupBegin(this->selectionFormat);
-  itrLine->MarkupBegin(this->selectionFormat);
-  parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 0);
-  parser->ParseFromLine(itrLine->line, itrLine->linenum, 2);
+  itrCursor->IMarkupBegin(this->selectionFormat);
+  itrLine->IMarkupBegin(this->selectionFormat);
+  parser->ParseFromToLine(itrLine->line, itrLine->linenum, GetVisLineCount(), 2);
   UpdateCursor(false);
   parser->Execute();
 }
@@ -1159,10 +1171,31 @@ void TSQLEdit::LoadFile(char * filename)
   itrCursor = buffer->Begin();
   itrLine = buffer->Begin();
   parser->InvalidateAll();
-  parser->ParseFromLine(buffer->FirstLine(), 1, 0);
+  parser->ParseFromLine(itrLine->line, 1, 0);
   UpdateCursor(false);
   UpdateVBar();
   RepaintWindow(true);
+}
+//---------------------------------------------------------------------------
+void TSQLEdit::ParseScreenBetween(Iter * it1, Iter * it2)
+{
+  if(it2->linenum < it1->linenum || (it2->linenum == it1->linenum && it2->pos < it1->pos))
+  {
+    Iter * tmp = it1;
+    it1 = it2;
+    it2 = tmp;
+  }
+  if(it2->linenum < itrLine->linenum)
+   return;
+
+  if(it1->linenum < itrLine->linenum)
+    it1 = itrLine;
+
+  int count = it2->linenum - it1->linenum+1;
+  if(count > GetVisLineCount())
+    count = GetVisLineCount();
+
+  parser->ParseFromToLine(it1->line, it1->linenum, count, 2);
 }
 //---------------------------------------------------------------------------
 void __fastcall TSQLEdit::SetFontsize(int size)
@@ -1183,6 +1216,11 @@ void __fastcall TSQLEdit::SetLinenumsEnabled(bool enabled)
 bool __fastcall TSQLEdit::GetLinenumsEnabled()
 {
   return drawer->GetLinenumsEnabled();
+}
+//---------------------------------------------------------------------------
+void __fastcall TSQLEdit::SetLanguageDefinition(LanguageDefinition * def)
+{
+  parser->SetLangDef(def);
 }
 //---------------------------------------------------------------------------
 

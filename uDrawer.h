@@ -14,21 +14,25 @@ namespace SHEdit
   class NSpan;
   class TSQLEdit;
   class FontStyle;
-  //---------------------------------------------------------------------------
+
+  /*!
+   * Drawer ensures drawing everything that it is told to draw. It is usually told by TSQLEdit to move parts of already-painted information upwards or downwards, to update/repaint cursor and to update it's fontsize or linenumwidth parameters, while by Parser it is ordered to draw text, endlines and eof.
+   *
+   * When drawing text, the Drawer::x is incremented with width of drawn text waiting for endline to bleach the rest of screen and reset the x again to 0. Also information about length of longest line is kept for setting of horizontal scrollbar's parameters. Just highest 'ever reached' width is kept - in current structure there's no way to keep this parameter up to date (and it's just a visual glitch).
+   *
+   * Here is not much to document either, just to mention that everything that is not apparently pixel position is usually screen-line position (that means i.e. nth visible line).
+   *
+   * One more note - UpdateFontSize and updateLinenumWidth does not automatically repaint screen - screen repaint has to be triggered manually.
+   * */
   //---------------------------------------------------------------------------
   class Drawer
   {
     private:
       TSQLEdit * parent;
 
-      HANDLE drawerQueueMutex;
-      HANDLE drawerCanvasMutex;
-      HANDLE drawerTaskPending;
-
       TCanvas * canvas;
       TCanvas * drawcanvas;
 
-      //double buffer debug test
       Graphics::TBitmap * bitmap;
 
       inline int RightBorder();

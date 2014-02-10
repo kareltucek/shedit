@@ -13,6 +13,9 @@ namespace SHEdit
   class Mark;
   class Iter;
   //---------------------------------------------------------------------------
+  /*!
+   * Span represents some text span placed somewhere in buffer. More info can be found in the Buffer class.
+   * */
   struct Span
   {
     Span(Span * prev, Span * next, wchar_t* string, short length);
@@ -29,6 +32,11 @@ namespace SHEdit
     Stack<Mark> marks;
   };
   //---------------------------------------------------------------------------
+  /*!
+   * NSpan represents some new line, and creates a linked list of new lines, while taking part in the linked list created of Spans as well. More info can be found in the Buffer class.
+   *
+   * Each NSpan holds cached state of parser from beginning of that line.
+   * */
   struct NSpan : Span
   {
     NSpan(Span* afterword, NSpan* afterline);
@@ -56,6 +64,9 @@ namespace SHEdit
     //whatever
   };
   //---------------------------------------------------------------------------
+  /*!
+   * Span represents some range of Spans and NSpans. In fact it holds part of buffer by its ends. More info can be found in the Buffer class.
+   * */
   struct Range
   {
     Range(Span * first, Span * last, bool empty, NSpan * firstLine, NSpan * lastLine, bool lineempty, int linecount);
@@ -74,6 +85,9 @@ namespace SHEdit
     int linecount;
   };
   //---------------------------------------------------------------------------
+  /*!
+   * Action holds relative (numeric) description of an edition that was made on buffer. It serves for updating iterators back to their initial state when the edit is being undone. More info can be found in the Buffer class.
+   * */
   struct Action
   {
     enum ActionType{deletion, insertion};
@@ -88,6 +102,9 @@ namespace SHEdit
       int topos;
   };
   //---------------------------------------------------------------------------
+  /*!
+   * Serves for undo/redo. More info can be found in the Buffer class.
+   * */
   struct UndoTask
   {
     UndoTask(Action * action, Range * range);

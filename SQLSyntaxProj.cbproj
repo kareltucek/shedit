@@ -64,6 +64,9 @@
 			<TASM_Debugging>None</TASM_Debugging>
 		</PropertyGroup>
 		<ItemGroup>
+			<None Include="config.h">
+				<BuildOrder>15</BuildOrder>
+			</None>
 			<CppCompile Include="cSQLSyntax.cpp">
 				<DependentOn>$(BDS)\Projects\SQLSyntaxFS\SQLSyntax\cSQLSyntax.h</DependentOn>
 				<BuildOrder>7</BuildOrder>

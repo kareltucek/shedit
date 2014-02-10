@@ -34,30 +34,47 @@ namespace SHEdit
    * ------------------
    * TSQLEdit is a syntax highlight source code editing component.
    *
-   * TSQLEdit consists of 4 main parts. This component class TSQLEdit and then Buffer, Parser and Drawer. Originally parser and drawer were designed to work in their own thread, but as it turned out, it was not possible due to the fact that vcl is not thread safe and thus text rendering was not possible, so merged everything to just one thread, and cut off a lot of heavy stuff for thread sync.
+   * TSQLEdit consists of 4 main parts. The component class TSQLEdit, Buffer, Parser and Drawer. Originally parser and drawer were designed to work in their own thread, but as it turned out, it was not possible due to the fact that vcl is not thread safe and thus text rendering was not possible, so I merged everything into just one thread, and cut off a lot of heavy stuff for thread sync.
    * 
    * The data are stored in the buffer in a two-level linked list, which maintains a continuous text stream on one level, and newline list on the other one. Almost entire data structure is designed "lineary" - without andy binary tree indexes, mainly because of relatively high time complexity of keeping the binary tree up-to-date - that means, main approach, that amortizes time complexity to be constant (considering the size of buffer) (except for line movements) is to have an iterator that points to the current position of window, without having access to information about the rest of the data (there is just implemented a linear positioning system, that keeps track of current line number and offset, and that keeps all iterators valid and having the correct positioning info). Above the buffer works the component (actual TSQLEdit class), whose job is to process all user interaction, let the buffer to insert and remove text, handle undo and redo funcionality, and to manage painting of the screen. When updating the screen, component repaints just those parts of screen that are no longer valid (by lines - always entire line is reparsed/repainted). Lines that need to be repainted or reparsed are handed over to the Parser whose job is to parse the lines and those that are in visible part of window directly send further to drawer that draws them. Parser works "asynchronously" - can reparse every time just what it needs to reparse. 
    * 
    * Getting started
    * ---------------
-   * To get this component working you need a vcl aware IDE (it is written and tested under C++Builder XE). The steps are to install the component package. Then before you can do anything practical, you need to programaticcaly hand over an instance of language specification to the component (A descendant of LanguageDefinition class, by (TODO) call). You can obtain the object by following manners:
+   * To get this component working you need a vcl aware IDE (it is written and tested under C++Builder XE). The steps are to install the component package. Then before you can do anything practical, you need to programaticcaly hand over an instance of language specification to the component (A descendant of LanguageDefinition class, by TSQLEdit::SetLanguageDefinition call). You can obtain the object by following manners:
    *
-   * 1. Derive new descendant of the LanguageDefinition, and define it's dictionaries in it's body. (more info in documentation of the LanguageDefinition class)
-   * 2. Create new isntance of the LanguageDefinition itself, and construct the lexer "from outside" using it's public methods
+   * 1. Derive new descendant of the LanguageDefinition, and define it's dictionaries in it's body. (more info in documentation of the LanguageDefinition class, for example see the code of LanguageDefinitionSQL)
+   * 2. Create new isntance of the LanguageDefinition itself, and construct the lexer "from outside" using it's public methods. (do not forget the SHEdit namespace :-) )
    * 3. (NOT YET IMPLEMENTED) Create specification using a configuration file and let the component load it.
    *
    * Last thing you might want to do is to go through published properties using your IDE's designer.
    *
-   * Formatting
+   * Editting/Getting data into/out of component
+   * -------------------------------------------
+   *  All editing etc should be done through the public members of TSQLEdit and Iterators that were obtained from the TSQLEdit instance. Members are quite self-explaining, so it should not be problem to find out yourself.
+   *
+   *  Line numbering starts from 1. Line position numbering starts from 0. Each position refers to position on one line - i.e. pos higher than line width is not interpretted as position on next line but should end up at end of line. There is no global position numbering - just line + line position pairs.
+   *
+   * Text formatting
    * ---------
    * TSQLEdit provides 3 ways of formatting documents:
    * 1. The syntax highlight feature. For more information visit LanguageDefinition class documentation.
-   * 2. A positionless markup that is hardlinked to the buffer structure, that is kept up-to date through Parser. It is quite efficient for large amounts of local formatting, but lacks responsivity regarding global formating changes. For more information see Iter::MarkupBegin and Iter::MarkupEnd methods.
-   * 3. Iterator-handled global markup, that is established using system of binary search trees. It is efficient for markup changes over large areas and can quickly find current format at any point of buffer. Where it lacks is that Iterators has to be kept up to date throught editions on buffer (and amount of such iterators is thus somehow limited). For more information see Iter::IMarkupBegin and Iter::IMarkupEnd methods.
+   * 2. A positionless markup that is hardlinked to the buffer structure, that is kept up-to date through Parser. It is quite efficient for large amounts of local formatting, but lacks responsivity regarding global formating changes. For more information see Mark class and Iter::MarkupBegin and Iter::MarkupEnd methods.
+   * 3. An Iterator-handled global markup, that is established using system of binary search trees. It is efficient for markup changes over large areas and can quickly find current format at any point of buffer. Where it lacks is that Iterators has to be kept up to date throught editing of buffer (and amount of such iterators is thus somehow limited). For more information see IMark class and IPos::IMarkupBegin and IPos::IMarkupEnd methods. 
+   *
+   * The syntax highlight has the lowest priority while Iterator-handled markup has the highest (that's how they are put together in Parser class).
    *
    * Content of Documentation
    * ------------------------
-   *  1. TSQLEdit class
+   *  1. TSQLEdit - the main component class
+   *  2. Buffer - overview of Buffer related functionality
+   *  3. buffer's structures - NSpan Span Range and Action - just very brief defs
+   *  4. IPos - positioning 
+   *  5. Iter - a bit more on positioning
+   *  6. Parser - how parsing works
+   *  7. LanguageDefinition and example LanguageDefinitionSQL
+   *  8. Drawer - just some notes
+   *  9. Text formatting - Format FontStyle Mark IMark 
+   *  10. Stack - minimalistic stack reimplementation (for low memory consumption needs)
    */
 
   /**
@@ -137,6 +154,8 @@ namespace SHEdit
       void Insert(wchar_t * text);                                                                  /*!< Handles all insertions.*/
       void ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed);                      /*!< Handles painting of most actions that need just partial movement of some data - line insertions and deletions, scrolling, etc.*/
 
+      void ParseScreenBetween(Iter * it1, Iter * it2);                                              /*!< Pushes visible lines between it1 and it2 to parser. Takes care of right order of iters, and of trimming the. */
+
       int __fastcall GetLineNum(NSpan * line);                                                      /*!< Returns line number relative to the first visible line. Relic of a positionless handling*/
       bool __fastcall GetLineFirst(NSpan * line);
       Iter * __fastcall GetLineByNum(int num, bool allowEnd);                                       /*!< returns iterator of line numth visible line*/
@@ -158,6 +177,8 @@ namespace SHEdit
       TMemo * dbgLog;
       int __fastcall GetVisLineCount();
       int __fastcall GetLineCount();
+      
+      void __fastcall SetLanguageDefinition(LanguageDefinition * def);
 
       void __fastcall SetLinenumsEnabled(bool enabled);                                             /*!< sets whether line numbers are being drawn. Needs manual triggering of repaintwindow*/
       bool __fastcall GetLinenumsEnabled();

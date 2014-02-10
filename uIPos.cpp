@@ -54,8 +54,10 @@ IMark* IPos::IMarkupEnd(SHEdit::Format * format)
 FontStyle IPos::ReconstructIMarkFontStyle()
 {
   FontStyle st = FontStyle();
+  if(buffer == NULL)
+    return st;
   std::list<IPos*> searchtree; //dunno why i called it a tree
-  for (std::list<Format*>::iterator itr = buffer->FormatList.begin(); itr != buffer->FormatList.end(); itr++)
+  for (std::set<Format*>::iterator itr = buffer->FormatList.begin(); itr != buffer->FormatList.end(); itr++)
   {
     IMark * m = (*itr)->GetMarkBefore(this);
     if(m != NULL && m->begin)

@@ -63,12 +63,14 @@ void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontS
   y = Y_OFF+linesize*linenum;
   if(newline)
   {
-
-#ifdef DEBUG
-    // Write("\n");
-#endif
     HPos = parent->HBar->Position;
     x = 2-HPos+GetLinenumWidth();
+  }
+
+  if(x > parent->Width)
+  {
+    x += drawcanvas->TextWidth(text);
+    return;
   }
 
   if(format.foreground != NULL)
@@ -76,13 +78,6 @@ void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontS
   if(format.background != NULL)
     drawcanvas->Brush->Color = *format.background;
 
-#ifdef DEBUG
-  /*  //drawcanvas->Rectangle(x, y,x+drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text)), y+linesize);
-      Sleep(10);
-      DrawTaskText *dbg = ((DrawTaskText*)tasktoprocess);
-      Write((((DrawTaskText*)tasktoprocess)->format.background != NULL && *(((DrawTaskText*)tasktoprocess)->format.background) != (TColor)0xddffdd ? String("!") : String(" ")) + String((int)drawcanvas->Brush->Color) +String(" ")+ String(y) + String("(")+ String(x) + String(")<")+ String(drawcanvas->TextWidth(*(((DrawTaskText*)tasktoprocess)->text)))+ String(">:")+ *(((DrawTaskText*)tasktoprocess)->text));
-      */
-#endif
   drawcanvas->TextOut(x, y, text);
   x = drawcanvas->PenPos.x;
 

@@ -68,7 +68,7 @@ Span::Span(Span * prev, Span * next, wchar_t * string, short length)
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
   NSpan::NSpan(Iter * After)
-: Span(After)
+: Span(After), parserState()
 {
   prevline = After->line;
   nextline = After->line->nextline;
@@ -78,7 +78,7 @@ Span::Span(Span * prev, Span * next, wchar_t * string, short length)
 }
 //---------------------------------------------------------------------------
   NSpan::NSpan(Span* afterword, NSpan* afterline)
-: Span(afterword)
+: Span(afterword), parserState()
 {
   prevline = afterline;
   nextline = afterline->nextline;
@@ -88,7 +88,7 @@ Span::Span(Span * prev, Span * next, wchar_t * string, short length)
 }
 //---------------------------------------------------------------------------
   NSpan::NSpan()
-: Span()
+: Span(), parserState()
 {
   prevline = NULL;
   nextline = NULL;

@@ -1,10 +1,9 @@
-//define DEBUG
+#define DEBUG
 //define DEBUG_LOGGING
 //define DEBUG_PARSELINELOOP
 //define DEBUG_CURSOR
 #define DEBUG_REPAINT false
 
-//define STRICT_PARSE
 #define DOUBLE_BUFFERED
 //define FULL_WIDTH_PAINT
 #define TAB_WIDTH 2
@@ -20,7 +19,7 @@
 #define MARGINS 50  //for horizontal adjustment
 
 #define PARSEINADVANCE 10000
-#define PARSEINONEGO 100
+#define PARSEINONEGO 1000
 
 
 #define DEFONTSIZE 8
