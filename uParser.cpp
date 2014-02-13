@@ -105,6 +105,7 @@ bool __fastcall Parser::Execute()
   bool painted = false;
 
   int parsed = 0;
+  bool endValid = false;
   while(tasklistprior.size() > 0 || (tasklist.size() > 0 && tasklist.front().linenum < upperbound))
   {
     ParseTask pt;
@@ -135,6 +136,7 @@ bool __fastcall Parser::Execute()
     if(state.searchStateStack.top == NULL)
       state.searchStateStack.Push(langdef->GetDefSC());
     LanguageDefinition::SearchIter& searchtoken = state.searchStateStack.top->data;
+    actFormat = *state.searchStateStack.top->data.base->format;
 
     tasklistprior.remove(pt);
     tasklist.remove(pt);
@@ -153,7 +155,7 @@ bool __fastcall Parser::Execute()
       //parent->Log(String("parsing line ")+String(itr->linenum));
       ParseLine(itr, searchtoken, linenum >= 0);
 
-      itr->GoChar();
+      endValid = itr->GoChar();
       if(linenum >= 0)
       {
         //FlushAll();
@@ -181,7 +183,7 @@ bool __fastcall Parser::Execute()
         {
           this->tasklist.push_front(ParseTask(itr->line, itr->linenum));
         }
-        //itr->line->parserState = this->state; //will be done after breaak
+        itr->line->parserState = this->state;
         break;
       }
     }
@@ -192,7 +194,8 @@ bool __fastcall Parser::Execute()
       SendEof();
     }
 
-    itr->line->parserState = this->state;
+    if(itr->word->next == NULL && endValid) //when last line is empty line, then parseline would not get assigned
+      itr->line->parserState = this->state;  //beware - you do not want to assign state into wrong line (when iter could go no further
 
     //parent->Log(String("parsed to line ")+String(itr->linenum));
     delete itr;
@@ -271,15 +274,25 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter& searchtoken, 
 
   while(*(itr->ptr) != '\n')
   {
+    CheckMarkup(itr, paint);
+    while(langdef->IsWhite(*(itr->ptr)) && *(itr->ptr) != '\n')
+    {
+      AddChar(itr, pos);
+      itr->GoChar();
       CheckMarkup(itr, paint);
+    }
+    if(*(itr->ptr) == '\n')
+      break;
 
     //lasttoken = searchtoken->nextTree;
     bool lookahead = true;
     int type;
     if(langdef->IsAl(*(itr->ptr)))
     {
-      Flush();
+      inword = true;
       type = langdef->Go(searchtoken, *(itr->ptr), lookahead);
+      if(lookahead && paint)
+        Flush();
       lookahead = false;
       while(langdef->IsAlNum(*(itr->ptr)) && (type == LangDefSpecType::Nomatch || (type != LangDefSpecType::Empty && langdef->IsAlNum(itr->GetNextChar()))))
       {
@@ -289,26 +302,43 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter& searchtoken, 
           CheckMarkup(itr,paint);
         type = langdef->Go(searchtoken, *(itr->ptr), lookahead);
       }
-      if(!langdef->IsAlNum(*(itr->ptr)))
+      if(!langdef->IsAlNum(*(itr->ptr)))  //the search was ended past the word
       {
-        searchtoken.current = searchtoken.base;
-        if(paint)
-          actFormat += *(searchtoken.current->format);
-        Flush();
-        type = langdef->Go(searchtoken, *(itr->ptr), lookahead);
-        if(*(itr->ptr) == '\n')
-          break;
+        if(type != LangDefSpecType::Nomatch && type != LangDefSpecType::Empty && CanGoFurther(searchtoken, itr, true, true))
+        {
+          while(langdef->IsWhite(*(itr->ptr)) && *(itr->ptr) != '\n')
+          {
+            inword = false;
+            AddChar(itr, pos);
+            itr->GoChar();
+            CheckMarkup(itr, paint);
+          }
+          type = LangDefSpecType::Nomatch;
+        } /*                             //ths would cut the ended word
+        else
+        {
+          searchtoken.current = searchtoken.base;
+          if(paint)
+            actFormat += *(searchtoken.current->format);
+          Flush();
+          type = langdef->Go(searchtoken, *(itr->ptr), lookahead);
+          if(*(itr->ptr) == '\n')
+            break;
+        }     */
       }
-      else if( langdef->IsAlNum(itr->GetNextChar()))
+      else if( langdef->IsAlNum(itr->GetNextChar()))  //the search was ended in the middle of word
       {
         type = LangDefSpecType::WordTag;
         searchtoken.current = searchtoken.base;
       }
-      //else everything is gonna work
+      //else everything is gonna work  //ehm  //the search was ended on the last letter of word
     }
     else
     {
+      inword = false;
       type = langdef->Go(searchtoken, *(itr->ptr), lookahead);
+      if(type != LangDefSpecType::Empty && type != LangDefSpecType::Nomatch && CanGoFurther(searchtoken, itr, false))
+        type = LangDefSpecType::Nomatch;
     }
     #ifdef DEBUG
 
@@ -351,8 +381,17 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter& searchtoken, 
         }
         if(searchtoken.mask & searchtoken.current->popmask)
         {
-          for(int i = searchtoken.current->popcount; i > 0; i--)
-            state.searchStateStack.Pop();
+          if(searchtoken.current->popcount >= 0)
+          {
+            for(int i = searchtoken.current->popcount; i > 0; i--)
+              state.searchStateStack.Pop();
+          }
+          else
+          {
+            int popmask = searchtoken.current->popmask;
+            while(state.searchStateStack.top != NULL && state.searchStateStack.top->data.mask & popmask)
+              state.searchStateStack.Pop();
+          }
           if(state.searchStateStack.top == NULL)
             state.searchStateStack.Push(langdef->GetDefSC());
           searchtoken = state.searchStateStack.top->data;
@@ -361,16 +400,19 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter& searchtoken, 
         {
           for(int i = 0; i < searchtoken.current->jumpcount; i++)
           {
-            if(searchtoken.current->jumps[i].pushmask & searchtoken.mask)
+            if(searchtoken.current->jumps[i].pushmask & searchtoken.mask && searchtoken.current->jumps[i].pushmask == 0)
             {
+              int newmask = searchtoken.current->jumps[i].newmask;
               state.searchStateStack.Push(searchtoken);
               searchtoken = state.searchStateStack.top->data;
+              searchtoken.mask ^= newmask;
               searchtoken.base = searchtoken.current->jumps[i].nextTree;
               searchtoken.current = searchtoken.base;
               break;
             }
           }
         }
+        actFormat = *searchtoken.current->format ;
         break;
       case LangDefSpecType::Jump:
         if(paint)
@@ -379,39 +421,57 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter& searchtoken, 
           actFormat += *(searchtoken.current->format);
           Flush();
         }
+        if(searchtoken.mask & searchtoken.current->popmask)
+        {
+          if(searchtoken.current->popcount >= 0)
+          {
+            for(int i = searchtoken.current->popcount; i > 0; i--)
+              state.searchStateStack.Pop();
+          }
+          else
+          {
+            int popmask = searchtoken.current->popmask;
+            while(state.searchStateStack.top != NULL && state.searchStateStack.top->data.mask & popmask)
+              state.searchStateStack.Pop();
+          }
+          if(state.searchStateStack.top == NULL)
+            state.searchStateStack.Push(langdef->GetDefSC());
+          searchtoken = state.searchStateStack.top->data;
+        }
         searchtoken.base = searchtoken.current->jumps[0].nextTree;
         searchtoken.current = searchtoken.base;
+        actFormat = *searchtoken.current->format ;
         break;
       case LangDefSpecType::Normal:
         if(paint)
         {
           AddChar(itr, pos);
           actFormat += *(searchtoken.current->format);
-          Flush();
+          //Flush();
         }
         break;
       case LangDefSpecType::Nomatch:
         if(paint)
         {
           AddChar(itr, pos);
-          actFormat += *(searchtoken.current->format);//if format remains, flush wont be done
+          //actFormat += *(searchtoken.current->format);//if format remains, flush wont be done
         }
         break;
       case LangDefSpecType::WordTag:
         if(paint)
         {
           AddChar(itr, pos);
-          actFormat = *(searchtoken.current->format);
+          actFormat += *(searchtoken.current->format);
         }
         itr->GoChar();
         while(langdef->IsAlNum(*(itr->ptr)))
         {
-            CheckMarkup(itr,paint);
+          CheckMarkup(itr,paint);
           if(paint)
             AddChar(itr, pos);
           itr->GoChar();
         }
-          CheckMarkup(itr,paint);
+        CheckMarkup(itr,paint);
         if(paint)
         {
           actFormat += *(searchtoken.current->format);
@@ -432,6 +492,48 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter& searchtoken, 
     searchtoken = lineback;
   return;
 
+}
+//---------------------------------------------------------------------------
+bool Parser::CanGoFurther(LanguageDefinition::SearchIter sit, Iter * itr, bool inword, bool checkbefore)
+{
+  Iter * it2 = itr->Duplicate();
+  int type = LangDefSpecType::Nomatch;
+  bool look = false;
+  if(checkbefore)
+  {
+    type = langdef->Go(sit, *(it2->ptr), look);
+
+  }
+  while(*(it2->ptr) != '\n' && type == LangDefSpecType::Nomatch)
+  {
+    look = false;
+    it2->GoChar();
+
+    bool whiteskipped = false;
+    while(langdef->IsWhite(*(it2->ptr)) && *(it2->ptr) != '\n')
+    {
+      whiteskipped = true;
+      it2->GoChar();
+    }
+    if(whiteskipped && inword && langdef->IsAl(*(it2->ptr)))
+    {
+      delete it2;
+      return false;
+    }
+    else if(whiteskipped)
+      inword = false;
+
+    type = langdef->Go(sit, *(it2->ptr), look);
+    inword = (inword && langdef->IsAlNum(*(it2->ptr))) || langdef->IsAl(*(it2->ptr));
+  }
+  if(*(it2->ptr) == '\n' || type == LangDefSpecType::Empty || (inword && langdef->IsAlNum(it2->GetNextChar())))
+  {
+    delete it2;
+    return false;
+  }
+  actFormat += *(sit.current->format);
+  delete it2;
+  return true;
 }
 //---------------------------------------------------------------------------
 void Parser::AddChar(Iter * itr, int & pos)
@@ -471,6 +573,7 @@ void Parser::CheckMarkup(Iter * itr, bool paint)
           state.markupStack.Push(m->data.format);
           if(paint)
           {
+            CanGoFurther(state.searchStateStack.top->data, itr, this->inword, true); //its side effect is correction of format
             Flush();
             actMarkup += *(m->data.format);
             actMarkupCombined = actMarkup;
@@ -485,6 +588,7 @@ void Parser::CheckMarkup(Iter * itr, bool paint)
           state.markupStack.Remove(m->data.format);
           if(paint)
           {
+            CanGoFurther(state.searchStateStack.top->data, itr, this->inword, true); //its side effect is correction of format
             Flush();
             ReconstructMarkup();
             actMarkupCombined = actMarkup;
@@ -497,6 +601,7 @@ void Parser::CheckMarkup(Iter * itr, bool paint)
   }
   if(itr->pos == itr->nextimark && itr->linenum == itr->nextimarkln && paint)
   {
+    CanGoFurther(state.searchStateStack.top->data, itr, this->inword, true); //its side effect is correction of format
     Flush();
     actIMarkup = itr->ReconstructIMarkFontStyle();
     actMarkupCombined = actMarkup;
@@ -538,14 +643,15 @@ void Parser::Flush()
     drawer->DrawText(actText, newline, linenum, actFormat);
     newline = false;
     actText = "";
-    actFormat = *(langdef->GetTree()->format);
+    actFormat = *(state.searchStateStack.top->data.base->format);
   }
 }
 //---------------------------------------------------------------------------
 void Parser::FlushAll()
 {
   Flush();
-  drawer->DrawEndl(linenum);
+  actFormat += actMarkupCombined;
+  drawer->DrawEndl(linenum, actFormat);
 }
 //---------------------------------------------------------------------------
 void Parser::SendEof()

@@ -22,19 +22,35 @@ Format::Format()
 
 };
 //---------------------------------------------------------------------------
+  Format::Format(TColor * foreground, TColor * background, TFontStyles style)
+: FontStyle(foreground, background, style)
+{
+
+};
+//---------------------------------------------------------------------------
 FontStyle::FontStyle(TColor * foreground, TColor * background)
+  : style()
+{
+  this->foreground = foreground;
+  this->background = background;
+};
+//---------------------------------------------------------------------------
+FontStyle::FontStyle(TColor * foreground, TColor * background, TFontStyles style)
+  : style(style)
 {
   this->foreground = foreground;
   this->background = background;
 };
 //---------------------------------------------------------------------------
 FontStyle::FontStyle(TColor * foreground)
+  : style()
 {
   this->foreground = foreground;
   this->background = NULL;
 };
 //---------------------------------------------------------------------------
 FontStyle::FontStyle()
+  : style()
 {
   this->foreground = NULL;
   this->background = NULL;
@@ -84,12 +100,16 @@ void Format::RemoveAllMarks()
 //---------------------------------------------------------------------------
 bool Format::operator==(const SHEdit::Format& f)
 {
-  return (*(this->foreground) == *(f.foreground) &&  *(this->background) == *(f.background));
+  bool s = this->foreground == f.foreground || (this->foreground && f.foreground && *(this->foreground) == *(f.foreground));
+  bool b = this->background == f.background || (this->background && f.background && *(this->background) == *(f.background));
+  return b && s && this->style == f.style;
 }
 //---------------------------------------------------------------------------
 bool Format::operator!=(const SHEdit::Format& f)
 {
-  return (*(this->foreground) != *(f.foreground) ||  *(this->background) != *(f.background));
+  bool s = this->foreground == f.foreground || (this->foreground && f.foreground && *(this->foreground) == *(f.foreground));
+  bool b = this->background == f.background || (this->background && f.background && *(this->background) == *(f.background));
+  return !b || !s  || this->style != f.style;
 }
 //---------------------------------------------------------------------------
 SHEdit::Format& Format::operator+=(const SHEdit::Format& f)
@@ -98,6 +118,7 @@ SHEdit::Format& Format::operator+=(const SHEdit::Format& f)
     this->foreground = f.foreground;
   if(f.background)
     this->background = f.background;
+  this->style = this->style + f.style;   //I have no idea how the + is implemented... what I want is in fact to do "this->style | f.style" (as I suppose it is stored as binary mask)
   return *this;
 }
 //---------------------------------------------------------------------------
@@ -105,6 +126,7 @@ SHEdit::Format& Format::operator=(const SHEdit::Format& f)
 {
     this->foreground = f.foreground;
     this->background = f.background;
+    this->style = f.style;
   return *this;
 }
 //---------------------------------------------------------------------------
@@ -112,7 +134,7 @@ bool FontStyle::operator==(const SHEdit::FontStyle& f)
 {
   bool s = this->foreground == f.foreground || (this->foreground && f.foreground && *(this->foreground) == *(f.foreground));
   bool b = this->background == f.background || (this->background && f.background && *(this->background) == *(f.background));
-  return b & s;
+  return b && s && this->style == f.style;
 }
 //---------------------------------------------------------------------------
 bool FontStyle::operator!=(const SHEdit::FontStyle& f)
@@ -126,6 +148,7 @@ SHEdit::FontStyle& FontStyle::operator+=(const SHEdit::FontStyle& f)
     this->foreground = f.foreground;
   if(f.background)
     this->background = f.background;
+  this->style = this->style + f.style;
   return *this;
 }
 //---------------------------------------------------------------------------
@@ -135,6 +158,7 @@ SHEdit::FontStyle& FontStyle::operator+=(const SHEdit::Format& f)
     this->foreground = f.foreground;
   if(f.background)
     this->background = f.background;
+  this->style = this->style + f.style;
   return *this;
 }
 //---------------------------------------------------------------------------
@@ -143,6 +167,7 @@ SHEdit::FontStyle& FontStyle::operator=(const SHEdit::FontStyle& f)
 {
     this->foreground = f.foreground;
     this->background = f.background;
+  this->style = f.style;
   return *this;
 }
 //---------------------------------------------------------------------------
@@ -150,6 +175,7 @@ SHEdit::FontStyle& FontStyle::operator=(const SHEdit::Format& f)
 {
     this->foreground = f.foreground;
     this->background = f.background;
+  this->style = f.style;
   return *this;
 }
 //---------------------------------------------------------------------------

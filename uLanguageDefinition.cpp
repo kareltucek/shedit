@@ -18,9 +18,24 @@ LanguageDefinition::TreeItem::TreeItem(wchar_t c, LangDefSpecType type, SHEdit::
   this->type = type;
   this->format = format;
   this->jumpcount = 0;
+  this->jumps = NULL;
   this->popmask = 0;
   for(int i = 0; i < 128; i++)
     map[i] = NULL;
+}
+//---------------------------------------------------------------------------
+LanguageDefinition::TreeItem::TreeItem(TreeItem * tree, SHEdit::FontStyle * format)
+{
+  this->thisItem = tree->thisItem;
+  this->type = tree->type;
+  this->format = format;
+  this->jumpcount = tree->jumpcount;
+  this->popmask = tree->popmask;
+  this->jumps = new Jump[jumpcount];
+  for(int i = 0; i < jumpcount; i++)
+    this->jumps[i] = tree->jumps[i];
+  for(int i = 0; i < 128; i++)
+    map[i] = tree->map[i];
 }
 //---------------------------------------------------------------------------
 bool LanguageDefinition::SearchIt::operator==(const SearchIt& sit)
@@ -67,6 +82,7 @@ LanguageDefinition::LanguageDefinition()
   defFormat->background = new TColor(clWhite);
   tree = AddNewTree(defFormat);
   tree->format = defFormat;
+  allowWhiteSkipping = false;
 }
 //---------------------------------------------------------------------------
 bool LanguageDefinition::IsAl(wchar_t c)
@@ -86,7 +102,7 @@ bool LanguageDefinition::IsNum(wchar_t c)
 //---------------------------------------------------------------------------
 bool LanguageDefinition::IsWhite(wchar_t c)
 {
-  return (int)c < 33 && c != '\n';
+  return allowWhiteSkipping && (int)c < 33 && c != '\n';
 }
 //---------------------------------------------------------------------------
 void LanguageDefinition::SetDefaultColor(TColor * defColor)
@@ -99,9 +115,10 @@ void LanguageDefinition::AddReservedNames(wchar_t * string, FontStyle * format, 
 {
   if(at == NULL)
     at = tree;
-  FontStyle * newformat = new FontStyle();
-  *newformat = *(at->format);
-  *newformat = *format;
+  FontStyle * newformat = format;
+  //FontStyle * newformat = new FontStyle();
+  //*newformat = *(at->format);
+  //*newformat = *format;
   wchar_t * ptrend = string + wcslen(string); 
   while(string != ptrend)
   {
@@ -109,13 +126,18 @@ void LanguageDefinition::AddReservedNames(wchar_t * string, FontStyle * format, 
       string++;
     wchar_t * ptr = string;
     TreeItem * item = at;
+    if(*ptr == '\0')  //else would change the tree base instead
+      return;
     while(*ptr != ' ' && *ptr != '\0')
     {
       item = FindOrCreateItem(item, *ptr, at);
       ptr++;
     }
     item->type = LangDefSpecType::Normal;
-    item->format = newformat;
+    if(newformat != NULL)
+      item->format = newformat;
+    if(newformat == NULL && item->format == NULL && at->format != NULL)
+      item->format = at->format;
     string = ptr;
   }
 }
@@ -123,6 +145,11 @@ void LanguageDefinition::AddReservedNames(wchar_t * string, FontStyle * format, 
 void LanguageDefinition::SetCaseSensitive(bool casesensitive)
 {
   this->caseSensitive = caseSensitive;
+}
+//---------------------------------------------------------------------------
+void LanguageDefinition::SetAllowWhiteSkipping(bool allow)
+{
+  this->allowWhiteSkipping = allow;
 }
 //---------------------------------------------------------------------------
 
@@ -149,21 +176,26 @@ void LanguageDefinition::AddWord(wchar_t * string, FontStyle * format, TreeItem 
     ptr++;
   }
   item->type = LangDefSpecType::WordTag;
-  item->format = new FontStyle();
-  *(item->format) = *(at->format);
-  *(item->format) = *format;
+  if(format != NULL)
+    item->format = format;
+  if(format == NULL && item->format == NULL && at->format != NULL)
+    item->format = at->format;
+  //item->format = new FontStyle();
+  //*(item->format) = *(at->format);
+  //*(item->format) = *format;
 }
 //---------------------------------------------------------------------------
-LanguageDefinition::TreeItem* LanguageDefinition::AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeItem * at)
+LanguageDefinition::TreeItem* LanguageDefinition::AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeItem * at, TreeItem * to)
 {
   if(at == NULL)
     at = tree;
-  TreeItem * newTree = AddNewTree(format);
+  if(to == NULL)
+    to = AddNewTree(format);
 
-  AddJump(opening, format, LangDefSpecType::Jump, at, newTree);
-  AddJump(closing, format, LangDefSpecType::Jump, newTree, at);
+  AddJump(opening, format, LangDefSpecType::Jump, at, to);
+  AddJump(closing, format, LangDefSpecType::Jump, to, at);
 
-  return newTree;
+  return to;
 }
 //---------------------------------------------------------------------------
 LanguageDefinition::TreeItem * LanguageDefinition::AddNewTree(FontStyle * format)
@@ -173,6 +205,12 @@ LanguageDefinition::TreeItem * LanguageDefinition::AddNewTree(FontStyle * format
   //newTree->id = idsUsed;
   //idsUsed++;
   //specItems.push_back(newTree);
+  return newTree;
+}
+//---------------------------------------------------------------------------
+LanguageDefinition::TreeItem * LanguageDefinition::AddDupTree(LanguageDefinition::TreeItem * tree, FontStyle * format)
+{
+  TreeItem * newTree = new TreeItem(tree, format == NULL ? tree->format : format);
   return newTree;
 }
 //---------------------------------------------------------------------------
@@ -190,7 +228,8 @@ void LanguageDefinition::AddJump(wchar_t * string, FontStyle * format, LangDefSp
     ptr++;
   }
   item->type = type;
-  item->format = format;
+  if(format != NULL)
+    item->format = format;
   item->AddJump(0, 0, to);
   //item->id = to->id;
 }
@@ -226,7 +265,8 @@ void LanguageDefinition::AddPop(wchar_t * string, FontStyle * format, TreeItem *
     item = FindOrCreateItem(item, *ptr, at);
     ptr++;
   }
-  item->type = LangDefSpecType::PushPop;
+  if(item->type != LangDefSpecType::Jump)
+    item->type = LangDefSpecType::PushPop;
   if(format != NULL)
     item->format = format;
   item->popmask = item->popmask | popmask;
@@ -236,6 +276,7 @@ void LanguageDefinition::AddPop(wchar_t * string, FontStyle * format, TreeItem *
 LanguageDefinition::TreeItem* LanguageDefinition::FindOrCreateItem(TreeItem * item, wchar_t c, TreeItem * at)
 {
   wchar_t comp = towupper(c);
+  //find
   if((int)comp < (int)0xEF && item->map[(int)comp] != NULL)
     return item->map[(int)comp];
   for (std::list<TreeItem*>::const_iterator itr = item->items.begin(); itr != item->items.end(); ++itr)
@@ -243,6 +284,7 @@ LanguageDefinition::TreeItem* LanguageDefinition::FindOrCreateItem(TreeItem * it
     if((*itr)->thisItem == comp)
       return *itr;
   }
+  //create
   if((int)comp < (int)0xEF)
   {
     item->map[(int)comp] = new TreeItem(comp, LangDefSpecType::Nomatch, at->format);

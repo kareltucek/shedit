@@ -83,6 +83,7 @@ namespace SHEdit
 
       int dbgscb;
       bool onidleset;
+      bool inword;
       TIdleEvent oldidle;
 
       int upperbound;
@@ -108,6 +109,8 @@ namespace SHEdit
       void AddChar(Iter * itr, int & pos);
 
       inline void CheckMarkup(Iter * itr, bool paint);
+
+      bool CanGoFurther(LanguageDefinition::SearchIter sit, Iter * itr, bool inword, bool checkbefore = false);
 
       std::list<ParseTask> tasklistprior;
       std::list<ParseTask> tasklist;

@@ -32,6 +32,7 @@ Iter::Iter(NSpan * line)
 Iter::Iter(NSpan * line, int linenum, int pos, Buffer * buffer)
   : IPos(buffer, line, linenum, pos)
 {
+  this->word = line;
   this->type = IPType::iptIter;
   UpdatePos();
   Update();
@@ -325,6 +326,8 @@ void Iter::GoByOffset(int chars)
 //---------------------------------------------------------------------------
 void Iter::GoBy(int chars)
 {
+  if(line->next == NULL)
+    return;
   while(this->word->length - this->offset <= chars && *(word->string) != '\n')
   {
     chars -= this->word->length - this->offset;

@@ -43,7 +43,7 @@ namespace SHEdit
    * To get this component working you need a vcl aware IDE (it is written and tested under C++Builder XE). The steps are to install the component package. Then before you can do anything practical, you need to programaticcaly hand over an instance of language specification to the component (A descendant of LanguageDefinition class, by TSQLEdit::SetLanguageDefinition call). You can obtain the object by following manners:
    *
    * 1. Derive new descendant of the LanguageDefinition, and define it's dictionaries in it's body. (more info in documentation of the LanguageDefinition class, for example see the code of LanguageDefinitionSQL)
-   * 2. Create new isntance of the LanguageDefinition itself, and construct the lexer "from outside" using it's public methods. (do not forget the SHEdit namespace :-) )
+   * 2. Create new isntance of the LanguageDefinition itself, and construct the lexer "from outside" using it's public methods. (do not forget the SHEdit namespace and include correct header :-) )
    * 3. (NOT YET IMPLEMENTED) Create specification using a configuration file and let the component load it.
    *
    * Last thing you might want to do is to go through published properties using your IDE's designer.
@@ -113,7 +113,9 @@ namespace SHEdit
       TScrollBar * HBar;                                                                             
       TScrollBar * VBar;                                                                             
       void UpdateVBar();                                                                             
-      void UpdateHBar();                                                                             
+      void UpdateHBar();
+
+      TTimer * timer;
 
       Iter * XYtoItr(int& x, int& y);                                                               /*!< Converts coordinates to coresponding iterator. */
       void UpdateCursor(bool paint);                                                                /*!< Recalculates position of itrCursor, and posts results to the drawer. If paint is set to true, it also asks drawer to redraw window.*/
@@ -134,7 +136,9 @@ namespace SHEdit
       void Scroll(int by);                                                                           
       void __fastcall OnVScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);            
       void __fastcall OnHScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);            
-      void __fastcall OnResizeCallback(TObject* Sender);                                             
+      void __fastcall OnResizeCallback(TObject* Sender);
+
+      void __fastcall OnTimer(TObject * Sender);                                                    /*!< ensures cursor blinking :) */
 
     protected:
       virtual void __fastcall Paint();                                                               

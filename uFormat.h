@@ -23,10 +23,12 @@ namespace SHEdit
   {
     public:
       FontStyle();
+      FontStyle(TColor * foreground, TColor * background, TFontStyles style);
       FontStyle(TColor * foreground, TColor * background);
       FontStyle(TColor * foreground);
       TColor * foreground;
       TColor * background;
+      TFontStyles style;
       bool operator==(const FontStyle& f);
       bool operator!=(const FontStyle& f);
       FontStyle& operator+=(const FontStyle& f);
@@ -56,6 +58,7 @@ namespace SHEdit
       friend class Iter;
       Format();
       Format(TColor * foreground, TColor * background);
+      Format(TColor * foreground, TColor * background, TFontStyles style);
       ~Format();
       void Remove(Stack<Mark>::Node * mark);
       void Add(Stack<Mark>::Node * mark);

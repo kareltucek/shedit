@@ -40,6 +40,7 @@ namespace SHEdit
 
     private:
       bool caseSensitive;
+      bool allowWhiteSkipping;
       FontStyle * defFormat;
       TreeItem * tree;
 
@@ -58,6 +59,7 @@ namespace SHEdit
       struct TreeItem
       {
         TreeItem(wchar_t c, LangDefSpecType type, FontStyle * format);
+        TreeItem(TreeItem * tree, FontStyle * format);
 
         void AddJump(short pushmask, short newmask, TreeItem * to);
 
@@ -93,11 +95,13 @@ namespace SHEdit
       void AddPop(wchar_t * string, FontStyle * format, TreeItem * at, short popmask);
       void AddWord(wchar_t * string, FontStyle * format, TreeItem * at = NULL); /*!< Adds a wordtag item (i.e. for highlighting php variables as $test just by $) */
       TreeItem * AddLine(wchar_t * string, FontStyle * format, TreeItem * at = NULL, TreeItem * to = NULL); /*!< Adds a linetag item - as c commenting //. Returns new tree that was created for the line's formatting */
-      TreeItem * AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeItem * at = NULL); /*!< Is just an abreviation for two jumps. Adds jump from "opening" tag at "at" tree to newly created tree and then corresponding jump back */
+      TreeItem * AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeItem * at = NULL, TreeItem * to = NULL); /*!< Is just an abreviation for two jumps. Adds jump from "opening" tag at "at" tree to newly created tree and then corresponding jump back */
       TreeItem * AddNewTree(FontStyle * format); /*!< Just creates and returns an empty new tree with format as the default format */
+      TreeItem * AddDupTree(TreeItem * tree, FontStyle * format);
 
 
       void SetCaseSensitive(bool caseSensitive);
+      void SetAllowWhiteSkipping(bool allow);
       void SetDefaultColor(TColor * defColor);
 
       LanguageDefinition();

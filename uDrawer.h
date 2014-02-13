@@ -71,7 +71,7 @@ namespace SHEdit
       void __fastcall DrawEof(short linenum);
       void __fastcall UpdateCursor(int x, int y);
       void __fastcall DrawResize(int w, int h);
-      void __fastcall DrawEndl(short linenum);
+      void __fastcall DrawEndl(short linenum, FontStyle format);
       void __fastcall DrawLinenum(int from);
       void __fastcall Paint();
 

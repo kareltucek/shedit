@@ -72,6 +72,11 @@ TSQLEdit * SQLEditFocused; //callback musi jit na statickou metodu...
   HBar->LargeChange = 40;
   HBar->Hide();
 
+  timer = new TTimer(this);
+  timer->Enabled = false;
+  timer->Interval = 1000;
+  timer->OnTimer = OnTimer;
+
   OnResize = OnResizeCallback;
 
   buffer = new Buffer();
@@ -89,7 +94,7 @@ TSQLEdit * SQLEditFocused; //callback musi jit na statickou metodu...
 
   recmsg = false;
 
-  selectionFormat = new Format(NULL, new TColor(clGray));
+  selectionFormat = new Format(NULL, new TColor(clSilver));
   cursorsInInvOrder = false;
 
   clipboard = Clipboard();
@@ -111,6 +116,9 @@ __fastcall TSQLEdit::~TSQLEdit()
   UnhookWindowsHookEx(KBHook);
   if(this == SQLEditFocused)
     SQLEditFocused = NULL;
+  delete HBar;
+  delete VBar;
+  delete timer;
 }
 //---------------------------------------------------------------------------
 void __fastcall TSQLEdit::Paint()
@@ -391,10 +399,12 @@ void __fastcall TSQLEdit::WndProc(Messages::TMessage &Message)
       if(!KBHook)
         KBHook = SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)ProcessKeyCall, NULL, GetCurrentThreadId());
       SQLEditFocused = this;
+      timer->Enabled = true;
       return;
     case WM_KILLFOCUS:
       UnhookWindowsHookEx(KBHook);
       KBHook = NULL;
+      timer->Enabled = false;
       return;
     case WM_CHAR:
       switch(Message.WParam)
@@ -940,6 +950,7 @@ void TSQLEdit::Insert(wchar_t * text)
   int linesMoved = buffer->Insert(itrCursor, text);
   itrLine->GoLineStart();
   //itrCursor->linenum += linesMoved;
+  UpdateCursor(false);
 
   if(linesMoved != 0 && drawer->UpdateLinenumWidth(buffer->GetLineCount()))
     RepaintWindow(true);
@@ -1143,6 +1154,11 @@ void __fastcall TSQLEdit::OnResizeCallback(TObject * Sender)
   UpdateHBar();
   drawer->DrawResize(this->Width, this->Height);
 
+}
+//---------------------------------------------------------------------------
+void __fastcall TSQLEdit::OnTimer(TObject * Sender)
+{
+  drawer->Paint();
 }
 //---------------------------------------------------------------------------
 bool __fastcall TSQLEdit::GetLineFirst(NSpan * line)

@@ -105,6 +105,10 @@
 				<DependentOn>$(BDS)\Projects\SQLSyntaxFS\SQLSyntax\uLanguageDefinitionSQL.h</DependentOn>
 				<BuildOrder>10</BuildOrder>
 			</CppCompile>
+			<CppCompile Include="uLanguageDefinitionWebLangs.cpp">
+				<DependentOn>uLanguageDefinitionWebLangs.h</DependentOn>
+				<BuildOrder>16</BuildOrder>
+			</CppCompile>
 			<CppCompile Include="uMark.cpp">
 				<DependentOn>$(BDS)\Projects\SQLSyntaxFS\SQLSyntax\uMark.h</DependentOn>
 				<BuildOrder>11</BuildOrder>

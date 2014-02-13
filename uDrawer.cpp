@@ -29,6 +29,7 @@ __fastcall Drawer::Drawer(TCanvas * canvas, TSQLEdit * parent)
   bitmap->SetSize(parent->Width, parent->Height);
 
   drawcanvas = bitmap->Canvas;
+  drawcanvas->Font->Quality = fqClearTypeNatural;
 #else
   drawcanvas = canvas;
 #endif
@@ -72,15 +73,38 @@ void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontS
     x += drawcanvas->TextWidth(text);
     return;
   }
+#ifndef QUICKDRAW
+    if(newline || format.background == NULL || *format.background != drawcanvas->Brush->Color )
+    {
+      if(format.background != NULL)
+      {
+        drawcanvas->Pen->Color = *format.background;
+        drawcanvas->Brush->Color = *format.background;
+      }
+      else
+      {
+        drawcanvas->Pen->Color = (TColor)0xFFFFFF;
+        drawcanvas->Brush->Color = (TColor)0xFFFFFF;
+      }
+      drawcanvas->Rectangle(x > linenumwidth+3 ? x+1 : x, y, parent->Width, y+linesize);
+    }
+#endif
 
   if(format.foreground != NULL)
     drawcanvas->Font->Color = *format.foreground;
   if(format.background != NULL)
     drawcanvas->Brush->Color = *format.background;
+  drawcanvas->Font->Style = format.style;
+#ifndef QUICKDRAW
+  drawcanvas->Brush->Style = bsClear;
+#endif
 
   drawcanvas->TextOut(x, y, text);
   x = drawcanvas->PenPos.x;
 
+#ifndef QUICKDRAW
+  drawcanvas->Brush->Style = bsSolid;
+#endif
 
 }
 //---------------------------------------------------------------------------
@@ -109,6 +133,7 @@ void __fastcall Drawer::DrawMove(int from, int to, int by)
 void __fastcall Drawer::DrawEof(short linenum)
 {
   drawcanvas->Pen->Color = (TColor)0xFFFFFF;
+  drawcanvas->Brush->Color = (TColor)0xFFFFFF;
   y = Y_OFF+linesize*linenum;
   drawcanvas->Rectangle(0, y,RightBorder(), BottomBorder());
   if(linenumsenabled)
@@ -134,16 +159,24 @@ void __fastcall Drawer::DrawResize(int w, int h)
 }
 
 //---------------------------------------------------------------------------
-void __fastcall Drawer::DrawEndl(short linenum)
+void __fastcall Drawer::DrawEndl(short linenum, FontStyle format)
 {
 #ifndef FULL_WIDTH_PAINT
   drawcanvas->Pen->Color = (TColor)0xFFFFFF;
   drawcanvas->Brush->Color = (TColor)0xFFFFFF;
 #else
-  drawcanvas->Pen->Color = drawcanvas->Brush->Color;
+  if(format.background != NULL)
+  {
+    drawcanvas->Pen->Color = *format.background;
+    drawcanvas->Brush->Color = *format.background;
+  }
+  else
+    drawcanvas->Pen->Color = drawcanvas->Brush->Color;
 #endif
+  con = false;
   y = Y_OFF+linesize*linenum;
-  drawcanvas->Rectangle(x == 2 ? 0 : x, y,RightBorder(), y+linesize);
+  if(x < parent->Width)
+    drawcanvas->Rectangle(x == 2 ? 0 : x, y,RightBorder(), y+linesize);
   if(x+HPos-2+200 > HMax)
   {
     HMax = x+HPos-2+200;
@@ -154,13 +187,14 @@ void __fastcall Drawer::DrawEndl(short linenum)
 
   if(linenumsenabled)
   {
-    drawcanvas->Font->Color = (TColor)0x0;
-    drawcanvas->Pen->Color = (TColor)0xFFFFFF;
-    drawcanvas->Brush->Color = (TColor)0xFFFFFF;
+    drawcanvas->Font->Color = (TColor)0x444444;
+    drawcanvas->Pen->Color = (TColor)0xEEEEEE;
+    drawcanvas->Brush->Color = (TColor)0xEEEEEE;
+    drawcanvas->Font->Style = TFontStyles();
     drawcanvas->Rectangle(0, y, GetLinenumWidth(), y+linesize);
     drawcanvas->TextOut(2, y, String(parent->itrLine->linenum+linenum));
     drawcanvas->MoveTo(GetLinenumWidth(), y);
-    drawcanvas->Pen->Color = (TColor)0x0;
+    drawcanvas->Pen->Color = (TColor)0x444444;
     drawcanvas->LineTo(GetLinenumWidth(), y+linesize);
   }
 }
@@ -170,7 +204,6 @@ void __fastcall Drawer::DrawEndl(short linenum)
 void __fastcall Drawer::Paint()
 {
   con = !con;
-  con = true;
 #ifdef DOUBLE_BUFFERED
   canvas->Draw(0, 0, bitmap);
 #endif
@@ -224,14 +257,14 @@ int Drawer::BottomBorder()
 //---------------------------------------------------------------------------
 void __fastcall Drawer::DrawLinenum(int from)
 {
-  drawcanvas->Font->Color = (TColor)0x0;
-  drawcanvas->Pen->Color = (TColor)0xFFFFFF;
-  drawcanvas->Brush->Color = (TColor)0xFFFFFF;
+    drawcanvas->Font->Color = (TColor)0x444444;
+    drawcanvas->Pen->Color = (TColor)0xEEEEEE;
+    drawcanvas->Brush->Color = (TColor)0xEEEEEE;
   drawcanvas->Rectangle(0, from*linesize, GetLinenumWidth(), parent->Height);
   for(int i = parent->Height/linesize, j = from; j <= i; j++)
     drawcanvas->TextOut(2, j*linesize, String(parent->itrLine->linenum+j));
 
-  drawcanvas->Pen->Color = (TColor)0x0;
+    drawcanvas->Pen->Color = (TColor)0x444444;
   drawcanvas->MoveTo(GetLinenumWidth(), 0);
   drawcanvas->LineTo(GetLinenumWidth(), parent->Height);
 
@@ -257,6 +290,9 @@ void __fastcall Drawer::SetFontsize(int size)
   while( bitmap->Canvas->Pixels[0][i+1] == clGreen)
     i++;
   linesize = i+1;
+  #ifndef QUICKDRAW
+  linesize++;
+  #endif
   delete bitmap;
 
   drawcanvas->Font->Name = "Courier New";
