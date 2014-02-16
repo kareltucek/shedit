@@ -96,10 +96,10 @@ namespace SHEdit
     ~Action();
 
     ActionType type;
-      int fromlinenum;
-      int tolinenum;
-      int frompos;
-      int topos;
+    int fromlinenum;
+    int tolinenum;
+    int frompos;
+    int topos;
   };
   //---------------------------------------------------------------------------
   /*!
@@ -113,7 +113,7 @@ namespace SHEdit
     Action * action;
     Range * range;
   };
-  
+
 };
 //---------------------------------------------------------------------------
 #endif

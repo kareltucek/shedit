@@ -23,16 +23,16 @@
 
 template <class T_data> class Stack
 {
-public:
+  public:
     struct Node
     {
-        Node(T_data _data) : data(_data) { };
+      Node(T_data _data) : data(_data) { };
 
-        T_data data;
-        Node * next;
-        Node ** prev;
+      T_data data;
+      Node * next;
+      Node ** prev;
 
-        Node* Remove();                                                         /*!< Returns pointer to the next node, for easier removal of elements while iterating through. Any item of Stack can be removed directly from outside of stack by this. Removed node is directly deleted. */
+      Node* Remove();                                                         /*!< Returns pointer to the next node, for easier removal of elements while iterating through. Any item of Stack can be removed directly from outside of stack by this. Removed node is directly deleted. */
     };
 
     Node * top;
@@ -50,33 +50,33 @@ public:
 
 
 //---------------------------------------------------------------------------
-template <class T_data>
+  template <class T_data>
 Stack<T_data>::Stack()
 {
-    top = NULL;
+  top = NULL;
 }
 //---------------------------------------------------------------------------
-template <class T_data>
+  template <class T_data>
 Stack<T_data>::~Stack()
 {
-    Erase();
+  Erase();
 }
 //---------------------------------------------------------------------------
-template <class T_data>
+  template <class T_data>
 typename Stack<T_data>::Node* Stack<T_data>::Push(const T_data& d)
 {
-    Node * n = new Node(d);
-    n->next = top;
-    n->prev = &top;
+  Node * n = new Node(d);
+  n->next = top;
+  n->prev = &top;
 
-    top = n;
-    if(n->next != NULL)
-        n->next->prev = &(n->next);
+  top = n;
+  if(n->next != NULL)
+    n->next->prev = &(n->next);
 
-    return n;
+  return n;
 }
 //---------------------------------------------------------------------------
-template <class T_data>
+  template <class T_data>
 void Stack<T_data>::Pop()
 {
   if(top != NULL)
@@ -84,92 +84,92 @@ void Stack<T_data>::Pop()
     Node *n = top;
     top = top->next;
     if(top != NULL)
-        top->prev = &top;
+      top->prev = &top;
     delete n;
   }
 }
 //---------------------------------------------------------------------------
-template <class T_data>
+  template <class T_data>
 typename Stack<T_data>::Node* Stack<T_data>::Node::Remove()
 {
-    Node * ret = next;
-    *prev = next;
-    if(next != NULL)
-        next->prev = prev;
+  Node * ret = next;
+  *prev = next;
+  if(next != NULL)
+    next->prev = prev;
 
-    delete this;
-    return ret;
+  delete this;
+  return ret;
 }
 //---------------------------------------------------------------------------
-template <class T_data>
+  template <class T_data>
 void Stack<T_data>::Remove(T_data d)
 {
-    Node *n = top;
-    while(n != NULL)
-    {
-        if(n->data == d)
-            n = n->Remove();
-        else
-            n = n->next;
-    }
+  Node *n = top;
+  while(n != NULL)
+  {
+    if(n->data == d)
+      n = n->Remove();
+    else
+      n = n->next;
+  }
 }
 //---------------------------------------------------------------------------
-template <class T_data>
+  template <class T_data>
 void Stack<T_data>::Erase()
 {
-    Node *n = top;
-    Node *m = top;
-    while(n != NULL)
-    {
-        n = n->next;
-        delete m;
-        m = n;
-    }
-    top = NULL;
+  Node *n = top;
+  Node *m = top;
+  while(n != NULL)
+  {
+    n = n->next;
+    delete m;
+    m = n;
+  }
+  top = NULL;
 }
 //---------------------------------------------------------------------------
-template <class T_data>
+  template <class T_data>
 Stack<T_data>& Stack<T_data>::operator=(const Stack<T_data>& stack)
 {
-    if(&stack == this)
-        return *this;
-
-    Erase();
-    Node * n = stack.top;
-    while(n != NULL)
-    {
-        Push(n->data);
-        n = n->next;
-    }
+  if(&stack == this)
     return *this;
+
+  Erase();
+  Node * n = stack.top;
+  while(n != NULL)
+  {
+    Push(n->data);
+    n = n->next;
+  }
+  return *this;
 }
 //---------------------------------------------------------------------------
-template <class T_data>
+  template <class T_data>
 bool Stack<T_data>::operator==(const Stack<T_data>& stack)
 {
-    Node * n = top;
-    Node * m = stack.top;
-    while(n != NULL && m != NULL)
-    {
-        if(n->data != m->data)
-            return false;
-        n = n->next;
-        m = m->next;
-    }
-    return n == m;
+  Node * n = top;
+  Node * m = stack.top;
+  while(n != NULL && m != NULL)
+  {
+    if(n->data != m->data)
+      return false;
+    n = n->next;
+    m = m->next;
+  }
+  return n == m;
 }
 //---------------------------------------------------------------------------
-template <class T_data>
+  template <class T_data>
 bool Stack<T_data>::Contains(T_data d)
 {
-    Node *m = top;
-    while(m != NULL)
-    {
-        if(m->data == d)
-            return true;
-        m = m->next;
-    }
-    return false;
+  Node *m = top;
+  while(m != NULL)
+  {
+    if(m->data == d)
+      return true;
+    m = m->next;
+  }
+  return false;
 }
 //---------------------------------------------------------------------------
 

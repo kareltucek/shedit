@@ -4,7 +4,7 @@
 
 
 #include "uDrawer.h"
-#include "cSQLSyntax.h"
+#include "cSHSyntax.h"
 #include "uFormat.h"
 #include <string>
 #include <stdio.h>
@@ -22,7 +22,7 @@ std::ofstream myfile;
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-__fastcall Drawer::Drawer(TCanvas * canvas, TSQLEdit * parent)
+__fastcall Drawer::Drawer(TCanvas * canvas, TSHEdit * parent)
 {
 #ifdef DOUBLE_BUFFERED
   bitmap = new Graphics::TBitmap();
@@ -117,8 +117,8 @@ void __fastcall Drawer::DrawMove(int from, int to, int by)
   {
     int adjustment = linesize*(TO+1) > BottomBorder() ? BottomBorder() - linesize*(TO+1)-2 : -2;
     TRect source2(from == 0 ? 0 : GetLinenumWidth(), 0, 0, 1);
-    TRect source(from == 0 ? 0 : GetLinenumWidth(), linesize*FROM, RightBorder(), linesize*(TO+1)+adjustment);
-    TRect dest(from == 0 ? 0 : GetLinenumWidth(), linesize*(FROM+BY), RightBorder(), linesize*(TO+BY+1)+adjustment);
+    TRect source(from == 0 ? 0 : GetLinenumWidth(), linesize*FROM, RightBorder(), linesize*(TO+1)-adjustment);
+    TRect dest(from == 0 ? 0 : GetLinenumWidth(), linesize*(FROM+BY), RightBorder(), linesize*(TO+BY+1)-adjustment);
     drawcanvas->CopyRect(dest, drawcanvas, source);
     if(BY < 0)
     {

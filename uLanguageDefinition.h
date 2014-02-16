@@ -7,26 +7,55 @@
 
 #include <list>
 #include <vcl.h>
+
+#include "config.h"
 //---------------------------------------------------------------------------
 namespace SHEdit
 {
   /*!
    * LanguageDefinition
    * ------------------
-   * LanguageDefinition is a class that provides Parser definitions of what is to be how parsed and interpretted. Entire dictionary consists of a tree structure of TreeItem, that hold entire structure of the dictionary - the LanguageDefinition is rather just a wrapper that simplifies representation of entire structure and provides functions for building of the tree structure.
+   * Language highlight is actually done on a basis of a simple automaton, whose behaviour is  defined by this class. LanguageDefinition class itself is rather a wrapper, that holds general information - the actual specification is held by a set of trees of TreeNodes (creating sort of directed graph).
    *
-   * The dictionary is at the moment implemented in a very naive (and inefficient) way - each TreeItem represents just one character and has an array of character's that allows constant-time acces to the next node. That means that each part of dictionary has it's root which represents an empty search from which strings of tree items actually form reserved words of the language represented. The Language definition then let'đ pointer move along these strings as it is provided characters from parser. Every tree has assigned one value of enum LangDefSpecType which represents what type of word ends at that point and a pointer back to the root of tree. The LangDefSpecTypes are:
+   * Actual searching is done by passing an instance of SearchIter between Parser and LanguageDefinition, while LanguageDefinition provides language-related information and Parser interpret's them regarding the structure of source code. SearchIter contains a pointer to the base (/root) of current tree, a pointer to the current item and a "mask" that represents in fact a 16 bit register in which some information may be stored. Parser actually stores SearchIters in a stack that allows parser to return from a tree to a tree from which it got there.
+   *
+   * At the moment it is implemented in a very naive (and memory-inefficient) way - each TreeNode represents just one character and has an array of character's that allows constant-time acces to next node. That means that each part of dictionary has its root which represents an empty search from which strings of tree items actually form reserved words of the language represented. The Language definition then let's a pointer move along these strings as it is provided characters from parser. Every TreeNode has assigned one value of enum LangDefSpecType which represents what type of word ends and for some of these some additional information. The LangDefSpecTypes are:
    * - Empty - represents root of part of dictionary structure
    * - Nomatch - a place where nothing is matched, but from where search may continue to next character (i.e. middle of a reserved word)
    * - Normal - end of a standard word, that is to be formatted by the format the node points to (the search item is then pointed back to root)
-   * - PairTag - better word would be "Jump" - is matched as the Normal tag, but does not retur the search item back to root, but carries it further to a root of another tree. The pair tag then refers to two different jump tokens that do lead in ine direction to another tree, from where another token leads back
-   * - LineTag - as PairTag leads to another tree from where the search token is returned back at an end of line (by Parser)
+   * - Jump - is matched as the Normal tag, but does not retur the search item back to root, but carries it further to a root of another tree. Before every jump, pop mask is checked, and if it matches, then pop is performed instead. Two optional masks can be specified:
+   *   - a "jumpmask" - if it is specified, then jump occurs only if current searchIter's mask contains something of the jumpmask (== when jumpmask & currentmask returns true). 
+   *   - a "newmask" - if jump is performed, the current searchIter's mask is xored with the newmask
+   *   Each TreeNode can have more sets of the jump values assigned. In that case they are tried one by one in order in which the jump records were created until some jump is matched. Default values for masks are 0 and 0 which means "jump always and let the mask be as it is". Pop mask is not used in jump logic at all - it's purpose here is to prevent jumping if a pop should be performed instead.
+   * - PushPop - is implemented exactly the same way as jump but with a little difference - If jumpmask (abreviated also as pushmask) is matched, then jump is performed by Parser and former state is pushed onto stack, where it waits until a pop occurs. (then also the newmask value is added by xor to current mask)
+   *   - Pop - each TreeNode has also a single popmask. If popmask is matched (as popmask & current mask) then Parser pops search iters from top of its stack according to popcount and continues parsing from the new top of the stack. If popcount is greater or equal to zero then it specifies the count of items to be popped. If popcount is -1 then items are popped while the popmask matches the top-of-the-stack's mask.
+   *   Pop is always checked before push.
+   * - LineTag - obsolete - At this point a jump is performed and current parserState is remembered until end of first line, where the parser state is forced back to the saved state. For standard linetag functionality it is recommended to use pair of jumps.
    * - WordTag - as normal tag, but formats everything until end of word (by standard convention that word begins by alpha and continues as alpha-numeric - these can be overriden). Written with regard i.e. for sql/php variables
    *
-   * At the moment there's no way of passing more advanced matching conditions (jumps are one-directional - when jump is done, then only way to return is to use another jump, which though cannot distinguished whether it is jumping to the original tree or somewhere else. Should be reimplemented some day in future as a pair of tree identification and mask that would be stored as stack in parser's state. Though this should work quite well as long as the highlight structure is not too complex and as long as the language that is being highlighted is well structured (i.e. jump tokens are unique).
+   *   Default tree (the entry point of automaton) can be obtained by GetTree() function.
    *
-   * When creating a specification, you may imagine that TreeItem just specifies basic root for a part of dictionary with it's own private dictionary and default font style. Then you need to work with all dictionaries that you want to use for highlight and add jumps between them.
+   *   case sensitivity - Case sensitivity is set separately for each tree root. You have to set it correctly BEFORE you start adding keywords. The Langdef's SetCaseSensitive serves just for setting case sensitiviness of the newly created trees (i.e. it definitely won't do anything with the initially provided tree. 
+   * 
+   * Banks
+   * --------
+   * If you need different parts of your language to have separately treated stacks (i.e. entrypoint leads to tree of language A in whose context language B can be used to produce additional A code and you want to treat all recursively entered A scopes in the same context), then you may use Banks. Each stack has to have assigned its bank ID (which has to be retrieved by the GetNewBankID() except for the default 0). Then all trees with assigned bank IDs share one stack for the pushpop logic of the automaton. Then for each ID you have to set its default tree and a bank mask. The bank mask specifies which masks are used by that bank and practically is used for determining where pops do lead. On jump or push from a tree of one bank to tree of another bank, the Parser switches itself to stack of the target tree's bank without paying attention to actual target tree of the jump. The new mask is then set not just to the top of new stack, but to all its nodes. Pop works equivalently - the part of popmask that was matched to the current mask is checked against the current bank mask. If it matches then normal pop is performed. If it is not, then bank mask that does match is found and pop if performed back to that tree. 
+   *
+   * If you want to use masks, you need to specify BankID default bases, BankIDs and BankMasks for all trees. If you do not want to use it, then you do not need to care about everything - the default values will do.
+   *
+   * Formatting
+   * ---------
+   * Each root has it's own format that is applied to everything that was matched from the root. Every matched node (except for nomatch) then can have its own format that is added on top of the root's. You may leave some parts of format specification of key words NULL (then the root's format is applied).
+   *
+   * Formatting stores just pointers to colours. The colours themselves should be stored somewhere. From there you can change them at any time (you will just need to initiate screen redraw manually from TSHEdit).
+   *
+   * When creating a specification, you may imagine that TreeNode just specifies root for a part of entire dictionary with it's own private dictionary and default font style. Then you need to work with all dictionaries that you want to use for highlight and add jumps between them.
    * */
+
+
+#define PUSH_ALWAYS 0
+#define POP_AUTO -1
+
   class FontStyle;
 
   enum LangDefSpecType{Empty = 0x1, Nomatch = 0x2, Normal=0x4, Jump=0x8, PushPop=0x10, WordTag=0x20, LineTag=0x40, Lookahead = 0x80};
@@ -35,70 +64,109 @@ namespace SHEdit
   {
     public:
       struct Jump;
-      struct TreeItem;
+      struct TreeNode;
       struct SearchIt;
+      typedef SearchIt SearchIter;
 
     private:
       bool caseSensitive;
       bool allowWhiteSkipping;
       FontStyle * defFormat;
-      TreeItem * tree;
+      TreeNode * tree;
 
-      TreeItem* FindOrCreateItem(TreeItem * item, wchar_t c, TreeItem * at);
+      short bankIdsNum;
+      short * bankMasks;
+      TreeNode ** bankBases;
+
+      TreeNode* FindOrCreateItem(TreeNode * item, wchar_t c, TreeNode * at);
+      LangDefSpecType Go(SearchIter * item, wchar_t c, bool & lookahead); /*!< Serves Parser for retrieving information about where to go further. Lookahead is set to true, if item was returned to empty and directly went to first unmatched character */
+
+      void _AddPush(bool tobegin, wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask);
+      void _AddJump(bool tobegin, wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask); /*!< Adds a custom jump from "at" tree to "to" tree.*/
+
 
     public:
+      friend class Parser;
+
       struct Jump
       {
-        Jump(short _pushmask, short _newmask, TreeItem * _next);
+        Jump(short _pushmask, short _newmask, TreeNode * _next);
         Jump();
         short pushmask;
         short newmask;
-        TreeItem * nextTree;
+        TreeNode * nextTree;
       };
 
-      struct TreeItem
+      struct TreeNode
       {
-        TreeItem(wchar_t c, LangDefSpecType type, FontStyle * format);
-        TreeItem(TreeItem * tree, FontStyle * format);
+        TreeNode(wchar_t c, LangDefSpecType type, FontStyle * format, bool caseSensitive);
+        TreeNode(TreeNode * tree, FontStyle * format);
 
-        void AddJump(short pushmask, short newmask, TreeItem * to);
+        void AddJump(short pushmask, short newmask, TreeNode * to, bool begin);
 
         wchar_t thisItem;
-        std::list<TreeItem*> items;
-        TreeItem * map[128];
+        bool caseSensitive;
+        std::list<TreeNode*> items;
+        TreeNode * map[128];
         FontStyle * format;
         LangDefSpecType type;
-        //TreeItem * nextTree;
+        //TreeNode * nextTree;
 
         short jumpcount;
         Jump * jumps; //an array
 
         short popmask;
         short popcount;
+
+        int bankID;
+
+#ifdef DEBUG
+        wchar_t * Name;
+#endif
       };
 
       struct SearchIt
       {
-        TreeItem * current;
-        TreeItem * base;
+        SearchIt();
+        TreeNode * current;
+        TreeNode * base;
         short mask;
 
         bool operator==(const SearchIt& sit);
         bool operator!=(const SearchIt& sit);
       };
 
-      typedef SearchIt SearchIter;
 
-      void AddReservedNames(wchar_t * string, FontStyle * format, TreeItem * at = NULL); /*!< Adds all words that are contained in string (as space-separated list) to the tree given as "at". If tree is not given, then the main root is used */
-      void AddJump(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeItem * at, TreeItem * to); /*!< Adds a custom jump from "at" tree to "to" tree.*/
-      void AddPush(wchar_t * string, FontStyle * format, TreeItem * at, TreeItem * to, short pushmask, short newmask);
-      void AddPop(wchar_t * string, FontStyle * format, TreeItem * at, short popmask);
-      void AddWord(wchar_t * string, FontStyle * format, TreeItem * at = NULL); /*!< Adds a wordtag item (i.e. for highlighting php variables as $test just by $) */
-      TreeItem * AddLine(wchar_t * string, FontStyle * format, TreeItem * at = NULL, TreeItem * to = NULL); /*!< Adds a linetag item - as c commenting //. Returns new tree that was created for the line's formatting */
-      TreeItem * AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeItem * at = NULL, TreeItem * to = NULL); /*!< Is just an abreviation for two jumps. Adds jump from "opening" tag at "at" tree to newly created tree and then corresponding jump back */
-      TreeItem * AddNewTree(FontStyle * format); /*!< Just creates and returns an empty new tree with format as the default format */
-      TreeItem * AddDupTree(TreeItem * tree, FontStyle * format);
+      void AddPops(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2);  /*!< Just an abreviation. */
+      void AddJumps(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0); /*!< Just an abreviation. */
+      void AddJumpsFront(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0); /*!< Just an abreviation. */
+      void AddPushes(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask);  /*!< Just an abreviation. */
+      void AddPushesFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask);   /*!< Just an abreviation. */
 
+      void AddKeywords(wchar_t * string, FontStyle * format, TreeNode * at = NULL); /*!< Adds all words that are contained in string (as space-separated list) to the tree given as "at". If tree is not given, then the main root is used */
+      void AddJump(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0); /*!< Adds a custom jump from "at" tree to "to" tree. String is a space separated list.*/
+      void AddJumpFront(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0); /*!< Like AddJump but adds new jumps to the beginning of jump list.*/
+      void AddPush(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask); /*!< Adds pushes specified by string (as space separated list. */
+      void AddPushFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask);
+      void AddPop(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2);
+      void AddWord(wchar_t * string, FontStyle * format, TreeNode * at = NULL); /*!< Adds a wordtag item (i.e. for highlighting php variables as $test just by $) */
+      TreeNode * AddLine(wchar_t * string, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); /*!< Adds a linetag item - as c commenting //. Returns new tree that was created for the line's formatting. Is an abbreviation for double jump. */
+      TreeNode * AddLineStrong(wchar_t * string, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); /*!< as AddLine, but stores entire state of parser and at the end of line it restores it back. */
+      TreeNode * AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); /*!< Is just an abreviation for two jumps. Adds jump from "opening" tag at "at" tree to newly created tree and then corresponding jump back */
+      TreeNode * AddPushPopPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at, TreeNode * to, short mask); /*!< Is just an abreviation for push that adds the mask and pop that is conditioned by the same mask.*/
+      TreeNode * AddNewTree(FontStyle * format); /*!< Just creates and returns an empty new tree with format as the default format */
+      TreeNode * AddNewTree(FontStyle * format, bool caseSensitive); /*!< Just creates and returns an empty new tree with format as the default format */
+      TreeNode * AddDupTree(TreeNode * tree, FontStyle * format); /*!< Duplicates the base of tree provided with the format provided. All pointers remain intact - one tree may have more than one bases. By making changes that are deeper than the duplicated TreeNode's member pointers, then you are making changes to both trees. */
+
+      short GetBankIdCount();
+      short GetNewBankID();
+
+      void  SetBankMask(int bank, short mask);
+      short GetBankMask(int bank);
+      void SetBankBase(int bank, TreeNode * item);
+      short GetBankIdByMask(int mask);
+
+      void SetTreeCaseSensitive(TreeNode * item, bool caseSensitive);
 
       void SetCaseSensitive(bool caseSensitive);
       void SetAllowWhiteSkipping(bool allow);
@@ -112,11 +180,10 @@ namespace SHEdit
       virtual bool IsNum(wchar_t c);
       virtual bool IsWhite(wchar_t c); /*!< not used anywhere in project if I am not mistaken */
 
-      TreeItem* GetTree();
-      SearchIter GetDefSC();
-      LangDefSpecType Go(SearchIter& item, wchar_t c, bool & lookahead); /*!< Serves Parser for retrieving information about where to go further. Lookahead is set to true, if item was returned to empty and directly went to first unmatched character */
+      TreeNode* GetTree();
+      SearchIter GetDefSC(short id);
 
-      //TreeItem* GetSpecItem(short id); /*!< returns item corresponding with mask (mask is actually just identifier atm */
+      //TreeNode* GetSpecItem(short id); /*!< returns item corresponding with mask (mask is actually just identifier atm */
   };
 }
 //---------------------------------------------------------------------------

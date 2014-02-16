@@ -34,9 +34,9 @@ namespace SHEdit
   {
     public:
       bool begin;
-    Format * format;
-    IMark(Format * format, bool begin, IPos * itr);
-    ~IMark();
+      Format * format;
+      IMark(Format * format, bool begin, IPos * itr);
+      ~IMark();
   };
 
 }

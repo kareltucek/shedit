@@ -15,7 +15,7 @@
 namespace SHEdit
 {
   class NSpan;
-  class TSQLEdit;
+  class TSHEdit;
   class Drawer;
   class Mark;
   class Format;
@@ -48,17 +48,22 @@ namespace SHEdit
       {
         ParserState();
         ~ParserState();
+
+        void InitBanks(int count);
         bool operator==(const ParserState& state);
         bool operator!=(const ParserState& state);
         ParserState& operator=(const ParserState& p);
 
         short parseid;
-        Stack<LanguageDefinition::SearchIter> searchStateStack;
+        Stack<LanguageDefinition::SearchIter> * searchStateBank;
         Stack<Format*> markupStack;
+
+        short bankCount;
+        short actBank;
       };
 
       /*!
-       * ParseTask represents a task for Parser. It is passed from TSQLEdit to the Parser whenever component wants anything to be reparsed or repainted
+       * ParseTask represents a task for Parser. It is passed from TSHEdit to the Parser whenever component wants anything to be reparsed or repainted
        * */
       struct ParseTask
       {
@@ -74,7 +79,7 @@ namespace SHEdit
       ParserState state;
       LanguageDefinition * langdef;
 
-      TSQLEdit * parent;
+      TSHEdit * parent;
       Drawer * drawer;
 
       bool newline;
@@ -108,23 +113,28 @@ namespace SHEdit
       void SendEof();
       void AddChar(Iter * itr, int & pos);
 
+      void PerformPush(LanguageDefinition::SearchIter *& sit);
+      void PerformJump(LanguageDefinition::SearchIter *& sit);
+      void PerformPop(LanguageDefinition::SearchIter *& sit);
+
       inline void CheckMarkup(Iter * itr, bool paint);
 
-      bool CanGoFurther(LanguageDefinition::SearchIter sit, Iter * itr, bool inword, bool checkbefore = false);
+      bool CanGoFurther(LanguageDefinition::SearchIter sit, Iter * itr, bool inword, bool checkbefore = false, bool recursive = false);
 
       std::list<ParseTask> tasklistprior;
       std::list<ParseTask> tasklist;
 
-      void ParseLine(Iter * itr, LanguageDefinition::SearchIter& searchtoken, bool paint);
+      void ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, bool paint);
       void __fastcall Draw();
 #ifdef DEBUG
-      static void Write(AnsiString message);
+      void Write(AnsiString message);
+      void DumpStackState();
 #endif
     public:
 #ifdef DEBUG
       bool dbgLogging;
 #endif
-      friend class TSQLEdit;
+      friend class TSHEdit;
 
       void __fastcall OnIdle(TObject * Sender, bool& Done);
 
@@ -132,7 +142,7 @@ namespace SHEdit
 
       void InvalidateAll();
 
-      __fastcall Parser(TSQLEdit * parent, Drawer * drawer);
+      __fastcall Parser(TSHEdit * parent, Drawer * drawer);
       virtual __fastcall ~Parser();
 
       void SetLangDef(LanguageDefinition * langdef);

@@ -1,18 +1,18 @@
 se path=""
-se tags=~/.vim/ctags/SQL
+"se tags=~/.vim/ctags/SQL
 o vimproj
 vsplit config.h
-call OpenObject("cSQLSyntax")
-call OpenObject("uIPos")
-call OpenObject("uStack")
+call OpenObject("cSHSyntax")
 call OpenObject("uBuffer")
-call OpenObject("uIter")
-call OpenObject("uSpan")
-call OpenObject("uParser")
 call OpenObject("uDrawer")
 call OpenObject("uFormat")
-call OpenObject("uMark")
+call OpenObject("uIPos")
+call OpenObject("uIter")
+call OpenObject("uParser")
 call OpenObject("uLanguageDefinition")
 call OpenObject("uLanguageDefinitionSQL")
+call OpenObject("uLanguageDefinitionWebLangs")
+call OpenObject("uMark")
+call OpenObject("uSpan")
+call OpenObject("uStack")
 tabdo windo se scroll=8
-
