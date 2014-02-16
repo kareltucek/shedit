@@ -1,10 +1,10 @@
 ﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 		<PropertyGroup>
-			<ProjectGuid>{CDB71867-2652-44C8-B9D4-27E8D1B23E53}</ProjectGuid>
+			<ProjectGuid>{8A94BD71-B050-4483-BE5E-A1A1D9C9BC92}</ProjectGuid>
 			<ProjectVersion>12.3</ProjectVersion>
-			<MainSource>SHSyntaxProj.cpp</MainSource>
+			<MainSource>SHEditPackage.cpp</MainSource>
 			<Base>True</Base>
-			<Config Condition="'$(Config)'==''">Debug</Config>
+			<Config Condition="'$(Config)'==''">Release</Config>
 			<Platform>Win32</Platform>
 			<AppType>Library</AppType>
 			<FrameworkType>None</FrameworkType>
@@ -23,19 +23,18 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<LinkPackageStatics>rtl.lib;vcl.lib</LinkPackageStatics>
-			<OutputExt>bpl</OutputExt>
-			<_TCHARMapping>wchar_t</_TCHARMapping>
 			<ProjectType>CppPackage</ProjectType>
+			<LinkPackageStatics>rtl.lib;vcl.lib</LinkPackageStatics>
+			<_TCHARMapping>wchar_t</_TCHARMapping>
 			<ILINK_GenerateLibFile>true</ILINK_GenerateLibFile>
-			<IncludePath>B:\Projects\SHSyntaxFS\SHSyntax\;$(IncludePath)</IncludePath>
 			<ILINK_GenerateImportLibrary>true</ILINK_GenerateImportLibrary>
+			<OutputExt>bpl</OutputExt>
 			<AllPackageLibs>rtl.lib;vcl.lib</AllPackageLibs>
-			<ILINK_LibraryPath>B:\Projects\SHSyntaxFS\SHSyntax\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
 			<Multithreaded>true</Multithreaded>
 			<DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE</DCC_UnitAlias>
 			<DynamicRTL>true</DynamicRTL>
+			<UsePackages>true</UsePackages>
 			<IntermediateOutputDir>.\$(Config)\$(Platform)</IntermediateOutputDir>
 			<BCC_wpar>false</BCC_wpar>
 			<BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
@@ -64,69 +63,68 @@
 		</PropertyGroup>
 		<ItemGroup>
 			<None Include="config.h">
-				<BuildOrder>15</BuildOrder>
+				<BuildOrder>16</BuildOrder>
 			</None>
-			<CppCompile Include="cSHSyntax.cpp">
-				<DependentOn>$(BDS)\Projects\SHSyntaxFS\SHSyntax\cSHSyntax.h</DependentOn>
-				<BuildOrder>7</BuildOrder>
-				<OptionOverrides>true</OptionOverrides>
+			<CppCompile Include="cSHEdit.cpp">
+				<DependentOn>cSHEdit.h</DependentOn>
+				<BuildOrder>2</BuildOrder>
 			</CppCompile>
 			<PackageImport Include="rtl.bpi">
 				<BuildOrder>1</BuildOrder>
 			</PackageImport>
-			<CppCompile Include="SHSyntaxProj.cpp">
+			<CppCompile Include="SHEditPackage.cpp">
 				<BuildOrder>0</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="uBuffer.cpp">
-				<DependentOn>$(BDS)\Projects\SHSyntaxFS\SHSyntax\uBuffer.h</DependentOn>
+				<DependentOn>uBuffer.h</DependentOn>
 				<BuildOrder>5</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="uDrawer.cpp">
-				<DependentOn>$(BDS)\Projects\SHSyntaxFS\SHSyntax\uDrawer.h</DependentOn>
-				<BuildOrder>7</BuildOrder>
+				<DependentOn>uDrawer.h</DependentOn>
+				<BuildOrder>6</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="uFormat.cpp">
-				<DependentOn>$(BDS)\Projects\SHSyntaxFS\SHSyntax\uFormat.h</DependentOn>
-				<BuildOrder>12</BuildOrder>
+				<DependentOn>uFormat.h</DependentOn>
+				<BuildOrder>7</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="uIPos.cpp">
 				<DependentOn>uIPos.h</DependentOn>
-				<BuildOrder>13</BuildOrder>
-			</CppCompile>
-			<CppCompile Include="uIter.cpp">
-				<DependentOn>$(BDS)\Projects\SHSyntaxFS\SHSyntax\uIter.h</DependentOn>
-				<BuildOrder>6</BuildOrder>
-			</CppCompile>
-			<CppCompile Include="uLanguageDefinition.cpp">
-				<DependentOn>$(BDS)\Projects\SHSyntaxFS\SHSyntax\uLanguageDefinition.h</DependentOn>
 				<BuildOrder>8</BuildOrder>
 			</CppCompile>
-			<CppCompile Include="uLanguageDefinitionSQL.cpp">
-				<DependentOn>$(BDS)\Projects\SHSyntaxFS\SHSyntax\uLanguageDefinitionSQL.h</DependentOn>
+			<CppCompile Include="uIter.cpp">
+				<DependentOn>uIter.h</DependentOn>
+				<BuildOrder>9</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="uLanguageDefinition.cpp">
+				<DependentOn>uLanguageDefinition.h</DependentOn>
 				<BuildOrder>10</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="uLanguageDefinitionSQL.cpp">
+				<DependentOn>uLanguageDefinitionSQL.h</DependentOn>
+				<BuildOrder>11</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="uLanguageDefinitionWebLangs.cpp">
 				<DependentOn>uLanguageDefinitionWebLangs.h</DependentOn>
-				<BuildOrder>16</BuildOrder>
+				<BuildOrder>12</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="uMark.cpp">
-				<DependentOn>$(BDS)\Projects\SHSyntaxFS\SHSyntax\uMark.h</DependentOn>
-				<BuildOrder>11</BuildOrder>
+				<DependentOn>uMark.h</DependentOn>
+				<BuildOrder>13</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="uParser.cpp">
-				<DependentOn>$(BDS)\Projects\SHSyntaxFS\SHSyntax\uParser.h</DependentOn>
-				<BuildOrder>9</BuildOrder>
+				<DependentOn>uParser.h</DependentOn>
+				<BuildOrder>14</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="uSpan.cpp">
-				<DependentOn>$(BDS)\Projects\SHSyntaxFS\SHSyntax\uSpan.h</DependentOn>
-				<BuildOrder>4</BuildOrder>
+				<DependentOn>uSpan.h</DependentOn>
+				<BuildOrder>15</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="uStack.cpp">
 				<DependentOn>uStack.h</DependentOn>
-				<BuildOrder>14</BuildOrder>
+				<BuildOrder>4</BuildOrder>
 			</CppCompile>
 			<PackageImport Include="vcl.bpi">
-				<BuildOrder>8</BuildOrder>
+				<BuildOrder>3</BuildOrder>
 			</PackageImport>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
@@ -147,9 +145,6 @@
 			<Borland.ProjectType>CppPackage</Borland.ProjectType>
 			<BorlandProject>
 				<CPlusPlusBuilder.Personality>
-					<Source>
-						<Source Name="MainSource">SHSyntaxProj.cpp</Source>
-					</Source>
 					<VersionInfo>
 						<VersionInfo Name="IncludeVerInfo">False</VersionInfo>
 						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
@@ -181,12 +176,16 @@
 						<Excluded_Packages Name="$(BDS)\Components\Bpl\MCComponents.bpl">Medicalc Components</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\bcboffice2k150.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\bcbofficexp150.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
+						<Excluded_Packages Name="K:\Bpl\DScintillaSQL.bpl">DScintillaSQL</Excluded_Packages>
 					</Excluded_Packages>
 					<ProjectProperties>
 						<ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
 						<ProjectProperties Name="ManagePaths">True</ProjectProperties>
 						<ProjectProperties Name="VerifyPackages">True</ProjectProperties>
 					</ProjectProperties>
+					<Source>
+						<Source Name="MainSource">SHEditPackage.cpp</Source>
+					</Source>
 				</CPlusPlusBuilder.Personality>
 				<Platforms>
 					<Platform value="Win32">True</Platform>

@@ -126,7 +126,7 @@ using namespace SHEdit;
     LanguageDefinition::AddPops(L"onafterprint=\\\" onbeforeprint=\\\" onbeforeunload=\\\" onerror=\\\" onhaschange=\\\" onload=\\\" onmessage=\\\" onoffline=\\\" ononline=\\\" onpagehide=\\\" onpageshow=\\\" onpopstate=\\\" onredo=\\\" onresize=\\\" onstorage=\\\" onundo=\\\" onunload=\\\" onblur=\\\" onchange=\\\" oncontextmenu=\\\" onfocus=\\\" onformchange=\\\" onforminput=\\\" oninput=\\\" oninvalid=\\\" onreset=\\\" onselect=\\\" onsubmit=\\\" onkeydown=\\\" onkeypress=\\\" onkeyup=\\\" onabort=\\\" oncanplay=\\\" oncanplaythrough=\\\" ondurationchange=\\\" onemptied=\\\" onended=\\\" onerror=\\\" onloadeddata=\\\" onloadedmetadata=\\\" onloadstart=\\\" onpause=\\\" onplay=\\\" onplaying=\\\" onprogress=\\\" onratechange=\\\" onreadystatechange=\\\" onseeked=\\\" onseeking=\\\" onstalled=\\\" onsuspend=\\\" ontimeupdate=\\\" onvolumechange=\\\" onwaiting=\\\" onclick=\\\" ondblclick=\\\" ondrag=\\\" ondragend=\\\" ondragenter=\\\" ondragleave=\\\" ondragover=\\\" ondragstart=\\\" ondrop=\\\" onmousedown=\\\" onmousemove=\\\" onmouseout=\\\" onmouseover=\\\" onmouseup=\\\" onmousewheel=\\\" onscroll=\\\""
             , NULL, htmlTagTree, MASK_DOUBLE_QUOTE,POP_AUTO);
 
-  AddSafetyJumps();
+  //AddSafetyJumps();
 
 
 
@@ -168,11 +168,6 @@ using namespace SHEdit;
   phpCommentTree->bankID = 1;
   phpHtmlEnterTree->bankID = 1;
   phpQuoteTree->bankID = 1;
-
-
-
-
-
 }
 //---------------------------------------------------------------------------
 void LanguageDefinitionWebLangs::ConstructHtml(LanguageDefinition::TreeNode * at, TColor * bg, TColor * fg)
@@ -251,10 +246,26 @@ void LanguageDefinitionWebLangs::ConstructPhp(LanguageDefinition::TreeNode * at,
 //---------------------------------------------------------------------------
 void LanguageDefinitionWebLangs::AddSafetyJumps()
 {
-  TreeNode* array[14] = {htmlTree, htmlCommentTree, htmlTagTree, htmlPredictTree,
-  htmlQuoteTree, cssPropertyTree, cssValueTree, cssEnterTree,
-  cssTree, cssQuoteTree, jvTree, jvEnterTree,
-  jvCommentTree, jvQuoteTree};
+  TreeNode* array[10] = {htmlTree, htmlCommentTree, htmlTagTree,
+  cssPropertyTree, cssValueTree, cssEnterTree,
+  cssTree,  jvTree, jvEnterTree,
+  jvCommentTree};
+
+  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, htmlTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, cssTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, cssPropertyTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, cssValueTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+
+  AddJumpFront(L"{", NULL, LangDefSpecType::Jump, htmlTagTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+  AddJumpFront(L"{", NULL, LangDefSpecType::Jump, htmlTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+
+
+
+  TreeNode* qarray[3] =  {htmlQuoteTree, cssQuoteTree, jvQuoteTree};
+  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, htmlQuoteTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
+  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, cssQuoteTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
+  AddJumpFront(L"{", NULL, LangDefSpecType::Jump, htmlQuoteTree, cssPropertyTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
+  AddJumpFront(L"}", NULL, LangDefSpecType::Jump, htmlQuoteTree, cssTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
 
 
 }

@@ -22,6 +22,7 @@
 
 namespace SHEdit
 {
+
   class LanguageDefinitionWebLangs : public LanguageDefinition
   {
     private:
@@ -55,7 +56,6 @@ namespace SHEdit
       TreeNode * htmlTree;
       TreeNode * htmlCommentTree;
       TreeNode * htmlTagTree;
-      TreeNode * htmlPredictTree;
       TreeNode * htmlQuoteTree;
 
       TreeNode * phpTree;

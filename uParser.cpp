@@ -5,7 +5,7 @@
 #include "uParser.h"
 #include "uDrawer.h"
 #include "uLanguageDefinition.h"
-#include "cSHSyntax.h"
+#include "cSHEdit.h"
 #include "uSpan.h"
 #include "uIter.h"
 #include "uMark.h"
@@ -155,8 +155,11 @@ bool __fastcall Parser::Execute()
         if(itr->line->parserState.searchStateBank == NULL)
             itr->line->parserState.InitBanks(langdef->GetBankIdCount());
         state = itr->line->parserState;
+
         if(itr->linenum == 1)
           state.parseid = currentparseid;
+        else if(itr->line != NULL && itr->line->prevline != NULL)
+          state.parseid = itr->line->prevline->parserState.parseid;
 
         if(linenum >= 0)
         {
@@ -175,6 +178,8 @@ bool __fastcall Parser::Execute()
         tasklistprior.remove(pt);
         tasklist.remove(pt);
 
+
+
         while(itr->word->next && (first || itr->line->parserState != this->state || tasklistprior.front().line == itr->line))
         {
             if(itr->line->parserState.searchStateBank == NULL)
@@ -188,7 +193,7 @@ bool __fastcall Parser::Execute()
             tasklistprior.remove(pt);
             tasklist.remove(pt);
 
-            //parent->Log(String("parsing line ")+String(itr->linenum)+String(" in tree ")+String(state.searchStateStack.top->data.base->Name));
+           // parent->Log(String("parsing line ")+String(itr->linenum));
             ParseLine(itr, &state.searchStateStack.top->data, linenum >= 0);
 
             endValid = itr->GoChar();
@@ -309,7 +314,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
     bool linetag = false;
     int pos = 0;
     bool lookahead;
-    LangDefSpecType type;
+    LangDefSpecType type, lasttype;
     wchar_t *& pt = (itr->ptr); //debug
     this->inword = false;
     bool& inword = this->inword; //debug
@@ -392,6 +397,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
         type = LangDefSpecType::Nomatch;
         } */
 
+        lasttype = type;
         type = langdef->Go(searchiter, *(itr->ptr), lookahead = !inword || !langdef->IsAlNum(*(itr->ptr)));
 
         inword = langdef->IsAl(*(itr->ptr)) || (inword && langdef->IsAlNum(*(itr->ptr)));
@@ -408,7 +414,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
 #ifdef DEBUG
         /* int dbgtype = type; if( dbgLogging )  parent->Log( String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String((int)lookahead));        //Write(String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String(searchiter->type));  */
 #endif
-        if(lookahead)
+        if(lookahead || (lasttype == LangDefSpecType::Empty && type != LangDefSpecType::Empty))
             Flush();
 
 proc:
@@ -418,8 +424,8 @@ proc:
                 if(paint)
                 {
                     AddChar(itr, pos);
-                    actFormat += *(searchiter->current->format);
-                    Flush();
+                    //actFormat += *(searchiter->current->format);
+                    //Flush();
                 }
                 break;
             case LangDefSpecType::LineTag:
@@ -647,22 +653,40 @@ void Parser::PerformJump(LanguageDefinition::SearchIter *& sit)
 
            if(sit->base->bankID == sit->current->jumps[i].nextTree->bankID)
            {
+             LanguageDefinition::TreeNode * newtree = sit->current->jumps[i].nextTree;
+
+             if(sit->current->jumps[i].freemask)
+             {
+               int freemask = sit->current->jumps[i].freemask;
+               while(state.searchStateStack.top != NULL && state.searchStateStack.top->data.mask & freemask)
+                state.searchStateStack.Pop();
+               if(state.searchStateStack.top == NULL)
+                 state.searchStateStack.Push(langdef->GetDefSC(state.actBank));
+               sit = &(state.searchStateStack.top->data);
+             }
+
              sit->mask ^= newmask;
-             sit->base = sit->current->jumps[i].nextTree;
+             sit->base = newtree;
 
            }
            else
            {
-            short oldBankMask = langdef->GetBankMask(state.actBank);
+              short oldBankMask = langdef->GetBankMask(state.actBank);
+              short freemask = sit->current->jumps[i].freemask;
 
-            state.actBank = sit->current->jumps[i].nextTree->bankID;
-            if(state.searchStateStack.top == NULL)
-                state.searchStateStack.Push(langdef->GetDefSC(state.actBank));
+              state.actBank = sit->current->jumps[i].nextTree->bankID;
 
-            sit = &(state.searchStateStack.top->data);
-            sit->mask = sit->mask | newmask;
-              for(Stack<LanguageDefinition::SearchIter>::Node * n = state.searchStateStack.top; n != NULL; n = n->next)
-                n->data.mask = n->data.mask | (newmask & oldBankMask);
+              if(freemask)
+               while(state.searchStateStack.top != NULL && state.searchStateStack.top->data.mask & freemask)
+            state.searchStateStack.Pop();
+
+              if(state.searchStateStack.top == NULL)
+                  state.searchStateStack.Push(langdef->GetDefSC(state.actBank));
+
+              sit = &(state.searchStateStack.top->data);
+              sit->mask = sit->mask | newmask;
+                for(Stack<LanguageDefinition::SearchIter>::Node * n = state.searchStateStack.top; n != NULL; n = n->next)
+                  n->data.mask = n->data.mask | (newmask & oldBankMask);
            }
 
            sit->current = sit->base;

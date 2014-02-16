@@ -24,5 +24,5 @@
 #define QUICKDRAW
 #define FORCELOOKAHEAD true
 
-#define SCROLL_STEP 3
+#define SCROLL_STEP 6
 #define Y_OFF 0

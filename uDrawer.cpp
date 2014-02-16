@@ -4,7 +4,7 @@
 
 
 #include "uDrawer.h"
-#include "cSHSyntax.h"
+#include "cSHEdit.h"
 #include "uFormat.h"
 #include <string>
 #include <stdio.h>

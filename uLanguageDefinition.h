@@ -82,7 +82,7 @@ namespace SHEdit
       LangDefSpecType Go(SearchIter * item, wchar_t c, bool & lookahead); /*!< Serves Parser for retrieving information about where to go further. Lookahead is set to true, if item was returned to empty and directly went to first unmatched character */
 
       void _AddPush(bool tobegin, wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask);
-      void _AddJump(bool tobegin, wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask); /*!< Adds a custom jump from "at" tree to "to" tree.*/
+      void _AddJump(bool tobegin, wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short freemask); /*!< Adds a custom jump from "at" tree to "to" tree.*/
 
 
     public:
@@ -90,10 +90,11 @@ namespace SHEdit
 
       struct Jump
       {
-        Jump(short _pushmask, short _newmask, TreeNode * _next);
+        Jump(short _pushmask, short _newmask, short _freemask, TreeNode * _next);
         Jump();
         short pushmask;
         short newmask;
+        short freemask;
         TreeNode * nextTree;
       };
 
@@ -102,7 +103,7 @@ namespace SHEdit
         TreeNode(wchar_t c, LangDefSpecType type, FontStyle * format, bool caseSensitive);
         TreeNode(TreeNode * tree, FontStyle * format);
 
-        void AddJump(short pushmask, short newmask, TreeNode * to, bool begin);
+        void AddJump(short pushmask, short newmask, short freemask, TreeNode * to, bool begin);
 
         wchar_t thisItem;
         bool caseSensitive;
@@ -138,14 +139,14 @@ namespace SHEdit
 
 
       void AddPops(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2);  /*!< Just an abreviation. */
-      void AddJumps(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0); /*!< Just an abreviation. */
-      void AddJumpsFront(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0); /*!< Just an abreviation. */
+      void AddJumps(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0, short freemask = 0); /*!< Just an abreviation. */
+      void AddJumpsFront(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0, short freemask = 0); /*!< Just an abreviation. */
       void AddPushes(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask);  /*!< Just an abreviation. */
       void AddPushesFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask);   /*!< Just an abreviation. */
 
       void AddKeywords(wchar_t * string, FontStyle * format, TreeNode * at = NULL); /*!< Adds all words that are contained in string (as space-separated list) to the tree given as "at". If tree is not given, then the main root is used */
-      void AddJump(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0); /*!< Adds a custom jump from "at" tree to "to" tree. String is a space separated list.*/
-      void AddJumpFront(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0); /*!< Like AddJump but adds new jumps to the beginning of jump list.*/
+      void AddJump(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0, short freemask = 0); /*!< Adds a custom jump from "at" tree to "to" tree. String is a space separated list.*/
+      void AddJumpFront(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0, short freemask = 0); /*!< Like AddJump but adds new jumps to the beginning of jump list.*/
       void AddPush(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask); /*!< Adds pushes specified by string (as space separated list. */
       void AddPushFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask);
       void AddPop(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2);

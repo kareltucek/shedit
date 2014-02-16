@@ -128,20 +128,25 @@ void Stack<T_data>::Erase()
   top = NULL;
 }
 //---------------------------------------------------------------------------
-  template <class T_data>
+template <class T_data>
 Stack<T_data>& Stack<T_data>::operator=(const Stack<T_data>& stack)
 {
-  if(&stack == this)
-    return *this;
+    if(&stack == this)
+        return *this;
 
-  Erase();
-  Node * n = stack.top;
-  while(n != NULL)
-  {
-    Push(n->data);
-    n = n->next;
-  }
-  return *this;
+    Erase();
+    Node * n = stack.top;
+    Node ** m = &top;
+    while(n != NULL)
+    {
+        *m = new Node(n->data);
+        (*m)->next = NULL;
+        (*m)->prev = m;
+
+        m = &((*m)->next);
+        n = n->next;
+    }
+    return *this;
 }
 //---------------------------------------------------------------------------
   template <class T_data>
