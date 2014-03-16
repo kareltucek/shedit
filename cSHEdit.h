@@ -29,7 +29,7 @@ namespace SHEdit
 
   /** \mainpage
    * overrview
-   * ------------------
+   * ========
    * TSHEdit is a syntax highlight source code editing component.
    *
    * TSHEdit consists of 4 main parts. The component class TSHEdit, Buffer, Parser and Drawer. Originally parser and drawer were designed to work in their own thread, but as it turned out, it was not possible due to the fact that vcl is not thread safe and thus text rendering was not possible, so I merged everything into just one thread, and cut off a lot of heavy stuff for thread sync.
@@ -77,15 +77,15 @@ namespace SHEdit
    *  4. IPos - positioning
    *  5. Iter - a bit more on positioning
    *  6. Parser - how parsing works
-   *  7. LanguageDefinition and example LanguageDefinitionSQL
+   *  7. LanguageDefinition and example LanguageDefinitionSQL and LanguageDefinitionWebLangs
    *  8. Drawer - just some notes
    *  9. Text formatting - Format FontStyle Mark IMark
    *  10. Stack - minimalistic stack reimplementation (for low memory consumption needs)
    */
 
   /**
-   * TSHEdit - the component class
-   * ------------------------------
+   * 1. TSHEdit - the component class
+   * =============================
    * This class represents the component itself. It's task is to process user input and command other objects what to do - information this class stores are Iterators pointing to the current line, cursor position and selection end, then information about scrolling deltas and mouse positioning information. It's members are on one hand overriden message/event handling procedures and on the other hand methods that are used to process these.
    *
    * Inner funcionality

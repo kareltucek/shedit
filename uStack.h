@@ -5,8 +5,10 @@
 
 /*!
  * Stack 
- * -----
+ * =====
  * Stack (working rather on principle of a forward list, but written for purpose of having a stack) template was specially reimplemented due to need of a small dynamic container, that would consume as little memory as possible (at least when empty :-) ), and anyway so that it's behaviour is always absolutely predictable.
+ *
+ * For some purposes there should probably implemented one more template, that would keep data in memory sequentially on one place to allow fast assigments and comparisons. 
  *
  * Iterating through Stack is meant to be done using the Stack<T_data>::Node* pointer as an iterator. I.e. like:
  *
@@ -131,22 +133,22 @@ void Stack<T_data>::Erase()
 template <class T_data>
 Stack<T_data>& Stack<T_data>::operator=(const Stack<T_data>& stack)
 {
-    if(&stack == this)
-        return *this;
-
-    Erase();
-    Node * n = stack.top;
-    Node ** m = &top;
-    while(n != NULL)
-    {
-        *m = new Node(n->data);
-        (*m)->next = NULL;
-        (*m)->prev = m;
-
-        m = &((*m)->next);
-        n = n->next;
-    }
+  if(&stack == this)
     return *this;
+      
+      Erase();
+      Node * n = stack.top;
+      Node ** m = &top;
+      while(n != NULL)
+      {
+        *m = new Node(n->data);
+          (*m)->next = NULL;
+          (*m)->prev = m;
+          
+          m = &((*m)->next);
+          n = n->next;
+      }
+  return *this;
 }
 //---------------------------------------------------------------------------
   template <class T_data>

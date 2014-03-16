@@ -23,6 +23,13 @@
 namespace SHEdit
 {
 
+  /*!
+   * Web Languages mor advanced example
+   * ----------------------------------
+   * This class was written as example of hot the automaton logic can be used to parse a bit advanced structure of highlighting.
+   *
+   * As example was used a group of web - oriented languages, namely html, php, css and javascript (also sql should have been here but I am terribly lazy), because of the mess one can do with 5 different languages in one file. One thing to notice is that html+jv+css are handled through different prints of php as if those were in the same context. It is principially wrong, but on average code it works very nicely and well illustrates the way the dictionaries work. 
+   * */
   class LanguageDefinitionWebLangs : public LanguageDefinition
   {
     private:
@@ -60,6 +67,7 @@ namespace SHEdit
 
       TreeNode * phpTree;
       TreeNode * phpCommentTree;
+      TreeNode * phpLineCommentTree;
       TreeNode * phpHtmlEnterTree;
       TreeNode * phpQuoteTree;
 
@@ -72,6 +80,7 @@ namespace SHEdit
       TreeNode * jvTree;
       TreeNode * jvEnterTree;
       TreeNode * jvCommentTree;
+      TreeNode * jvLineCommentTree;
       TreeNode * jvQuoteTree;
 
       void ConstructHtml(TreeNode * at, TColor * bg, TColor * fg);

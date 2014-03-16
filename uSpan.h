@@ -14,6 +14,8 @@ namespace SHEdit
   class Iter;
   //---------------------------------------------------------------------------
   /*!
+   * Span
+   * ----
    * Span represents some text span placed somewhere in buffer. More info can be found in the Buffer class.
    * */
   struct Span
@@ -33,6 +35,8 @@ namespace SHEdit
   };
   //---------------------------------------------------------------------------
   /*!
+   * NSpan
+   * -----
    * NSpan represents some new line, and creates a linked list of new lines, while taking part in the linked list created of Spans as well. More info can be found in the Buffer class.
    *
    * Each NSpan holds cached state of parser from beginning of that line.
@@ -65,7 +69,9 @@ namespace SHEdit
   };
   //---------------------------------------------------------------------------
   /*!
-   * Span represents some range of Spans and NSpans. In fact it holds part of buffer by its ends. More info can be found in the Buffer class.
+   * Range
+   * ----
+   * Range represents some range of Spans and NSpans. In fact it holds part of buffer by its ends. More info can be found in the Buffer class.
    * */
   struct Range
   {
@@ -86,6 +92,8 @@ namespace SHEdit
   };
   //---------------------------------------------------------------------------
   /*!
+   * Action
+   * ------
    * Action holds relative (numeric) description of an edition that was made on buffer. It serves for updating iterators back to their initial state when the edit is being undone. More info can be found in the Buffer class.
    * */
   struct Action
@@ -103,6 +111,8 @@ namespace SHEdit
   };
   //---------------------------------------------------------------------------
   /*!
+   * UndoTask
+   * --------
    * Serves for undo/redo. More info can be found in the Buffer class.
    * */
   struct UndoTask

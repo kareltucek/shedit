@@ -44,7 +44,7 @@ void IPos::RecalcPos()
 IMark* IPos::IMarkupBegin(SHEdit::Format * format)
 {
   return new IMark(format, true, this);
-  }
+}
 //---------------------------------------------------------------------------
 IMark* IPos::IMarkupEnd(SHEdit::Format * format)
 {

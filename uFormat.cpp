@@ -28,29 +28,29 @@ Format::Format()
 
 };
 //---------------------------------------------------------------------------
-FontStyle::FontStyle(TColor * foreground, TColor * background)
-  : style()
+  FontStyle::FontStyle(TColor * foreground, TColor * background)
+: style()
 {
   this->foreground = foreground;
   this->background = background;
 };
 //---------------------------------------------------------------------------
-FontStyle::FontStyle(TColor * foreground, TColor * background, TFontStyles style)
-  : style(style)
+  FontStyle::FontStyle(TColor * foreground, TColor * background, TFontStyles style)
+: style(style)
 {
   this->foreground = foreground;
   this->background = background;
 };
 //---------------------------------------------------------------------------
-FontStyle::FontStyle(TColor * foreground)
-  : style()
+  FontStyle::FontStyle(TColor * foreground)
+: style()
 {
   this->foreground = foreground;
   this->background = NULL;
 };
 //---------------------------------------------------------------------------
-FontStyle::FontStyle()
-  : style()
+  FontStyle::FontStyle()
+: style()
 {
   this->foreground = NULL;
   this->background = NULL;
@@ -124,9 +124,9 @@ SHEdit::Format& Format::operator+=(const SHEdit::Format& f)
 //---------------------------------------------------------------------------
 SHEdit::Format& Format::operator=(const SHEdit::Format& f)
 {
-    this->foreground = f.foreground;
-    this->background = f.background;
-    this->style = f.style;
+  this->foreground = f.foreground;
+  this->background = f.background;
+  this->style = f.style;
   return *this;
 }
 //---------------------------------------------------------------------------
@@ -165,16 +165,16 @@ SHEdit::FontStyle& FontStyle::operator+=(const SHEdit::Format& f)
 
 SHEdit::FontStyle& FontStyle::operator=(const SHEdit::FontStyle& f)
 {
-    this->foreground = f.foreground;
-    this->background = f.background;
+  this->foreground = f.foreground;
+  this->background = f.background;
   this->style = f.style;
   return *this;
 }
 //---------------------------------------------------------------------------
 SHEdit::FontStyle& FontStyle::operator=(const SHEdit::Format& f)
 {
-    this->foreground = f.foreground;
-    this->background = f.background;
+  this->foreground = f.foreground;
+  this->background = f.background;
   this->style = f.style;
   return *this;
 }

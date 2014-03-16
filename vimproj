@@ -2,7 +2,8 @@ se path=""
 "se tags=~/.vim/ctags/SQL
 o vimproj
 vsplit config.h
-call OpenObject("cSHSyntax")
+vsplit DOCUMENTATION
+call OpenObject("cSHEdit")
 call OpenObject("uBuffer")
 call OpenObject("uDrawer")
 call OpenObject("uFormat")

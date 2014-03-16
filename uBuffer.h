@@ -14,7 +14,7 @@ namespace SHEdit
 
   /*!
    * Buffer
-   * ------
+   * ======
    * The Buffers purpose is to store text, undo/redo information and iterator related positioning information. Text is actually stored as two level linked list, constructed on one level by instances of Span class, that create a continuous stream of text formated as null terminated wide char strings. Each Span represents some span of text, that does not contain a newline and contains the string itself, string's length, markup info and links to next and previous Spans. New lines are represented by NSpan class that inherits from Span, and thus are present in both levels of buffer. NSpans aditionally contain links to previous and next newlines and thus allow simple and fast movement over buffer even without binary tree indexing. 
    *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.txt}

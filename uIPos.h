@@ -14,7 +14,7 @@ namespace SHEdit
 
   /*!
    * IPos 
-   * ----
+   * ===
    *  IPos is base class for all positioning elements of this project. IPos stores a relative location in buffer using the line number and line position. IPos and Iterator (as its descendant) can work in 2 modes - a "full" mode and a positionless mode. Its full mode features are dependent on valid IPos::buffer pointer and on correct initialization of IPos::linenum and IPos::line. The "full mode" IPos and Iter register themselves within the buffer, and later are guaranteed to maintain their positions through all editations of buffer (that means that as long as they are initialized with correct information, it's linenum will remain correct even if it's value has changed). Positionless IPos and Iter classes are not guaranteed anything, but may be useful for quick local changes. 
    *
    * IPos itself is just a relative-location storing class, intended for marking of statical positions. If you need to move and access data, you should use Iter class.

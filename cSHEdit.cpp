@@ -27,8 +27,8 @@ namespace Cshedit
 {
   void __fastcall PACKAGE Register()
   {
-     TComponentClass classes[1] = {__classid(SHEdit::TSHEdit)};
-     RegisterComponents(L"Samples", classes, 0);
+    TComponentClass classes[1] = {__classid(SHEdit::TSHEdit)};
+    RegisterComponents(L"Samples", classes, 0);
   }
 }
 //---------------------------------------------------------------------------
@@ -297,9 +297,9 @@ void __fastcall TSHEdit::WndProc(Messages::TMessage &Message)
       if(FOnKeyPress != NULL)
       {
         bool ret = false;
-          FOnKeyPress(this, Message.WParam, ret);
-          if(ret)
-            break;
+        FOnKeyPress(this, Message.WParam, ret);
+        if(ret)
+          break;
       }
       switch(Message.WParam)
       {
@@ -448,18 +448,18 @@ void __fastcall TSHEdit::WndProc(Messages::TMessage &Message)
             if(itr != NULL)
             {
               delete itrCursor;
-                itrCursor = itr;
-                if(buffer->GetLineCount() < GetVisLineCount())
-                {
-                  delete itrLine;
-                    itrLine = buffer->Begin();
-                }
+              itrCursor = itr;
+              if(buffer->GetLineCount() < GetVisLineCount())
+              {
+                delete itrLine;
+                itrLine = buffer->Begin();
+              }
               AdjustLine(false);
-                if(itrbegin != NULL)
-                {
-                  parser->ParseFromLine(itrbegin->line, itrbegin->linenum, 0);
-                    delete itrbegin;
-                }
+              if(itrbegin != NULL)
+              {
+                parser->ParseFromLine(itrbegin->line, itrbegin->linenum, 0);
+                delete itrbegin;
+              }
             }
             UpdateVBar();
             UpdateCursor(false);
@@ -564,12 +564,12 @@ void TSHEdit::AdjustLine(bool paint)
     if(needsHAdjustment)
     {
       int hpos = 0;
-          hpos = cx-drawer->GetLinenumWidth() - this->Width/2;
+      hpos = cx-drawer->GetLinenumWidth() - this->Width/2;
 
-            if(hpos < 0)
-              HBar->Position = 0;
-            else
-              HBar->Position = hpos;
+      if(hpos < 0)
+        HBar->Position = 0;
+      else
+        HBar->Position = hpos;
     }
     RepaintWindow(true);
   }
@@ -737,9 +737,9 @@ void TSHEdit::ProcessMouseMove(int &x, int &y)
   }
 
   /*
-  if(oldIter != NULL) parser->ParseFromLine(oldIter->line, oldIter->linenum, 2);
-  if(itrCursor != NULL) parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 2);
-  if(itrCursorSecond != NULL) parser->ParseFromLine(itrCursorSecond->line, itrCursorSecond->linenum, 2);    */
+     if(oldIter != NULL) parser->ParseFromLine(oldIter->line, oldIter->linenum, 2);
+     if(itrCursor != NULL) parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 2);
+     if(itrCursorSecond != NULL) parser->ParseFromLine(itrCursorSecond->line, itrCursorSecond->linenum, 2);    */
   if(oldIter == NULL)
     ParseScreenBetween(itrCursor, itrCursorSecond);
   else
@@ -783,14 +783,14 @@ Iter * TSHEdit::GetCursor()
   return cursorsInInvOrder ? itrCursorSecond : itrCursor;
 
 }
-  //---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 Iter * TSHEdit::GetCursorEnd()
 {
 
   return cursorsInInvOrder ? itrCursor : itrCursorSecond;
 
 }
-  //---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 Iter * TSHEdit::XYtoItr(int& x, int& y)
 {             /*
@@ -946,7 +946,7 @@ void TSHEdit::DeleteSel(bool allowsync)
 void TSHEdit::Insert(wchar_t * text)
 {
   if(itrCursorSecond)
-     DeleteSel(false);
+    DeleteSel(false);
 
   parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 0);
 
@@ -993,7 +993,7 @@ void TSHEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed)
   else if(linesMoved != 0)
   {
     RepaintWindow(true);
-      UpdateVBar();
+    UpdateVBar();
   }
 
 
@@ -1207,7 +1207,7 @@ void TSHEdit::ParseScreenBetween(Iter * it1, Iter * it2)
     it2 = tmp;
   }
   if(it2->linenum < itrLine->linenum)
-   return;
+    return;
 
   if(it1->linenum < itrLine->linenum)
     it1 = itrLine;

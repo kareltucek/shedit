@@ -15,8 +15,8 @@ using namespace SHEdit;
 
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
-Span::Span(Iter * After)
-  : marks()
+  Span::Span(Iter * After)
+: marks()
 {
   prev = After->word;
   next = After->word->next;
@@ -24,8 +24,8 @@ Span::Span(Iter * After)
   length = 0;
 }
 //---------------------------------------------------------------------------
-Span::Span(Span * afterword)
-  : marks()
+  Span::Span(Span * afterword)
+: marks()
 {
   prev = afterword;
   if(afterword)
@@ -34,8 +34,8 @@ Span::Span(Span * afterword)
   length = 0;
 }
 //---------------------------------------------------------------------------
-Span::Span()
-  : marks()
+  Span::Span()
+: marks()
 {
   prev = NULL;
   next = NULL;
@@ -56,8 +56,8 @@ Span::~Span()
   }
 }
 //---------------------------------------------------------------------------
-Span::Span(Span * prev, Span * next, wchar_t * string, short length)
-  : marks()
+  Span::Span(Span * prev, Span * next, wchar_t * string, short length)
+: marks()
 {
   this->prev = prev;
   this->next = next;
@@ -236,19 +236,19 @@ void Range::Free()
   if(!empty && first != last->next)
   {
     Span * word = first;
-      Span * nextptr;
-      while(word != NULL)
-      {
-        nextptr = word->next;
-          if(word->string != NULL && *(word->string) == '\n')
-            delete (NSpan*)word;
-          else
-            delete word;
-              
-              if(word == last)
-                break;
-                  word = nextptr;
-      }
+    Span * nextptr;
+    while(word != NULL)
+    {
+      nextptr = word->next;
+      if(word->string != NULL && *(word->string) == '\n')
+        delete (NSpan*)word;
+      else
+        delete word;
+
+      if(word == last)
+        break;
+      word = nextptr;
+    }
   }
 }
 //---------------------------------------------------------------------------
@@ -257,10 +257,10 @@ void Range::Free()
 Action::Action(int fromlinenum, int tolinenum, int frompos, int topos, ActionType type)
 {
   this->fromlinenum = fromlinenum;
-    this->tolinenum = tolinenum;
-    this->frompos = frompos;
-    this->topos = topos;
-    this->type = type;
+  this->tolinenum = tolinenum;
+  this->frompos = frompos;
+  this->topos = topos;
+  this->type = type;
 }
 //---------------------------------------------------------------------------
 Action::~Action()
@@ -273,11 +273,11 @@ Action::~Action()
 UndoTask::UndoTask(Action * action, Range * range)
 {
   this->action = action;
-    this->range = range;
+  this->range = range;
 }
 //---------------------------------------------------------------------------
 UndoTask::~UndoTask()
 {
   delete range;
-    delete action;
+  delete action;
 }

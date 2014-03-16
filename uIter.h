@@ -17,7 +17,7 @@ namespace SHEdit
 
   /*!
    * Iter
-   * ---
+   * ===
    *  Iter class is a specialization of IPos. While IPos maintains relative position in buffer, not caring of link to it's physical structure, Iter keeps pointers and structure - related info that allow direct acces to the data, and comfortable movement over buffer.
    *
    *  Iter allows to maintain the positionless markup. Regarding Iterator - handled markup, Iterator provides Iter::UpdateNextImark() method that updates the nextimark and nextimarkln member variables that specify the next nearest change (in forward direction) in Iterator handled markup, and thus allows parser to draw these properly. The owner of iterator is responsible for keeping this up-to-date using Iter::UpdateNextImark() method whenever he needs to have it up-to-date.

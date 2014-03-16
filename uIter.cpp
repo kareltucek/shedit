@@ -15,8 +15,8 @@ using namespace SHEdit;
 #pragma package(smart_init)
 
 //---------------------------------------------------------------------------
-Iter::Iter(NSpan * line)
-  : IPos(NULL, line, -1, 0)
+  Iter::Iter(NSpan * line)
+: IPos(NULL, line, -1, 0)
 {
   this->type = IPType::iptIter;
   this->offset = 0;
@@ -29,8 +29,8 @@ Iter::Iter(NSpan * line)
     GoChar();
 }
 //---------------------------------------------------------------------------
-Iter::Iter(NSpan * line, int linenum, int pos, Buffer * buffer)
-  : IPos(buffer, line, linenum, pos)
+  Iter::Iter(NSpan * line, int linenum, int pos, Buffer * buffer)
+: IPos(buffer, line, linenum, pos)
 {
   this->word = line;
   this->type = IPType::iptIter;
@@ -38,8 +38,8 @@ Iter::Iter(NSpan * line, int linenum, int pos, Buffer * buffer)
   Update();
 }
 //---------------------------------------------------------------------------
-Iter::Iter(int offset, Span * word, NSpan * line, Buffer * buffer, int linenum)
-  : IPos(buffer, line, linenum, 0)
+  Iter::Iter(int offset, Span * word, NSpan * line, Buffer * buffer, int linenum)
+: IPos(buffer, line, linenum, 0)
 {
   this->type = IPType::iptIter;
   this->offset = offset;
@@ -96,7 +96,7 @@ void Iter::GoToLine(int line)
   if(this->line->nextline == NULL)
   {
     this->line = this->line->prevline;
-      linenum--;
+    linenum--;
   }
   GoLineStart();
 
@@ -370,7 +370,7 @@ void Iter::UpdatePos()
 {
   int p = this->pos;
   GoLineStart();
-    GoBy(p);
+  GoBy(p);
 }
 //---------------------------------------------------------------------------
 void Iter::UpdateNextImark()

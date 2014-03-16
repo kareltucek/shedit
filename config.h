@@ -7,7 +7,7 @@
 #define DOUBLE_BUFFERED
 #define FULL_WIDTH_PAINT
 #define TAB_WIDTH 2
-//define DRAW_POS
+#define DRAW_POS
 #define ALLOW_TABS
 
 #define KEEP_VIS_TOP 4

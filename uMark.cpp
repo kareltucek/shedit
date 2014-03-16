@@ -17,8 +17,8 @@ Mark::Mark(SHEdit::Format * format, bool begin, short pos)
 }
 //---------------------------------------------------------------------------
 
-IMark::IMark(SHEdit::Format * format, bool begin, IPos * itr)
-  : IPos(itr->buffer, itr->line, itr->linenum, itr->pos)
+  IMark::IMark(SHEdit::Format * format, bool begin, IPos * itr)
+: IPos(itr->buffer, itr->line, itr->linenum, itr->pos)
 {
   this->type = IPType::iptMark;
   this->format = format;

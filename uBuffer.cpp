@@ -647,15 +647,15 @@ Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*>
   if(event->action->type == Action::ActionType::deletion)
   {
     ItersTranslateInsert(event->action->fromlinenum, event->action->frompos, event->action->tolinenum - event->action->fromlinenum, event->action->topos, replLineLast);
-      action = new Action(event->action->fromlinenum, event->action->tolinenum - event->action->fromlinenum, event->action->frompos, event->action->topos, Action::ActionType::insertion);
-      itr = new Iter(replLineLast, event->action->tolinenum, event->action->topos, this);
+    action = new Action(event->action->fromlinenum, event->action->tolinenum - event->action->fromlinenum, event->action->frompos, event->action->topos, Action::ActionType::insertion);
+    itr = new Iter(replLineLast, event->action->tolinenum, event->action->topos, this);
     begin = new Iter(undoLineFirst, event->action->fromlinenum, event->action->frompos, this);
   }
   else
   {
     ItersTranslateDelete(event->action->fromlinenum, event->action->frompos, event->action->fromlinenum+event->action->tolinenum, event->action->topos, undoLineFirst);
-      action = new Action(event->action->fromlinenum,event->action->fromlinenum+event->action->tolinenum, event->action->frompos, event->action->topos, Action::ActionType::deletion);
-      itr = new Iter(undoLineFirst, event->action->fromlinenum, event->action->frompos, this);
+    action = new Action(event->action->fromlinenum,event->action->fromlinenum+event->action->tolinenum, event->action->frompos, event->action->topos, Action::ActionType::deletion);
+    itr = new Iter(undoLineFirst, event->action->fromlinenum, event->action->frompos, this);
     begin = NULL;
   }
 
@@ -848,7 +848,7 @@ String Buffer::GetLine(Iter * line, bool replaceTabs)
     if(*(itr->ptr) != '\t' || !replaceTabs)
     {
       str += *(itr->ptr);
-        pos++;
+      pos++;
     }
     else
     {
@@ -883,7 +883,7 @@ String Buffer::GetLineTo(Iter* To, bool replaceTabs)
     if(*(itr->ptr) != '\t' || !replaceTabs)
     {
       str += *(itr->ptr);
-        pos++;
+      pos++;
     }
     else
     {
@@ -978,14 +978,14 @@ void Buffer::ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, i
       if((*itr)->linenum < tolinenum || ((*itr)->linenum == tolinenum && (*itr)->pos <= topos))
       {
         (*itr)->line = toline;
-          (*itr)->linenum = fromlinenum;
-          (*itr)->pos = frompos;
+        (*itr)->linenum = fromlinenum;
+        (*itr)->pos = frompos;
       }
       else if((*itr)->linenum == tolinenum && (*itr)->pos > topos)
       {
         (*itr)->line = toline;
-          (*itr)->linenum = fromlinenum;
-          (*itr)->pos = frompos+(*itr)->pos-topos;
+        (*itr)->linenum = fromlinenum;
+        (*itr)->pos = frompos+(*itr)->pos-topos;
       }
       else if((*itr)->linenum > tolinenum)
       {

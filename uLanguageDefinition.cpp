@@ -54,20 +54,20 @@ bool LanguageDefinition::SearchIt::operator!=(const SearchIt& sit)
 }
 
 //---------------------------------------------------------------------------
-LanguageDefinition::Jump::Jump(short _pushmask, short _newmask, short _freemask, TreeNode * _next)
-  : pushmask(_pushmask), newmask(_newmask), freemask(_freemask), nextTree(_next)
+  LanguageDefinition::Jump::Jump(short _pushmask, short _newmask, short _freemask, TreeNode * _next)
+: pushmask(_pushmask), newmask(_newmask), freemask(_freemask), nextTree(_next)
 {
- }
+}
 
 //---------------------------------------------------------------------------
-LanguageDefinition::Jump::Jump()
-  : pushmask(0), newmask(0), freemask(0), nextTree(NULL)
+  LanguageDefinition::Jump::Jump()
+: pushmask(0), newmask(0), freemask(0), nextTree(NULL)
 {
- }
+}
 
 //---------------------------------------------------------------------------
-LanguageDefinition::SearchIt::SearchIt()
-  : current(NULL), base(NULL), mask(0)
+  LanguageDefinition::SearchIt::SearchIt()
+: current(NULL), base(NULL), mask(0)
 {
 }
 //---------------------------------------------------------------------------
@@ -279,8 +279,8 @@ void LanguageDefinition::_AddJump(bool begin, wchar_t * string, FontStyle * form
       ptr++;
     if(*ptr == '\0')
       break;
-
-    TreeNode * item = at;
+    
+      TreeNode * item = at;
     while(*ptr != ' ' && *ptr != '\0')
     {
       item = FindOrCreateItem(item, *ptr, at);
@@ -311,7 +311,7 @@ void LanguageDefinition::AddJumpFront(wchar_t * string, FontStyle * format, Lang
 //---------------------------------------------------------------------------
 void LanguageDefinition::AddJumpsFront(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short freemask)
 {
- _AddJump(true, string, format, type, at, to, jumpmask, newmask, freemask);
+  _AddJump(true, string, format, type, at, to, jumpmask, newmask, freemask);
 }
 //---------------------------------------------------------------------------
 void LanguageDefinition::_AddPush(bool begin, wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask)
@@ -530,7 +530,7 @@ short LanguageDefinition::GetBankMask(int bank)
 //---------------------------------------------------------------------------
 void LanguageDefinition::SetBankBase(int bank, TreeNode * item)
 {
-  bankBases[bank] = item;
+    bankBases[bank] = item;
 }
 //---------------------------------------------------------------------------
 short LanguageDefinition::GetBankIdByMask(int mask)
@@ -542,16 +542,16 @@ short LanguageDefinition::GetBankIdByMask(int mask)
 }
 //---------------------------------------------------------------------------
 /*
-LanguageDefinition::TreeNode * LanguageDefinition::GetSpecItem(short id)
-{
+   LanguageDefinition::TreeNode * LanguageDefinition::GetSpecItem(short id)
+   {
 
-  for (std::list<TreeNode*>::const_iterator itr = specItems.begin(); itr != specItems.end(); ++itr)
-  {
-    if((*itr)->id == id)
-      return *itr;
-  }
-  return this->tree;
-}                                   */
+   for (std::list<TreeNode*>::const_iterator itr = specItems.begin(); itr != specItems.end(); ++itr)
+   {
+   if((*itr)->id == id)
+   return *itr;
+   }
+   return this->tree;
+   }                                   */
 //---------------------------------------------------------------------------
 LanguageDefinition::~LanguageDefinition()
 {
