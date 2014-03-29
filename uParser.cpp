@@ -441,14 +441,14 @@ proc:
           actFormat += *(searchiter->current->format);
           Flush();
         }
-        break;
+        break;                          /*
       case LangDefSpecType::PushPop:
         if((searchiter->mask | state.globalMask) & searchiter->current->popmask)
         {
           PerformPop(searchiter);
           if(paint)
           {
-            actFormat = *searchiter->current->format ;
+             actFormat = *searchiter->current->format ;
             AddChar(itr, pos);
             actFormat += *(searchiter->current->format);
             Flush();
@@ -467,11 +467,10 @@ proc:
           PerformJumpPush(searchiter, true);
           actFormat = *searchiter->current->format ;
         }
-        break;
+        break;    */
       case LangDefSpecType::Jump:
-        if((searchiter->mask | state.globalMask) & searchiter->current->popmask)
+        if(PerformPop(searchiter))
         {
-          PerformPop(searchiter);
           if(paint)
           {
             AddChar(itr, pos);
@@ -487,7 +486,8 @@ proc:
             actFormat += *(searchiter->current->format);
             Flush();
           }
-          PerformJumpPush(searchiter, false);
+          PerformJumpPush(searchiter);
+          actFormat = *searchiter->current->format ;
         }
         searchiter->current = searchiter->base;
         actFormat = *searchiter->current->format ;
@@ -553,89 +553,46 @@ proc:
 
 }
 //---------------------------------------------------------------------------
-void Parser::PerformPop(LanguageDefinition::SearchIter *& sit)
+bool Parser::PerformPop(LanguageDefinition::SearchIter *& sit)
 {
-  int popmask = (sit->mask | state.globalMask) & sit->current->popmask;
 
   //Write(String("going to perform POP with popmask ")+String(popmask)+String(" on ")+actText+String(sit->current->thisItem));
   //DumpStackState();
- /* //banks
-  if(!(langdef->GetBankMask(state.actBank) & popmask))
+   for(int i = 0; i < sit->current->recpopcount; i++)
   {
-    short deb ;
-    //if(popmask == 128)
-    //  deb = !popmask;
-    int newbank = langdef->GetBankIdByMask(popmask);
-      //Write(String(" jumping from ")+String(sit->base->bankID)+String(" to ")+String(newbank));
-      //for(Stack<LanguageDefinition::SearchIter>::Node * n = state.searchStateStack.top; n != NULL; n = n->next)
-      //  n->data.mask = n->data.mask & ~popmask;
-    state.globalMask = state.globalMask & ~popmask;
-    state.actBank = newbank;
-  } */
-
-  if(sit->current->popcount >= 0)
-  {
-    //Write(String(" manualpopping"));
-    for(int i = sit->current->popcount; i > 0; i--)
-      state.searchStateStack.Pop();
-  }
-  else
-  {
-    //int popmask = sit->current->popmask;
-    while(state.searchStateStack.top != NULL && state.searchStateStack.top->data.mask & popmask)
+    if(sit->current->pops[i].popmask & (sit->mask | state.globalMask) || sit->current->pops[i].popmask == 0)
     {
-
-      // Write(String(" autopopping"));
-      state.searchStateStack.Pop();
-      
-    }
-  }
-  if(state.searchStateStack.top == NULL)
-    state.searchStateStack.Push(langdef->GetDefSC(state.actBank));
-
-  sit = &(state.searchStateStack.top->data);
-  //DumpStackState();
-}
-//---------------------------------------------------------------------------
-/*
-void Parser::PerformPush(LanguageDefinition::SearchIter *& sit)
-{
-  for(int i = 0; i < sit->current->jumpcount; i++)
-  {
-    if(sit->current->jumps[i].pushmask & sit->mask || sit->current->jumps[i].pushmask == 0)
-    {
-      int newmask = sit->current->jumps[i].newmask;
-
-      if(sit->base->bankID == sit->current->jumps[i].nextTree->bankID)
+      LanguageDefinition::TreeNode * dbg = sit->current;
+      int popmask = (sit->mask | state.globalMask) & sit->current->pops[i].popmask;
+      int newgmask = sit->current->pops[i].newgmask;
+      if(sit->current->pops[i].popcount >= 0)
       {
-        state.searchStateStack.Push(*sit);
-        sit = &(state.searchStateStack.top->data);
-        sit->mask ^= newmask;
-        sit->base = sit->current->jumps[i].nextTree;
-
+        //Write(String(" manualpopping"));
+        for(int i = sit->current->pops[i].popcount ; i > 0; i--)
+          state.searchStateStack.Pop();
       }
       else
       {
-        short oldBankMask = langdef->GetBankMask(state.actBank);
-
-        state.actBank = sit->current->jumps[i].nextTree->bankID;
-        if(state.searchStateStack.top == NULL)
-          state.searchStateStack.Push(langdef->GetDefSC(state.actBank));
-            
-            sit = &(state.searchStateStack.top->data);
-            sit->mask = (sit->mask | (newmask & ~oldBankMask);
-            state.globalMask = state.globalMask | (newmask & oldBankMask);
-            //for(Stack<LanguageDefinition::SearchIter>::Node * n = state.searchStateStack.top; n != NULL; n = n->next)
-            //  n->data.mask = n->data.mask | (newmask & oldBankMask);
+        //int popmask = sit->current->popmask;
+        while(state.searchStateStack.top != NULL && state.searchStateStack.top->data.mask & popmask)
+        {
+          // Write(String(" autopopping"));
+          state.searchStateStack.Pop();
+        }
       }
+      if(state.searchStateStack.top == NULL)
+        state.searchStateStack.Push(langdef->GetDefSC(state.actBank));
 
-      sit->current = sit->base;
-      break;
+      state.globalMask = state.globalMask  ^ newgmask;
+      sit = &(state.searchStateStack.top->data);
+      return true;
     }
   }
-}  */
+  return false;
+  //DumpStackState();
+}
 //---------------------------------------------------------------------------
-void Parser::PerformJumpPush(LanguageDefinition::SearchIter *& sit, bool push)
+void Parser::PerformJumpPush(LanguageDefinition::SearchIter *& sit)
 {
   /*
      if(sit->base->bankID == sit->current->jumps[0].nextTree->bankID)
@@ -652,55 +609,25 @@ void Parser::PerformJumpPush(LanguageDefinition::SearchIter *& sit, bool push)
      } */
   for(int i = 0; i < sit->current->jumpcount; i++)
   {
-    if(sit->current->jumps[i].pushmask & (sit->mask | state.globalMask) || sit->current->jumps[i].pushmask == 0)
+    if((sit->current->jumps[i].pushmask & (sit->mask | state.globalMask)) > 0 || sit->current->jumps[i].pushmask == 0)
     {
       int newmask = sit->current->jumps[i].newmask;
+      int newgmask = sit->current->jumps[i].newgmask;
 
-      //if(sit->base->bankID == sit->current->jumps[i].nextTree->bankID)
-      //{
-        LanguageDefinition::TreeNode * newtree = sit->current->jumps[i].nextTree;
-        /*
-        if(sit->current->jumps[i].freemask)
-        {
-          int freemask = sit->current->jumps[i].freemask;
-            while(state.searchStateStack.top != NULL && state.searchStateStack.top->data.mask & freemask)
-              state.searchStateStack.Pop();
-          if(state.searchStateStack.top == NULL)
-            state.searchStateStack.Push(langdef->GetDefSC(state.actBank));
-              sit = &(state.searchStateStack.top->data);
-        }            */
+      LanguageDefinition::TreeNode * newtree = sit->current->jumps[i].nextTree;
 
-        if(push)
+      if(sit->current->jumps[i].type != LangDefJumpType::tMask)
+      {
+        if(sit->current->jumps[i].type == LangDefJumpType::tPush)
         {
           state.searchStateStack.Push(*sit);
           sit = &(state.searchStateStack.top->data);
         }
-
-        sit->mask ^= newmask;
         sit->base = newtree;
-      /*   //banks
       }
-      else
-      {
-        short oldBankMask = langdef->GetBankMask(state.actBank);
-        short freemask = sit->current->jumps[i].freemask;
 
-        state.actBank = sit->current->jumps[i].nextTree->bankID;
-
-        if(freemask)
-          while(state.searchStateStack.top != NULL && state.searchStateStack.top->data.mask & freemask)
-            state.searchStateStack.Pop();
-
-        if(state.searchStateStack.top == NULL)
-          state.searchStateStack.Push(langdef->GetDefSC(state.actBank));
-            
-            sit = &(state.searchStateStack.top->data);
-            sit->mask = (sit->mask | (newmask & langdef->GetBankMask(state.actBank)));
-            state.globalMask = state.globalMask | (newmask & ~(langdef->GetBankMask(state.actBank)));
-            //sit->mask = sit->mask | newmask;
-            //for(Stack<LanguageDefinition::SearchIter>::Node * n = state.searchStateStack.top; n != NULL; n = n->next)
-            //  n->data.mask = n->data.mask | (newmask & oldBankMask);
-      }               */
+      state.globalMask = state.globalMask  ^ newgmask;
+      sit->mask ^= newmask;
 
       sit->current = sit->base;
       break;

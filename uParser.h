@@ -115,8 +115,8 @@ namespace SHEdit
       void AddChar(Iter * itr, int & pos);
 
       //void PerformPush(LanguageDefinition::SearchIter *& sit);
-      void PerformJumpPush(LanguageDefinition::SearchIter *& sit, bool push);
-      void PerformPop(LanguageDefinition::SearchIter *& sit);
+      void PerformJumpPush(LanguageDefinition::SearchIter *& sit);
+      bool PerformPop(LanguageDefinition::SearchIter *& sit);
 
       inline void CheckMarkup(Iter * itr, bool paint);
 

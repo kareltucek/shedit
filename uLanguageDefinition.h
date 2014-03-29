@@ -59,15 +59,16 @@ namespace SHEdit
 
   class FontStyle;
 
-  enum LangDefSpecType{Empty = 0x1, Nomatch = 0x2, Normal=0x4, Jump=0x8, PushPop=0x10, WordTag=0x20, LineTag=0x40, Lookahead = 0x80};
+  enum LangDefSpecType{Empty = 0x1, Nomatch = 0x2, Normal=0x4, Jump=0x8, WordTag=0x20, LineTag=0x40, Lookahead = 0x80};
+  enum LangDefJumpType{tJump, tPush, tMask};
   //---------------------------------------------------------------------------
   class LanguageDefinition
   {
     public:
       struct Jump;
       struct TreeNode;
-      struct SearchIt;
-      typedef SearchIt SearchIter;
+      struct SearchIter;
+      //typedef SearchIter SearchIter;
 
     private:
       bool caseSensitive;
@@ -85,26 +86,36 @@ namespace SHEdit
       void _AddPush(bool tobegin, wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask);
       void _AddJump(bool tobegin, wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short freemask); /*!< Adds a custom jump from "at" tree to "to" tree.*/
 
-
-    public:
-      friend class Parser;
-
       struct Jump
       {
-        Jump(short _pushmask, short _newmask, short _freemask, TreeNode * _next);
+        Jump(short _pushmask, short _newmask, short _newgmask, LangDefJumpType _type, TreeNode * _next);
         Jump();
         short pushmask;
         short newmask;
-        short freemask;
+        short newgmask;
+        short type;
         TreeNode * nextTree;
       };
+
+      struct Pop
+      {
+        Pop(short _popmask, short _newgmask, short _popcount);
+        Pop();
+        short popmask;
+        short popcount;
+        short newgmask;
+      };
+
+    public:
+      friend class Parser;
 
       struct TreeNode
       {
         TreeNode(wchar_t c, LangDefSpecType type, FontStyle * format, bool caseSensitive);
         TreeNode(TreeNode * tree, FontStyle * format);
 
-        void AddJump(short pushmask, short newmask, short freemask, TreeNode * to, bool begin);
+        void AddJump(short pushmask, short newmask, short newgmask, LangDefJumpType type, TreeNode * to, bool begin);
+        void AddPop(short popmask, short newmask, short popcount, bool begin);
 
         wchar_t thisItem;
         bool caseSensitive;
@@ -117,8 +128,8 @@ namespace SHEdit
         short jumpcount;
         Jump * jumps; //an array
 
-        short popmask;
-        short popcount;
+        short recpopcount;
+        Pop * pops;
 
         int bankID;
 
@@ -127,15 +138,15 @@ namespace SHEdit
 #endif
       };
 
-      struct SearchIt
+      struct SearchIter
       {
-        SearchIt();
+        SearchIter();
         TreeNode * current;
         TreeNode * base;
         short mask;
 
-        bool operator==(const SearchIt& sit);
-        bool operator!=(const SearchIt& sit);
+        bool operator==(const SearchIter& sit);
+        bool operator!=(const SearchIter& sit);
       };
 
 
@@ -150,7 +161,7 @@ namespace SHEdit
       void AddJumpFront(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0, short freemask = 0); /*!< Like AddJump but adds new jumps to the beginning of jump list.*/
       void AddPush(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask); /*!< Adds pushes specified by string (as space separated list. */
       void AddPushFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask);
-      void AddPop(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2);
+      void AddPop(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2, short newgmask = 0);
       void AddWord(wchar_t * string, FontStyle * format, TreeNode * at = NULL); /*!< Adds a wordtag item (i.e. for highlighting php variables as $test just by $) */
       TreeNode * AddLine(wchar_t * string, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); /*!< Adds a linetag item - as c commenting //. Returns new tree that was created for the line's formatting. Is an abbreviation for double jump. */
       TreeNode * AddLineStrong(wchar_t * string, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); /*!< as AddLine, but stores entire state of parser and at the end of line it restores it back. */

@@ -19,7 +19,8 @@ LanguageDefinition::TreeNode::TreeNode(wchar_t c, LangDefSpecType type, SHEdit::
   this->format = format;
   this->jumpcount = 0;
   this->jumps = NULL;
-  this->popmask = 0;
+  this->recpopcount = 0;
+  this->pops = NULL;
   this->bankID = 0;
   this->caseSensitive = caseSensitive;
   for(int i = 0; i < 128; i++)
@@ -32,54 +33,92 @@ LanguageDefinition::TreeNode::TreeNode(TreeNode * tree, SHEdit::FontStyle * form
   this->type = tree->type;
   this->format = format;
   this->jumpcount = tree->jumpcount;
-  this->popmask = tree->popmask;
+  this->recpopcount = tree->recpopcount;
   this->jumps = new Jump[jumpcount];
+  this->pops = new Pop[recpopcount];
   this->bankID = tree->bankID;
   this->caseSensitive = tree->caseSensitive;
   for(int i = 0; i < jumpcount; i++)
     this->jumps[i] = tree->jumps[i];
+  for(int i = 0; i < recpopcount; i++)
+    this->pops[i] = tree->pops[i];
   for(int i = 0; i < 128; i++)
     map[i] = tree->map[i];
 }
 //---------------------------------------------------------------------------
-bool LanguageDefinition::SearchIt::operator==(const SearchIt& sit)
+bool LanguageDefinition::SearchIter::operator==(const SearchIter& sit)
 {
   return (this->base == sit.base && this->mask == sit.mask);
 }
 
 //---------------------------------------------------------------------------
-bool LanguageDefinition::SearchIt::operator!=(const SearchIt& sit)
+bool LanguageDefinition::SearchIter::operator!=(const SearchIter& sit)
 {
   return (this->base != sit.base || this->mask != sit.mask);
 }
 
 //---------------------------------------------------------------------------
-  LanguageDefinition::Jump::Jump(short _pushmask, short _newmask, short _freemask, TreeNode * _next)
-: pushmask(_pushmask), newmask(_newmask), freemask(_freemask), nextTree(_next)
+  LanguageDefinition::Jump::Jump(short _pushmask, short _newmask, short _newgmask, LangDefJumpType _type, TreeNode * _next)
+: pushmask(_pushmask), newmask(_newmask), newgmask(_newgmask), type(_type), nextTree(_next)
 {
 }
 
 //---------------------------------------------------------------------------
   LanguageDefinition::Jump::Jump()
-: pushmask(0), newmask(0), freemask(0), nextTree(NULL)
+: pushmask(0), newmask(0), newgmask(0), type(0), nextTree(NULL)
+{
+}
+//---------------------------------------------------------------------------
+  LanguageDefinition::Pop::Pop(short _popmask, short _newgmask, short _popcount)
+: popmask(_popmask),  newgmask(_newgmask), popcount(_popcount)
 {
 }
 
 //---------------------------------------------------------------------------
-  LanguageDefinition::SearchIt::SearchIt()
+  LanguageDefinition::Pop::Pop()
+: popmask(0),  newgmask(0), popcount(0)
+{
+}
+
+//---------------------------------------------------------------------------
+  LanguageDefinition::SearchIter::SearchIter()
 : current(NULL), base(NULL), mask(0)
 {
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::TreeNode::AddJump(short pushmask, short newmask, short freemask, TreeNode * to, bool begin)
+void LanguageDefinition::TreeNode::AddJump(short pushmask, short newmask, short freemask, LangDefJumpType _type, TreeNode * to, bool begin)
 {
   Jump * newarray = new Jump[jumpcount+1];
   for(int i = 0; i < jumpcount; i++)
     newarray[i+(begin ? 1 : 0)] = jumps[i];
-  newarray[begin ? 0 : jumpcount] = Jump(pushmask, newmask, freemask, to);
+  newarray[begin ? 0 : jumpcount] = Jump(pushmask, newmask, freemask,  _type, to);
   delete [] jumps;
   jumps = newarray;
   jumpcount++;
+}
+//---------------------------------------------------------------------------
+void LanguageDefinition::TreeNode::AddPop(short popmask, short newgmask, short popcount, bool begin)
+{
+  if(recpopcount > 0)
+  {
+    Pop * ptr;
+    if(begin)
+      ptr = pops;
+    else
+      ptr = &pops[recpopcount-1];
+    if(ptr->newgmask == newgmask && popcount == ptr->popcount)
+    {
+      ptr->popmask = ptr->popmask | popmask;
+      return;
+    }
+  }
+  Pop * newarray = new Pop[recpopcount+1];
+  for(int i = 0; i < recpopcount; i++)
+    newarray[i+(begin ? 1 : 0)] = pops[i];
+  newarray[begin ? 0 : recpopcount] = Pop(popmask, newgmask, popcount);
+  delete [] pops;
+  pops = newarray;
+  recpopcount++;
 }
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -289,7 +328,7 @@ void LanguageDefinition::_AddJump(bool begin, wchar_t * string, FontStyle * form
     item->type = type;
     if(format != NULL)
       item->format = format;
-    item->AddJump(jumpmask, newmask, freemask, to, begin);
+    item->AddJump(jumpmask, newmask, freemask, LangDefJumpType::tJump, to, begin);
     //item->id = to->id;
   }
 }
@@ -335,10 +374,10 @@ void LanguageDefinition::_AddPush(bool begin, wchar_t * string, FontStyle * form
       item = FindOrCreateItem(item, *ptr, at);
       ptr++;
     }
-    item->type = LangDefSpecType::PushPop;
+    item->type = LangDefSpecType::Jump;
     if(format != NULL)
       item->format = format;
-    item->AddJump(pushmask, newmask, 0, to, begin);
+    item->AddJump(pushmask, newmask, 0, LangDefJumpType::tPush, to, begin);
     //item->id = to->id;
   }
 }
@@ -368,7 +407,7 @@ void LanguageDefinition::AddPops(wchar_t * string, FontStyle * format, TreeNode 
   AddPop(string, format, at, popmask, popcount);
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddPop(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount)
+void LanguageDefinition::AddPop(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount, short newgmask)
 {
   if(at == NULL)
     at = tree;
@@ -386,13 +425,10 @@ void LanguageDefinition::AddPop(wchar_t * string, FontStyle * format, TreeNode *
       item = FindOrCreateItem(item, *ptr, at);
       ptr++;
     }
-    if(item->type != LangDefSpecType::Jump)
-      item->type = LangDefSpecType::PushPop;
+    item->type = LangDefSpecType::Jump;
     if(format != NULL)
       item->format = format;
-    item->popmask = item->popmask | popmask;
-    if(popcount >= -1)
-      item->popcount = popcount;
+    item->AddPop(popmask, newgmask, popcount, true);
     //item->id = to->id;
   }
 }
