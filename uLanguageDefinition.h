@@ -76,10 +76,6 @@ namespace SHEdit
       FontStyle * defFormat;
       TreeNode * tree;
 
-      short bankIdsNum;
-      short * bankMasks;
-      TreeNode ** bankBases;
-
       TreeNode* FindOrCreateItem(TreeNode * item, wchar_t c, TreeNode * at);
       LangDefSpecType Go(SearchIter * item, wchar_t c, bool & lookahead); /*!< Serves Parser for retrieving information about where to go further. Lookahead is set to true, if item was returned to empty and directly went to first unmatched character */
 
@@ -131,8 +127,6 @@ namespace SHEdit
         short recpopcount;
         Pop * pops;
 
-        int bankID;
-
 #ifdef DEBUG
         wchar_t * Name;
 #endif
@@ -170,14 +164,6 @@ namespace SHEdit
       TreeNode * AddNewTree(FontStyle * format); /*!< Just creates and returns an empty new tree with format as the default format */
       TreeNode * AddNewTree(FontStyle * format, bool caseSensitive); /*!< Just creates and returns an empty new tree with format as the default format */
       TreeNode * AddDupTree(TreeNode * tree, FontStyle * format); /*!< Duplicates the base of tree provided with the format provided. All pointers remain intact - one tree may have more than one bases. By making changes that are deeper than the duplicated TreeNode's member pointers, then you are making changes to both trees. */
-
-      short GetBankIdCount();
-      short GetNewBankID();
-
-      void  SetBankMask(int bank, short mask);
-      short GetBankMask(int bank);
-      void SetBankBase(int bank, TreeNode * item);
-      short GetBankIdByMask(int mask);
 
       void SetTreeCaseSensitive(TreeNode * item, bool caseSensitive);
 

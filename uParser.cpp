@@ -27,35 +27,24 @@ std::ofstream myfile;
 
 #pragma package(smart_init)
 
-#define searchStateStack searchStateBank[state.actBank]
+#define searchStateStack searchStateStack
 
 //---------------------------------------------------------------------------
   Parser::ParserState::ParserState()
-: markupStack()
+: markupStack(), searchStateStack()
 {
   //stateid = 0;
-  actBank = -1;
-  bankCount = 0;
   globalMask = 0;
-  searchStateBank = NULL;
 }
 //---------------------------------------------------------------------------
 Parser::ParserState::~ParserState()
 {
   markupStack.Erase();
-  if(searchStateBank)
-    delete [] searchStateBank;
 }
 //---------------------------------------------------------------------------
 void Parser::ParserState::InitBanks(int count)
 {
-  bankCount = count;
-  actBank = 0;
-  if(count == 0)
-    searchStateBank = NULL;
-  else
-    searchStateBank = new Stack<LanguageDefinition::SearchIter>[count];
-  
+
 }
 //---------------------------------------------------------------------------
 SHEdit::Parser::ParserState& Parser::ParserState::operator=(const SHEdit::Parser::ParserState& p)
@@ -64,30 +53,23 @@ SHEdit::Parser::ParserState& Parser::ParserState::operator=(const SHEdit::Parser
   markupStack = p.markupStack;
   globalMask = p.globalMask;
 
-  if(this->bankCount == 0)
-    InitBanks(p.bankCount);
-
-  actBank = p.actBank;
-  for(int i = 0; i < bankCount; i++)
-    searchStateBank[i] = p.searchStateBank[i];
+  searchStateStack = p.searchStateStack;
 
   return *this;
 }
 //---------------------------------------------------------------------------
 bool Parser::ParserState::operator==(const ParserState& state)
 {
-  for(int i = 0; i < bankCount; i++)
-    if(!(searchStateBank[i] == state.searchStateBank[i]))
+    if(!(searchStateStack == state.searchStateStack))
       return false;
-  return (this->parseid == state.parseid && globalMask == state.globalMask && markupStack == state.markupStack && actBank == state.actBank);
+  return (this->parseid == state.parseid && globalMask == state.globalMask && markupStack == state.markupStack);
 }
 //---------------------------------------------------------------------------
 bool Parser::ParserState::operator!=(const ParserState& state)
 {
-  for(int i = 0; i < bankCount; i++)
-    if(!(searchStateBank[i] == state.searchStateBank[i]))
+    if(!(searchStateStack == state.searchStateStack))
       return true;
-  return !(this->parseid == state.parseid && globalMask == state.globalMask && markupStack == state.markupStack && actBank == state.actBank);
+  return !(this->parseid == state.parseid && globalMask == state.globalMask && markupStack == state.markupStack);
 }
 //---------------------------------------------------------------------------
 Parser::ParseTask::ParseTask(NSpan * l, int ln)
@@ -154,9 +136,7 @@ bool __fastcall Parser::Execute()
     bool first = true;
     painted = linenum >= 0 | painted;
     Iter * itr = new Iter(pt.line, linenum >= 0 ? parent->itrLine->linenum+linenum : pt.linenum, 0, parent->buffer);
-    if(itr->line->parserState.searchStateBank == NULL)
-      itr->line->parserState.InitBanks(langdef->GetBankIdCount());
-        state = itr->line->parserState;
+    state = itr->line->parserState;
 
     if(itr->linenum == 1)
       state.parseid = currentparseid;
@@ -173,7 +153,7 @@ bool __fastcall Parser::Execute()
     }
 
     if(state.searchStateStack.top == NULL)
-      state.searchStateStack.Push(langdef->GetDefSC(state.actBank));
+      state.searchStateStack.Push(langdef->GetDefSC(0));
     //LanguageDefinition::SearchIter * searchiter = &state.searchStateStack.top->data;  //now passed directly - no need to keep it
     actFormat = *state.searchStateStack.top->data.base->format;
 
@@ -184,8 +164,6 @@ bool __fastcall Parser::Execute()
 
     while(itr->word->next && (first || itr->line->parserState != this->state || tasklistprior.front().line == itr->line))
     {
-      if(itr->line->parserState.searchStateBank == NULL)
-        itr->line->parserState.InitBanks(langdef->GetBankIdCount());
       //take care of record from list
       newline = true;
       first = false;
@@ -581,7 +559,7 @@ bool Parser::PerformPop(LanguageDefinition::SearchIter *& sit)
         }
       }
       if(state.searchStateStack.top == NULL)
-        state.searchStateStack.Push(langdef->GetDefSC(state.actBank));
+        state.searchStateStack.Push(langdef->GetDefSC(0));
 
       state.globalMask = state.globalMask  ^ newgmask;
       sit = &(state.searchStateStack.top->data);
@@ -821,13 +799,14 @@ __fastcall Parser::~Parser()
 void Parser::DumpStackState()
 {
 #ifdef DEBUG_LOGGING
+/*
   Write(String("  current bank is ")+String(state.actBank));
   for(int i = 0; i < langdef->GetBankIdCount(); i++)
   {
     Write(String("  stack of bank ")+String(i)+String(" is "));
     for(Stack<LanguageDefinition::SearchIter>::Node * n = state.searchStateBank[i].top; n != NULL; n = n->next)
       Write(String("    ")+String(n->data.base->Name)+String(" - ")+String(n->data.mask));
-  }
+  }     */
 #endif
 }
 //---------------------------------------------------------------------------

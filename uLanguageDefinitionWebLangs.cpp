@@ -143,6 +143,7 @@ using namespace SHEdit;
   phpHtmlEnterTree->Name = L"php html enter tree";
 #endif
 
+/*
   GetNewBankID();
   SetBankBase(0, htmlTree);
   SetBankMask(0, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE | MASK_PREDICTION);
@@ -169,7 +170,7 @@ using namespace SHEdit;
   phpCommentTree->bankID = 1;
   phpLineCommentTree->bankID = 1;
   phpHtmlEnterTree->bankID = 1;
-  phpQuoteTree->bankID = 1;
+  phpQuoteTree->bankID = 1;    */
 }
 //---------------------------------------------------------------------------
 void LanguageDefinitionWebLangs::ConstructHtml(LanguageDefinition::TreeNode * at, TColor * bg, TColor * fg)

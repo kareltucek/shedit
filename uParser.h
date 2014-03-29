@@ -55,11 +55,9 @@ namespace SHEdit
         ParserState& operator=(const ParserState& p);
 
         short parseid;
-        Stack<LanguageDefinition::SearchIter> * searchStateBank;
+        Stack<LanguageDefinition::SearchIter> searchStateStack;
         Stack<Format*> markupStack;
 
-        short bankCount;
-        short actBank;
         short globalMask;
       };
 

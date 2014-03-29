@@ -21,7 +21,6 @@ LanguageDefinition::TreeNode::TreeNode(wchar_t c, LangDefSpecType type, SHEdit::
   this->jumps = NULL;
   this->recpopcount = 0;
   this->pops = NULL;
-  this->bankID = 0;
   this->caseSensitive = caseSensitive;
   for(int i = 0; i < 128; i++)
     map[i] = NULL;
@@ -36,7 +35,6 @@ LanguageDefinition::TreeNode::TreeNode(TreeNode * tree, SHEdit::FontStyle * form
   this->recpopcount = tree->recpopcount;
   this->jumps = new Jump[jumpcount];
   this->pops = new Pop[recpopcount];
-  this->bankID = tree->bankID;
   this->caseSensitive = tree->caseSensitive;
   for(int i = 0; i < jumpcount; i++)
     this->jumps[i] = tree->jumps[i];
@@ -134,11 +132,6 @@ LanguageDefinition::LanguageDefinition()
   tree->format = defFormat;
 
   allowWhiteSkipping = true;
-  bankIdsNum = 1;
-  bankMasks = new short[1];
-  bankMasks[0] = ~((short)0)-1;
-  bankBases = new TreeNode*[1];
-  bankBases[0] = tree;
 }
 //---------------------------------------------------------------------------
 bool LanguageDefinition::IsAl(wchar_t c)
@@ -522,60 +515,19 @@ beginning:
 //---------------------------------------------------------------------------
 LanguageDefinition::SearchIter LanguageDefinition::GetDefSC(short id)
 {
+/*
   SearchIter st;
   st.current = bankBases[id];
-  st.base = bankBases[id];
+  st.base = bankBases[id];  */
+  SearchIter st;
+  st.current = GetTree();
+  st.base = GetTree();
+  st.mask = 0;
   //mask = 0;
   return st;
 }
 //---------------------------------------------------------------------------
-short LanguageDefinition::GetBankIdCount()
-{
-  return  bankIdsNum;
-}
-//---------------------------------------------------------------------------
-short LanguageDefinition::GetNewBankID()
-{
-  short * newarray = new short[bankIdsNum+1];
-  for(int i = 0; i < bankIdsNum; i++)
-    newarray[i] = bankMasks[i];
-  bankMasks[bankIdsNum] = ~((short)0);
-  delete [] bankMasks;
-  bankMasks = newarray;
 
-  TreeNode ** newtarray = new TreeNode*[bankIdsNum+1];
-  for(int i = 0; i < bankIdsNum; i++)
-    newtarray[i] = bankBases[i];
-  bankBases[bankIdsNum] = NULL;
-  delete [] bankBases;
-  bankBases = newtarray;
-
-  bankIdsNum++;
-  return bankIdsNum-1;
-}
-//---------------------------------------------------------------------------
-void LanguageDefinition::SetBankMask(int bank, short mask)
-{
-  bankMasks[bank] = mask;
-}
-//---------------------------------------------------------------------------
-short LanguageDefinition::GetBankMask(int bank)
-{
-  return bankMasks[bank];
-}
-//---------------------------------------------------------------------------
-void LanguageDefinition::SetBankBase(int bank, TreeNode * item)
-{
-    bankBases[bank] = item;
-}
-//---------------------------------------------------------------------------
-short LanguageDefinition::GetBankIdByMask(int mask)
-{
-  for(int i = 0; i < bankIdsNum; i++)
-    if(bankMasks[i] & mask)
-      return i;
-  return 0;
-}
 //---------------------------------------------------------------------------
 /*
    LanguageDefinition::TreeNode * LanguageDefinition::GetSpecItem(short id)
