@@ -1,4 +1,4 @@
-//define DEBUG
+#define DEBUG
 //define DEBUG_LOGGING
 //define DEBUG_PARSELINELOOP
 //define DEBUG_CURSOR

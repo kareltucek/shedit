@@ -95,6 +95,7 @@ TSHEdit * TSHEditFocused; //callback musi jit na statickou metodu...
   recmsg = false;
 
   selectionFormat = new Format(NULL, new TColor(clSilver));
+  testFormat = new Format(NULL, new TColor(clRed));
   cursorsInInvOrder = false;
 
   clipboard = Clipboard();
@@ -330,6 +331,14 @@ void __fastcall TSHEdit::WndProc(Messages::TMessage &Message)
 #ifdef DEBUG
         case VK_F2:
           LoadFile("test.txt");
+          return;
+        case VK_F3:
+          if(GetCursorEnd() != NULL)
+          {
+          GetCursor()->IMarkupBegin(testFormat);
+          GetCursorEnd()->IMarkupEnd(testFormat);
+          ParseScreenBetween(GetCursor(), GetCursorEnd());
+          }
           return;
         case VK_F5:
           UpdateCursor(false);

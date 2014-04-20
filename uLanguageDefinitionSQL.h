@@ -27,6 +27,7 @@ namespace SHEdit
     TColor variable;
     TColor reserved;
     TColor preprocessor;
+    TColor background;
 
     public:
     LanguageDefinitionSQL();

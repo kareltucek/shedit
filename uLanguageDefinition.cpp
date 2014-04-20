@@ -56,25 +56,25 @@ bool LanguageDefinition::SearchIter::operator!=(const SearchIter& sit)
 }
 
 //---------------------------------------------------------------------------
-  LanguageDefinition::Jump::Jump(short _pushmask, short _newmask, short _newgmask, LangDefJumpType _type, TreeNode * _next)
-: pushmask(_pushmask), newmask(_newmask), newgmask(_newgmask), type(_type), nextTree(_next)
+  LanguageDefinition::Jump::Jump(short _pushmask, short _newmask, short _newgmask, LangDefJumpType _type, TreeNode * _next, FontStyle * _format)
+: pushmask(_pushmask), newmask(_newmask), newgmask(_newgmask), type(_type), nextTree(_next), format(_format)
 {
 }
 
 //---------------------------------------------------------------------------
   LanguageDefinition::Jump::Jump()
-: pushmask(0), newmask(0), newgmask(0), type(0), nextTree(NULL)
+: pushmask(0), newmask(0), newgmask(0), type(0), nextTree(NULL), format(NULL)
 {
 }
 //---------------------------------------------------------------------------
-  LanguageDefinition::Pop::Pop(short _popmask, short _newgmask, short _popcount)
-: popmask(_popmask),  newgmask(_newgmask), popcount(_popcount)
+  LanguageDefinition::Pop::Pop(short _popmask, short _newgmask, short _popcount, FontStyle * _format)
+: popmask(_popmask),  newgmask(_newgmask), popcount(_popcount), format(_format)
 {
 }
 
 //---------------------------------------------------------------------------
   LanguageDefinition::Pop::Pop()
-: popmask(0),  newgmask(0), popcount(0)
+: popmask(0),  newgmask(0), popcount(0), format(NULL)
 {
 }
 
@@ -84,18 +84,18 @@ bool LanguageDefinition::SearchIter::operator!=(const SearchIter& sit)
 {
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::TreeNode::AddJump(short pushmask, short newmask, short freemask, LangDefJumpType _type, TreeNode * to, bool begin)
+void LanguageDefinition::TreeNode::AddJump(short pushmask, short newmask, short gmask, LangDefJumpType _type, TreeNode * to, bool begin, FontStyle * format)
 {
   Jump * newarray = new Jump[jumpcount+1];
   for(int i = 0; i < jumpcount; i++)
     newarray[i+(begin ? 1 : 0)] = jumps[i];
-  newarray[begin ? 0 : jumpcount] = Jump(pushmask, newmask, freemask,  _type, to);
+  newarray[begin ? 0 : jumpcount] = Jump(pushmask, newmask, gmask,  _type, to, format);
   delete [] jumps;
   jumps = newarray;
   jumpcount++;
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::TreeNode::AddPop(short popmask, short newgmask, short popcount, bool begin)
+void LanguageDefinition::TreeNode::AddPop(short popmask, short newgmask, short popcount, bool begin, FontStyle * format)
 {
   if(recpopcount > 0)
   {
@@ -113,7 +113,7 @@ void LanguageDefinition::TreeNode::AddPop(short popmask, short newgmask, short p
   Pop * newarray = new Pop[recpopcount+1];
   for(int i = 0; i < recpopcount; i++)
     newarray[i+(begin ? 1 : 0)] = pops[i];
-  newarray[begin ? 0 : recpopcount] = Pop(popmask, newgmask, popcount);
+  newarray[begin ? 0 : recpopcount] = Pop(popmask, newgmask, popcount, format);
   delete [] pops;
   pops = newarray;
   recpopcount++;
@@ -214,7 +214,7 @@ LanguageDefinition::TreeNode* LanguageDefinition::AddLineStrong(wchar_t * string
   if(to == NULL)
     to = AddNewTree(format);
 
-  AddJump(string, format, LangDefSpecType::LineTag, at, to);
+  AddLine(string, format, at, to);
   return to;
 }
 //---------------------------------------------------------------------------
@@ -257,8 +257,8 @@ LanguageDefinition::TreeNode* LanguageDefinition::AddPair(wchar_t * opening, wch
   if(to == NULL)
     to = AddNewTree(format);
 
-  AddJump(opening, format, LangDefSpecType::Jump, at, to);
-  AddJump(closing, format, LangDefSpecType::Jump, to, at);
+  AddJump(opening, format, LangDefJumpType::tJump, at, to);
+  AddJump(closing, format, LangDefJumpType::tJump, to, at);
 
   return to;
 }
@@ -297,7 +297,7 @@ LanguageDefinition::TreeNode * LanguageDefinition::AddDupTree(LanguageDefinition
   return newTree;
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::_AddJump(bool begin, wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short freemask)
+void LanguageDefinition::_AddJump(bool begin, wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short gmask)
 {
   if(at == NULL)
     at = tree;
@@ -318,35 +318,36 @@ void LanguageDefinition::_AddJump(bool begin, wchar_t * string, FontStyle * form
       item = FindOrCreateItem(item, *ptr, at);
       ptr++;
     }
-    item->type = type;
+    item->type = LangDefSpecType::Jump;
+    FontStyle * fmt = item->format;
     if(format != NULL)
-      item->format = format;
-    item->AddJump(jumpmask, newmask, freemask, LangDefJumpType::tJump, to, begin);
+      fmt = format;
+    item->AddJump(jumpmask, newmask, gmask, type, to, begin, fmt);
     //item->id = to->id;
   }
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddJump(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short freemask)
+void LanguageDefinition::AddJump(wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short gmask)
 {
-  _AddJump(false, string, format, type, at, to, jumpmask, newmask, freemask);
+  _AddJump(false, string, format, type, at, to, jumpmask, newmask, gmask);
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddJumps(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short freemask)
+void LanguageDefinition::AddJumps(wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short gmask)
 {
-  _AddJump(false, string, format, type, at, to, jumpmask, newmask, freemask);
+  _AddJump(false, string, format, type, at, to, jumpmask, newmask, gmask);
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddJumpFront(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short freemask)
+void LanguageDefinition::AddJumpFront(wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short gmask)
 {
-  _AddJump(true, string, format, type, at, to, jumpmask, newmask, freemask);
+  _AddJump(true, string, format, type, at, to, jumpmask, newmask, gmask);
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddJumpsFront(wchar_t * string, FontStyle * format, LangDefSpecType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short freemask)
+void LanguageDefinition::AddJumpsFront(wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short gmask)
 {
-  _AddJump(true, string, format, type, at, to, jumpmask, newmask, freemask);
+  _AddJump(true, string, format, type, at, to, jumpmask, newmask, gmask);
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::_AddPush(bool begin, wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask)
+void LanguageDefinition::_AddPush(bool begin, wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short gmask)
 {
   if(at == NULL)
     at = tree;
@@ -368,36 +369,37 @@ void LanguageDefinition::_AddPush(bool begin, wchar_t * string, FontStyle * form
       ptr++;
     }
     item->type = LangDefSpecType::Jump;
+    FontStyle * fmt = item->format;
     if(format != NULL)
-      item->format = format;
-    item->AddJump(pushmask, newmask, 0, LangDefJumpType::tPush, to, begin);
+      fmt = format;
+    item->AddJump(pushmask, newmask, gmask, LangDefJumpType::tPush, to, begin, fmt);
     //item->id = to->id;
   }
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddPush(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask)
+void LanguageDefinition::AddPush(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short gmask)
 {
-  _AddPush(false, string, format, at, to, pushmask, newmask);
+  _AddPush(false, string, format, at, to, pushmask, newmask, gmask);
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddPushFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask)
+void LanguageDefinition::AddPushFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short gmask)
 {
-  _AddPush(true, string, format, at, to, pushmask, newmask);
+  _AddPush(true, string, format, at, to, pushmask, newmask, gmask);
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddPushes(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask)
+void LanguageDefinition::AddPushes(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short gmask)
 {
-  _AddPush(false, string, format, at, to, pushmask, newmask);
+  _AddPush(false, string, format, at, to, pushmask, newmask, gmask);
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddPushesFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask)
+void LanguageDefinition::AddPushesFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short gmask)
 {
-  _AddPush(true, string, format, at, to, pushmask, newmask);
+  _AddPush(true, string, format, at, to, pushmask, newmask, gmask);
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddPops(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount)
+void LanguageDefinition::AddPops(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount, short gmask)
 {
-  AddPop(string, format, at, popmask, popcount);
+  AddPop(string, format, at, popmask, popcount, gmask);
 }
 //---------------------------------------------------------------------------
 void LanguageDefinition::AddPop(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount, short newgmask)
@@ -419,9 +421,10 @@ void LanguageDefinition::AddPop(wchar_t * string, FontStyle * format, TreeNode *
       ptr++;
     }
     item->type = LangDefSpecType::Jump;
+    FontStyle * fmt = item->format;
     if(format != NULL)
-      item->format = format;
-    item->AddPop(popmask, newgmask, popcount, true);
+      fmt = format;
+    item->AddPop(popmask, newgmask, popcount, true, fmt);
     //item->id = to->id;
   }
 }

@@ -128,6 +128,7 @@ namespace SHEdit
       void ProcessMouseMove(int& x, int& y);                                                        /*!< processes mouse drag info (called from mouse move and mouse up handlers). */
       void ProcessMouseClear(bool redraw, bool deletecursord);                                      /*!< clears selection */
       Format * selectionFormat;
+      Format * testFormat;
       bool mouseDown;
       bool mouseSelect;                                                                             /*!< Whether component is in text-selection (=mouse drag) mode.*/
       bool cursorsInInvOrder;                                                                       /*!< obsolete*/

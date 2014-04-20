@@ -1,46 +1,48 @@
-All of this document can be found directly in header files. Unlike in headers here all information are sorted in logical order and are a bit cleaned up in order to present a single document that would make sense and in which information in different sections would not overlap more than neccessary.
+All of this document can be found directly in the header files. Unlike in the headers here are all information sorted in a logical order and are a bit cleaned up.
 
 overview
 ========
 TSHEdit is a syntax highlight source code editing component.
 
-TSHEdit consists of 4 main parts. The component class TSHEdit, Buffer, Parser and Drawer. Originally parser and drawer were designed to work in their own thread, but as it turned out, it was not possible due to the fact that vcl is so thread unsafe that text rendering from any other thread than the main thread is not possible, so I merged everything into just one thread, and cut off a lot of heavy stuff for thread sync.
+The TSHEdit consists of 4 main parts. The component class TSHEdit, the Buffer, the Parser and the Drawer. Originally the parser and the drawer were designed to work in their own threads, but as it turned out, it was not possible since the vcl is not thread safe (and it actually causes problems even when everything is synced properly from the side of the project).
 
-The data are stored in the buffer in a two-level linked list, which maintains a continuous text stream on one level, and newline list on the other one. Almost entire data structure is designed "lineary" - without andy binary tree indexes, mainly because of relatively high time complexity of keeping the binary tree up-to-date - that means, main approach, that amortizes time complexity to be constant (considering the size of buffer) (except for line movements) is to have an iterator that points to the current position of application's view, without having access to information about the rest of the data (there is just implemented a linear positioning system, that keeps track of current line number and offset, and that keeps all iterators valid and having the correct positioning info). Above the buffer works the component (actual TSHEdit class), whose job is to process all user interaction, let the buffer to insert and remove text, handle undo and redo funcionality, and to manage painting of the screen. When updating the screen, component repaints just those parts of screen that are no longer valid (by lines - always entire line is reparsed/repainted). Lines that need to be repainted or reparsed are handed over to the Parser whose job is to parse the lines and to send those that are in visible part of screen directly send further to drawer that draws them. Parser works "asynchronously" - can reparse every time just what it needs to reparse while maintaining the contetxt through entire buffer.
+The data are stored in the buffer in a two-level linked list, which maintains a continuous text stream on one level, and a newline list on the other one. Almost entire data structure is designed "lineary" - without binary tree indexes, mainly because of relatively high time complexity of keeping the binary tree up-to-date (at least that was the original idea) - that means, main approach, that amortizes time complexity to be constant (considering the size of buffer) (except for line movements) is to have an iterator that points to the current position of application's view, without having access to information about the rest of the data (there is implemented just a linear positioning system, which keeps a track of the current line number and offset, and which keeps all the iterators valid and having the correct positioning info). Above the buffer is the component (the actual TSHEdit class), whose job is to process all user input, to let the buffer insert and remove text, to handle undo and redo funcionality, and to manage the painting of the screen. When updating the screen, the component repaints just those parts of the screen that are no longer valid (by lines - always an entire line is reparsed/repainted). Lines which need to be repainted or reparsed are handed over to the Parser whose job is to parse the lines and to send those that are in visible part of the screen further to drawer which draws them. The Parser works "asynchronously" - can reparse every time just what it needs to reparse while maintaining the context through an entire buffer.
 
 Getting started
 ---------------
-To get this component working you need a vcl aware IDE (this was written and tested under C++Builder XE). The steps are first to install the component package through your gui. Then (unless you want to have just a notepad) you need to programaticcaly hand over an instance of language specification to the component (A descendant of LanguageDefinition class, by TSHEdit::SetLanguageDefinition call). You can obtain the object by following manners:
+To get this component working you need a vcl aware IDE (this was written and tested under the C++Builder XE). The steps are first to install the component package through your gui. Then (unless you want to have just a notepad) you need to programaticcaly hand over an instance of a language specification to the component (A descendant of the LanguageDefinition class, by the TSHEdit::SetLanguageDefinition call). You can obtain the object by following manners:
 
-1. Derive new descendant of the LanguageDefinition, and define it's dictionaries in it's body. (more info in documentation of the LanguageDefinition class, for example see the code of LanguageDefinitionSQL)
-2. Create new isntance of the LanguageDefinition itself, and construct the lexer "from outside" using it's public methods. (do not forget the SHEdit namespace and to include correct header :-) )
+1. Derive a new descendant of the LanguageDefinition and define its dictionaries in its body. (more info is in the documentation of the LanguageDefinition class, for example see the code of LanguageDefinitionSQL)
+2. Create a new isntance of the LanguageDefinition itself and construct the lexer "from outside" using it's public methods. (do not forget about the SHEdit namespace and about including correct header :-) )
 3. (NOT YET IMPLEMENTED) Create specification using a configuration file and let the component load it.
 
-Last thing you might want to do is to go through published properties using your IDE's designer.
+Last thing you might want to do is to go through the published properties using your IDE's designer.
 
 Editting/Getting data into/out of component
 -------------------------------------------
-All editing etc should be done through the public members of TSHEdit and Iterators that were obtained from the TSHEdit instance. Members are quite self-explaining, so it should not be problem to find out yourself.
+All editing etc should be done through the public members of the TSHEdit and the Iterators that were obtained from the TSHEdit instance. Members are quite self-explaining, so it should not be problem to find out yourself.
 
-Line numbering starts from 1. Line position numbering starts from 0. Each position refers to position on one line - i.e. pos higher than line width is not interpretted as position on next line but should end up at end of line. There is no global position numbering - just line + line position pairs.
+Line numbering starts from 1. Line position numbering starts from 0. Each position refers to a position on one line - i.e. pos higher than the line width is not interpretted as a position on the next line but should end up at the end of line. There is no global position numbering - just line + offset pairs.
 
 Text formatting
 ---------------
-TSHEdit provides 3 ways of formatting documents:
+TSHEdit provides 3 ways of styling documents:
 1. The syntax highlight feature. For more information visit LanguageDefinition class documentation.
-2. A positionless markup that is hardlinked to the buffer structure, that is kept up-to date through Parser. It is quite efficient for large amounts of local formatting, but lacks responsivity regarding global formating changes. For more information see Mark class and Iter::MarkupBegin and Iter::MarkupEnd methods.
-3. An Iterator-handled global markup, that is established using system of binary search trees. It is efficient for markup changes over large areas and can quickly find current format at any point of buffer. Where it lacks is that Iterators have to be kept up to date throught editing of buffer (and amount of such iterators is thus somehow limited). For more information see IMark class and IPos::IMarkupBegin and IPos::IMarkupEnd methods.
+2. A positionless markup which is hardlinked to the buffer structure, and which is kept up-to date through the Parser. It is quite efficient for large amounts of local formatting, but lacks responsivity regarding the global formating changes. For more information see the Mark class and the Iter::MarkupBegin and Iter::MarkupEnd methods.
+3. An Iterator-handled global markup, that is established using system of binary search trees. It is efficient for markup changes over large areas and can quickly find current format at any point of buffer. Where it lacks is that Iterators have to be kept up to date throught the editing of the buffer (and the amount of such iterators is thus somehow limited). For more information see the IMark class, IPos::IMarkupBegin, IPos::IMarkupEnd methods.
 
-The syntax highlight has the lowest priority while Iterator-handled markup has the highest (that's how they are put together in Parser class).
+The syntax highlight has the lowest priority while Iterator-handled markup has the highest (that's how they are put together in the Parser class).
 
 Todo - what is not really finished
 ----------------------------------
 - Config file parser for language definitions.
 - Memory optimalization - new container template beside the Stack should be implemented that would store data at one place and would allow fast assigning and comparing.
 - Search capability.
-- Dictionary structure should be somehow rewritten.
+- Dictionary structure should be somehow rewritten (well probably should be written completely from scratch).
 
+########################
 Content of Documentation
+########################
 ------------------------
 1. TSHEdit - the main component class
 2. Buffer - overview of Buffer related functionality
@@ -53,26 +55,30 @@ Content of Documentation
 9. Text formatting - Format FontStyle Mark IMark
 10. Stack - minimalistic stack reimplementation (for low memory consumption needs)
 
+###############################
+###############################
+###############################
+
 1. TSHEdit - the component class
-=============================
-This class represents the component itself. Its task is to process user input and command other objects what to do - information this class stores are Iterators pointing to the current line, cursor position and selection end, then information about scrolling deltas and mouse positioning information. Its members are on one hand overriden message/event handling procedures and on the other hand methods that are used to process these.
+================================
+This class represents the component itself. Its task is to process the user input and command other objects what to do - this class stores the Iterators pointing to the current line, to thecursor position and to the selection end, instances of buffer, parser and drawer, font styles for its own need, information about scrolling deltas and mouse positioning information. Its members are on one hand overriden message/event handling procedures and on the other hand methods that are used to process these.
 
 Inner funcionality
 -----------------
 ### Keyboard capturing ###
-Keyboard is trapped at 2 places - first is normal overriden winproc message for text input and the second is a windows hook which lets us intercept all keys we want, before they're passed to the program (that's neccessary to intercept input that would be otherwise consumed by vcl itself and would not be sent to component at all
+Keyboard is trapped at 2 places - the first one is a normal overriden winproc message for the text input and the second one is a windows hook which lets us intercept all the keys we want, before they're passed to the program (that's neccessary to intercept input that would be otherwise consumed by vcl itself and would not be sent to component at all
 
 ### Mouse capturing ###
-Mouse events are captured by 3 handlers - those are TSHEdit::MouseDown TSHEdit::MouseMove and TSHEdit::MouseUp methods. On mouse down itrCursor is placed at correct position. If mouse continues to move more than specified trashold, text-selection mode is entered and itrCursorSecond is used to mark the other end of selected area.
+Mouse events are captured by 3 handlers - those are the TSHEdit::MouseDown the TSHEdit::MouseMove and the TSHEdit::MouseUp methods. On the mouse down the itrCursor is placed to a correct position. If the mouse continues to move more than a specified trashold, the text-selection mode is entered and the itrCursorSecond is used to mark the other end of the selected area.
 
-### Handling edits, parsing, and screen repainting ###
-All positioning is done using Iter class. When obtained a signal to do some editing, the editing can be done by Buffer::Insert, Buffer::Delete, Buffer::Undo and Buffer::Redo methods. After editting buffer, it is neccessary to take care of reparsing the highlight related info and repaint the screen manually. That means you need to pass to parser pointers to begins of all editted segments by Parser::ParseFromLine call. When all lines were passed to parser, you need to call the Parser::Execute(). It will take care of updating everything neccessary and also will repaint all visible lines that were either passed to the parser manually or whose formatting has changed as result of the edit tasks. That is also the process of getting any lines repainted. Before calling Parser::Execute it is also neccessary to take care of repainting things that are not repainted by Parser - like updating cursor position, moving part of text downwards or upwards (when i.e. a newline has been inserted). If DOUBLE_BUFFERD option is on, you also need to call Drawer::Paint method to refresh screen after any manual drawing that's not followed by reparsing any visible line (Parser's execute does that automatically).
+### inner Handling edits, parsing, and screen repainting ###
+All positioning is done using an Iter class. When obtained a signal to do some editing, the editing can be done by Buffer::Insert, Buffer::Delete, Buffer::Undo and Buffer::Redo methods. After editting buffer, it is neccessary to take care of reparsing the highlight related info and repaint the screen manually. That means you need to pass to parser pointers to the begins of all editted segments by a Parser::ParseFromLine call. When all lines were passed to the parser, you need to call the Parser::Execute(). It will take care of updating of everything neccessary and also will repaint all the visible lines that were either passed to the parser manually or whose formatting has changed as result of the edit tasks. That is also the process of getting any lines repainted. Before calling Parser::Execute it is also neccessary to take care of repainting the things that are not repainted by the Parser - like updating the cursor position, moving part of text downwards or upwards (when i.e. a newline has been inserted). If DOUBLE_BUFFERD option is on, you also need to call Drawer::Paint method to refresh screen after any manual drawing that's not followed by reparsing any visible line (Parser's execute does that automatically).
 
 Everything needed for a text insertion and deletion is already encapsulated in TSHEdit::Insert and TSHEdit::DeleteSel methods. There are also other methods that simplify movement tasks - TSHEdit::ProcessChange (for partial screen movements) and TSHEdit::Scroll.
 
 2. Buffer
 =========
-The Buffers purpose is to store text, undo/redo information and iterator related positioning information. Text is actually stored as two level linked list, constructed on one level by instances of Span class, that create a continuous stream of text formated as null terminated wide char strings. Each Span represents some span of text, that does not contain a newline and contains the string itself, string's length, markup info and links to next and previous Spans. New lines are represented by NSpan class that inherits from Span, and thus is present in both levels of buffer. NSpans aditionally contain links to previous and next newlines and thus allow simple and fast movement over buffer even without binary tree indexing. 
+The Buffer's purpose is to store the text, undo/redo information and iterator related positioning information. Text is actually stored as two level linked list, constructed on one level by instances of Span class, that create a continuous stream of text formated as null terminated wide char strings. Each Span represents some span of text, that does not contain a newline and contains the string itself, string's length, markup info and links to next and previous Spans. New lines are represented by NSpan class that inherits from Span, and thus is present in both levels of buffer. NSpans aditionally contain links to previous and next newlines and thus allow simple and fast movement over buffer even without binary tree indexing. 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.txt}
 //  ┌---Buffer::data (of class Range)---------------------------------------------------------------------------------------------┐ 
@@ -84,13 +90,13 @@ The Buffers purpose is to store text, undo/redo information and iterator related
 //  \n An example of some text that may be in a buffer. \n Actually a multiline example of some text \n consisting of three lines \n
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Edits are processed by Buffer::Insert and Buffer::Delete methods, which further decide which inner methods to use. If edit changes entire word as it is split  in Spans, just Buffer::_Insert or Buffer::_Delete are used. If just a small change is required, it is handled by Buffer::_InsertAt and Buffer::_DeleteAt that decide whether to edit the Span directly or to duplicate it for Undo. In case of larger changes, the Insert/Delete function cuts the beginning and ending spans as needed, and pushes the entire string of Spans and NSpans (that are removed) onto undo stack, while replacing it by new content. Everytime an edit is made, the former spans are pushed onto undo stack (in case of insertion between already existing spans, just empty range with apropriate flags is pushed). Exception are edits that are done consecutively on one Span - in that case only first edit duplicates the Span and pushes it onto undo stack. The last thing that is always done is to call Buffer::ItersTranslateInsert or Buffer::ItersTranslateDelete that updates linenums and positions of iters in ItrList. 
+Edits are processed by Buffer::Insert and Buffer::Delete methods, which further decide which inner methods to use. If edit changes entire word as it is split  in Spans, just Buffer::_Insert or Buffer::_Delete are used (those just connect/disconnect the span from their neibhgours). If just a small change is required, it is handled by Buffer::_InsertAt and Buffer::_DeleteAt that decide whether to edit the Span directly (by rewriting its data) or to duplicate it for Undo. In case of larger changes, the Insert/Delete function cuts the beginning and ending spans as needed, and pushes the entire string of Spans and NSpans (that are removed) onto undo stack, while replacing it by new content. Everytime an edit is performed, the old spans are pushed onto the undo stack (in case of an insertion between already existing spans, just an empty range with apropriate flags is pushed). Exception are edits that are done consecutively on one Span - in that case only first edit duplicates the Span and pushes it into the undo stack. The last thing that is always done is to call Buffer::ItersTranslateInsert or Buffer::ItersTranslateDelete that updates linenums and positions of all iters in ItrList. 
 
-All positioned IPos descendants that were registered on their creation (that means were passed a valid Buffer*) are registered in ItrList. That list serves for updating the iterators to correct position which is needed due to absence of newline indexing that would allow to find quickly line by its number or in the other direction to determine line's number. (The reason of it's absence is that is much cheaper to update Iterators than to update an AVL tree as long  as there's just few Iterators. And from design there is)
+All positioned IPos descendants that were registered on their creation (that means were passed a valid Buffer*) are registered in ItrList. The list serves for updating the iterators to correct position which is needed due to absence of newline indexing that would allow to find quickly line by its number or in the other direction to determine line's number. (The reason of it's absence is that is cheaper to update Iterators than to update a tree as long  as there's just few Iterators. And from design there is)
 
 Undo and Redo are handled through Buffer::stackUndo and Buffer::stackRedo that store UndoTask instances. UndoTask consists of Action, that is used to keep information about relative position changes (for Iterator position updating) and of a Range, which holds pointers to ends of the string of Spans that were removed from buffer by the change (in case that nothing was removed fom Buffer but something was inserted, the range pointers do refer to the end points that are to be connected again (on Undo), and Range::empty or Range::emptyline is set to true). Info about where the removed string of Spans does belong is contained directly in the end Spans, whose pointers were not altered when editing was done. For more info see the actual structure of UndoTask or probably the code of Buffer::UndoRedo method.
 
-Here is an example of how may stackUndo look like (in the delete an overlap was shown, while insertion was made exactly at split of two Spans):
+Here is an example of how may stackUndo look like (in the delete an overlap is shown, while insertion is made exactly at split of two Spans):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.txt}
 //  The original structure of spans was apparently:
 //    v                       v                              v                 v                          v
@@ -120,73 +126,75 @@ Here is an example of how may stackUndo look like (in the delete an overlap was 
 
 Last two things the Buffer contains are Format list, which keeps pointers to formats that were applied to buffer by Iterator handled markup, to let anyone check whether the format is applied at some location (through binary search tree of the Format class in question). The other list contains links to all Iterator marks that are applied in Buffer, which allows to find out quickly at which positions the Iterator markup changes are. For more detail see Format and IMark classes.
 
-Members are not documented because the names are quite self explaining and anyway mostly explained above.
-
 3. Bufer's structures
 =====================
 
 Span
 ----
-Span represents some text span placed somewhere in buffer. More info can be found in the Buffer class.
+Span represents some text span placed somewhere in a buffer. 
 
-NSpan
------
-NSpan represents some new line, and creates a linked list of new lines, while taking part in the linked list created of Spans as well. More info can be found in the Buffer class.
+NSpan 
+----- 
+NSpan represents some new line, and creates a linked list of new lines, while taking part in the linked list created of Spans as well. 
 
-Each NSpan holds cached state of parser from beginning of that line.
+Each NSpan holds cached state of parser from beginning of line it represents.
 
 Range
 ----
-Range represents some range of Spans and NSpans. In fact it holds part of buffer by its ends. More info can be found in the Buffer class.
+Range represents some range of Spans and NSpans. In fact it holds part of buffer by its ends. 
 
 Action
 ------
-Action holds relative (numeric) description of an edition that was made on buffer. It serves for updating iterators back to their initial state when the edit is being undone. More info can be found in the Buffer class.
+Action holds relative (numeric) description of an editing task that was performed on a buffer. It serves for updating iterators back to their initial state when the something is being undone. 
 
 4. 5. Positioning
 =================
 IPos 
 ----
-IPos is base class for all positioning elements of this project. IPos stores a relative location in buffer using the line number and line position. IPos and Iterator (as its descendant) can work in 2 modes - a "full" mode and a positionless mode. Its full mode features are dependent on valid IPos::buffer pointer and on correct initialization of IPos::linenum and IPos::line. The "full mode" IPos and Iter register themselves within the buffer, and later are guaranteed to maintain their positions through all editations of buffer (that means that as long as they are initialized with correct information, it's linenum etc. will remain correct even if it's value has changed). Positionless IPos and Iter classes are not guaranteed anything, but may be useful for quick local changes. 
+IPos is base class for all positioning elements of this project. IPos stores a relative location in buffer using the line number and line position. IPos and Iterator (and their descendants) can work in 2 modes - a "full" mode and a positionless mode. Its full mode features are dependent on a valid IPos::buffer pointer and on a correct initialization of the IPos::linenum and IPos::line. The "full mode" IPos and Iter register themselves within the buffer and later are guaranteed to maintain their positions through all editing of buffer (that means that as long as they are initialized with correct information, it's linenum etc. will remain correct even if the value has changed). Positionless IPos and Iter classes are not guaranteed anything, but may be useful for quick local changes. 
 
-IPos itself is just a relative-location storing class, intended for marking of statical positions. If you need to move and access data, you should use Iter class.
+IPos itself is just a relative-location storing class, intended for marking statical positions. If you need to move and access data, you should use Iter class.
 
 Iter
 ----
-Iter class is a specialization of IPos. While IPos maintains relative position in buffer, not caring of link to it's physical structure, Iter keeps pointers and structure - related info that allows direct acces to the data, and comfortable movement over buffer.
+Iter class is a descendant of the IPos. While the IPos maintains relative position in buffer, not caring about link to it's physical structure, Iter keeps pointers and structure - related info that allows direct acces to the data.
+
+Iter class provides methods for comfortable movement in buffer,
 
 Iter also takes care of setting up any markup. Regarding Iterator-handled markup - Iterator provides Iter::UpdateNextImark() method that updates the nextimark and nextimarkln member variables that specify the next nearest change (in forward direction) in Iterator handled markup, and thus allows parser to draw these properly. The owner of iterator is responsible for keeping this up-to-date using Iter::UpdateNextImark() method whenever he needs to have it up-to-date.
 
-If you wish to use Iter with full positioning, you need to pass correct line pointer, linenum and buffer pointer to constructor. But Iterator will work as well positionlessly.
+If you wish to use Iter with full positioning, you need to pass it correct line pointer, linenum and buffer pointer to constructor. But Iterator will work as well positionlessly.
 
 All IPos descendants that are given proper Buffer pointer are registered and taken care of by their Buffer. That means you should always take care of destroying any Iterators you create (or whose duplicate are returned to you), when you dont need them any longer. Not doing so will slow down editing of buffer if you let unused iterators to accumulate.
 
 6. Parser
 =========
-Parser's task is to parse lines and keep information about highlighting that is neccessary for correct highlighting. Perser keeps a ParserState at each endline, which specifies in which state parser was at that point. Each time buffer is altered, the component is supposed to call Parser::ParseFromLine function, to tell the Parser to reparse text from given line. Parser then parses code and updates ParserStates of lines it goes over until it reaches a ParserState that is same as the Parser's own. Parser does not parse text right away, but pushes the items into 2 queues (normal queue and priority queue (the latter for lines that are supposed to be reparsed first - as visible lines, which are supposed to be redrawn as soon as possible)). Parsing is done when Parser::Execute method is called.
+Parser is not a good name for this class because what is does is basically just a lexical analysis.
 
-Parser::Execute() first sorts both queues, and then picks tke tasks one by one (first from priority queue). Each time it picks new task, it checkes it's screen position to know whether to paint line or just parse. In the former case it also initializes formats (reconstructs it from markupStack and searches through Iterator handled markup. Then it copies the line's parser State into it's own, and calls Parser::ParseLine, and continues to do so until some conditions are met. On Each line, the queues are checked and corresponding tasks removed. If priority queue is not empty, and parser has gone out of visible area of screen, then current line is pushed onto non-priority queue, and next task from priority queue is picked. When all priority tasks are reparsed, Parser calls Paint, to actually refresh all what has been painted. If non-priority queue is non empty, parser places its callback into Application's OnIdle event handler and parsing of non-priority queue continues later. Such parsing is broken each PARSEINONEGO (currently 100) lines, to allow Application to get from "Idle event loop". Non-priority queue is parsed until all tasks under a specified Parser::upperbound are parsed. Upperbound is now set to be component's line Iter + 1000 lines. Reason is mainly so that inserting of " followed by another " few seconds later does not throttle CPU on chasing the already reparsed results of such edits.
+Parser's task is to parse lines and draw them onto screen. Perser keeps an instance of ParserState at each endline, which specifies in which state parser was at that point. Each time buffer is altered, the component is supposed to call Parser::ParseFromLine function, to tell the Parser to reparse text from given line. Parser then parses code and updates ParserStates of lines it goes over until it reaches a ParserState that is same as the Parser's own. Parser does not parse text right away, but pushes the items into 2 queues (normal queue and priority queue). Parsing is done when Parser::Execute method is called.
 
-Parser::ParseLine() parses line char by char using its LanguageDefinition. Each char is given to the LanguageDefinition with current lexer position, and is returned new lexer position altogether with state. Upon the state depends what is done next - usually current char is pushed into String Parser::actText, where it waits until some "matched" state is returned, when it is drawn. ParseLine() also checks changes in markup. Parser also ensures that no word is broken in half or just a substring is matched as entire word using langdef's IsAl and IsAlNum functions (by standard convention - if you do not want it to behave standartly, then override the 2 functions). Also by default Parser allows skipping of white characters during search for matching entries in the dictionaries. The white-character is defined by IsWhite function of langdef. White character skipping can be turned of directly by a bool in LanguageDefinition.
+Parser::Execute() first sorts both queues, and then picks the tasks one by one (first from priority queue). Each time it picks new task, it checkes its screen position to know whether to paint line or just parse. In the former case it also initializes formats (reconstructs it from markupStack and searches through Iterator handled markup. Then it copies the line's parser State into it's own, calls Parser::ParseLine and continues to do so until some conditions are met. On Each line, the queues are checked and corresponding tasks removed. If priority queue is not empty, and parser has gone out of visible area of screen, then current line is pushed onto non-priority queue, and next task from priority queue is picked. When all priority tasks are reparsed, Parser calls Paint, to actually refresh all what has been painted. If non-priority queue is non empty, parser places its callback into Application's OnIdle event handler and parsing of non-priority queue continues later. Such parsing is stopped each PARSEINONEGO (currently 100) lines, to allow Application to get from "Idle event loop". Non-priority queue is parsed until all tasks under a specified Parser::upperbound are parsed. Upperbound is now set to be component's line Iter + 1000 lines. Reason is mainly so that inserting of " followed by another " few seconds later does not throttle CPU on chasing the already reparsed results of such edits.
+
+Parser::ParseLine() parses line char by char using its LanguageDefinition. Each char is given to the LanguageDefinition with current lexer position, and is returned new lexer position altogether with state. Upon the state depends what is done next - if special state was matched, then it is taken cared of appropriatelly - every time current char is pushed into String Parser::actText, where it waits until some "matched" state is returned, when it is drawn. ParseLine() also checks changes in markup. Parser ensures that no word is broken in half or just a substring is matched as entire word using langdef's IsAl and IsAlNum functions (by standard convention - if you do not want it to behave standartly, then override the 2 functions). Also by default Parser allows skipping of white characters during search for matching entries in the dictionaries. The white-character is defined by IsWhite function of langdef. White character skipping can be turned of directly by a bool in LanguageDefinition.
 
 7. LanguageDefinition
 =====================
-Language highlighting is actually done on a basis of a simple automaton, whose behaviour is  defined by this class. LanguageDefinition class itself is rather a wrapper, that holds general information - the actual specification of language is held by a set of trees of TreeNodes (creating sort of directed graph).
+Language highlighting is done in a way that resembles an simple automaton, whose behaviour is  defined by this class. LanguageDefinition class itself is rather a wrapper, that holds general information - the actual specification of language is held by a set of trees of TreeNodes (creating sort of directed graph).
 
-Actual searching is done by passing an instance of SearchIter between Parser and LanguageDefinition, while LanguageDefinition provides language-related information and Parser interpret's them regarding the structure of source code. SearchIter contains a pointer to the base (/root) of current tree, a pointer to the current item and a "mask" that represents in fact a 16 bit register in which some information may be stored. Parser actually stores SearchIters in a stack that allows parser to return from a tree to a tree from which it got there.
+Actual searching is done by passing an instance of SearchIter between Parser and LanguageDefinition, while LanguageDefinition provides language-related information and Parser interprets them regarding the structure of source code. SearchIter contains a pointer to the base (/root) of current tree, a pointer to the current item and a "mask" that represents a 16 bit register in which some information may be stored. Parser actually stores SearchIters in a stack that allows parser to return from a tree to a tree from which it got there.
 
-At the moment it is implemented in a very naive (and memory-inefficient) way - each TreeNode represents just one character and has an array of characters that allows constant-time acces to next node. Each part of dictionary has its root (also called basee here) which represents an empty search from which strings of tree items actually form reserved words of the language represented. The Language definition then let's a pointer move along these strings as it is provided characters from parser. Every TreeNode has assigned one value of enum LangDefSpecType which represents what type of word ends at that node and for some nodes also some additional information. The LangDefSpecTypes are:
+At the moment it is implemented in a very naive (and memory-inefficient) way - each TreeNode represents just one character and has an array of characters that allows constant-time acces to next node. Each part of dictionary has its root (also called basee here) which represents an empty search from which strings of tree items form reserved words of the language represented. The Language definition then let's a pointer move along these strings as it is provided characters from parser. Every TreeNode has assigned one value of enum LangDefSpecType which represents what type of word ends at that node and for some nodes also some additional information. The LangDefSpecTypes are:
   - Empty - represents root of part of dictionary structure
   - Nomatch - a place where nothing is matched, but from where search may continue to next character (i.e. middle of a reserved word)
   - Normal - end of a standard word, that is to be formatted by the format the node points to (the search iter is then pointed back to root)
-  - Jump - is matched as the Normal tag, but does not retur the search item back to root, but carries it further to a root of another tree. Before every jump, pop mask is checked, and if it matches, then pop is performed instead. Three optional masks can be specified:
-    - a "jumpmask" - if it is specified, then jump occurs only if current searchIter's mask contains something of the jumpmask (== when jumpmask & currentmask returns true). 
+  - Jump/Push - is matched as the Normal tag, but does not return the search item back to root, but carries it further to a root of another tree. Before every jump, pop mask is checked, and if it matches, then pop is performed instead. Three optional masks can be specified:
+    - a "jumpmask" - if it is specified, then jump occurs only if current searchIter's mask contains something of the jumpmask (== when jumpmask & currentmask > 0). 
     - a "newmask" - if jump is performed, the current searchIter's mask is xored with the newmask
-    - a "freemask" - This one is not supposed to be used normally but it allows to explicitly clear current context. If this mask is set then before jump is performed, the target stack is popped while freemask matches the stack's top's mask.
+    - a "globalmask" - same as newmask but this one is global which means that it is not altered by pushing and popping (both masks are "or"ed before checking against jump/push masks)
     Each TreeNode can have more sets of the masks and target trees assigned. In that case they are tried one by one in order in which the jump records were created until some jump is matched. Default values for masks are 0 and 0 which means "jump always and let the mask and stack be as it is". Pop mask is not used in jump logic at all - its purpose here is to prevent jumping if a pop should be performed instead (and in that case regular pop is performed instead).
   - PushPop
     - Push is implemented exactly the same way as jump is but with a little difference - If jumpmask (abreviated also as pushmask) is matched, then jump is performed by Parser and former state is pushed onto stack, where it waits until a pop occurs. (then also the newmask value is added by xor to current mask)
-    - Pop - each TreeNode of type Jump or PushPop has also a single popmask. If popmask is matched (as popmask & current mask == true) then Parser pops search iters from top of its stack according to popcount and continues parsing from the new top of the stack. If popcount is greater or equal to zero then it specifies the count of items to be popped. If popcount is -1 then items are popped while the popmask matches the top-of-the-stack's mask. -2 can be passed to functions when we do not want to alter popcount by the function call.
+    - Pop - again is implemented as jump/push, but its records are stored in separate list and are checked always before push/jump/pops If popmask is matched (as popmask & current mask == true) then Parser pops search iters from top of its stack according to popcount and continues parsing from the new top of the stack. If popcount is greater or equal to zero then it specifies the count of items to be popped. If popcount is -1 then items are popped while the popmask matches the top-of-the-stack's mask. -2 can be passed to functions when we do not want to alter popcount by the function call.
     Pop is always checked before push/jump.
   - LineTag - obsolete - At this point a jump is performed and current parserState is remembered until end of line, where the parser state is forced back to the saved state. For standard linetag functionality it is recommended to use pair of jumps.
   - WordTag - as normal tag, but formats everything until end of word (by standard convention that word begins by alpha and continues as alpha-numeric - these can be overriden). Written with regard i.e. for sql/php variables
@@ -195,15 +203,22 @@ Default tree (the entry point of automaton) can be obtained by GetTree() functio
 
 case sensitivity - Case sensitivity is set separately for each tree root. You have to set it correctly BEFORE you start adding keywords (otherwise some of keywords may become completely unaccessible). The Langdef's SetCaseSensitive serves just for setting case sensitiviness of the newly created trees (i.e. it definitely won't do anything with the initially provided tree. 
 
-Banks
------
-If you need different parts of your language to have separately treated stacks (i.e. entrypoint leads to tree of language A in whose context language B can be used to produce additional A code and you want to treat all recursively entered A scopes in the same context), then you may use Banks. Each tree root has to have assigned its bank ID (which has to be retrieved by the GetNewBankID() except for the default 0). Then all trees with same ID assigned share one stack for the pushpop logic of the automaton. Then for each ID you have to set its default tree and a bank mask. The bank mask specifies which masks are used by that bank and practically is used for determining where pops do lead. On jump or push from a tree of one bank to tree of another bank, the Parser switches itself to stack of the target tree's bank without paying attention to actual target tree of the jump. The new mask is then set not just to the top of new stack, but to all its nodes. Pop works equivalently - the part of popmask that was matched to the current mask is checked against the current bank mask. If it matches then normal pop is performed. If it is not, then bank mask that does match is found and pop if performed back to its stack. 
-
-If you want to use masks, you need to specify BankID default bases, BankIDs and BankMasks for all trees. If you do not want to use it, then you do not need to care about everything - the default values will do.
+LanguageDefinition can be constructed using following functions
+      void AddKeywords(wchar_t * string, FontStyle * format, TreeNode * at = NULL); 
+      void AddJump(wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0, short gmask= 0); 
+      void AddPush(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0); 
+      void AddPop(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2, short newgmask = 0);
+      void AddWord(wchar_t * string, FontStyle * format, TreeNode * at = NULL); 
+      TreeNode * AddLine(wchar_t * string, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); 
+      TreeNode * AddLineStrong(wchar_t * string, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); 
+      TreeNode * AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); 
+      TreeNode * AddPushPopPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at, TreeNode * to, short mask); 
+      TreeNode * AddNewTree(FontStyle * format); 
+      TreeNode * AddDupTree(TreeNode * tree, FontStyle * format); 
 
 Formatting
 ---------
-Each root has it's own format that is applied to everything that was matched from the root. Every matched node (except for nomatch) then can have its own format that is added on top of the root's. You may leave some parts of format specification of key words NULL (then the root's format is applied).
+Each root has it's own format which is applied to everything that was matched from the root. Every matched node (except for nomatch) then can have its own format that is added on top of the root's. You may leave some parts of format specification of key words NULL (then the root's format is applied) except for tree roots - those should always have specified both foreground and background color.
 
 Formatting stores just pointers to colours. The colours themselves should be stored somewhere. From there you can change them at any time (you will then just need to initiate screen redraw manually from TSHEdit).
 
@@ -219,14 +234,14 @@ Drawer ensures drawing everything that it is told to draw. It is usually told by
 
 When drawing text, the Drawer::x is incremented with width of drawn text waiting for endline to bleach the rest of screen and reset the x again to 0. Also information about length of longest line is kept for setting of horizontal scrollbar's parameters. Just highest 'ever reached' width is kept - in current structure there's no way to keep this parameter up to date (and it's just a visual glitch).
 
-Here is not much to document either, just to mention that everything that is not apparently pixel position is usually screen-line position (that means i.e. nth visible line).
+Note that in function calls everything that is not apparently pixel position is usually screen-line position (that means i.e. nth visible line).
 
 One more note - UpdateFontSize and updateLinenumWidth does not automatically repaint screen - screen repaint has to be triggered manually.
 
 9. Fonts, text formatting, markup system
 ========================================
-The basic thing to remember is (and is not linguistically apparent):
- - FontStyle represents how a font should be formatted. 
+The basic thing to remember is (and is not linguistically apparent or even correct from my side):
+ - FontStyle represents how a font should be look like. 
  - Format represents how the buffer is formatted using its FontStyle.
 
 That means that while Format inherits FontStyle, FontStyle class is used just to pass information while Format is used to represent it. 
@@ -256,7 +271,7 @@ IMark represents Iterator-handled markup. Position is kept by the IPos class in 
 
 10. Stack 
 =========
-Stack (working rather on principle of a forward list, but written for purpose of having a stack) template was specially reimplemented due to need of a small dynamic container, that would consume as little memory as possible (at least when empty :-) ), and anyway so that it's behaviour is always absolutely predictable.
+Stack (working rather on principle of a forward list, but written for purpose of having a stack) template was reimplemented due to need of a small dynamic container that would behave absolutely predictably regarding its memory consumption.
 
 For some purposes there should probably implemented one more template, that would keep data in memory sequentially on one place to allow fast assigments and comparisons. 
 

@@ -56,7 +56,7 @@ FontStyle IPos::ReconstructIMarkFontStyle()
   FontStyle st = FontStyle();
   if(buffer == NULL)
     return st;
-  std::list<IPos*> searchtree; //dunno why i called it a tree
+  std::list<IPos*> searchtree; //dont know why i called it a tree
   for (std::set<Format*>::iterator itr = buffer->FormatList.begin(); itr != buffer->FormatList.end(); itr++)
   {
     IMark * m = (*itr)->GetMarkBefore(this);
@@ -82,6 +82,18 @@ bool IPos::Compare(const IPos*& a, const IPos*& b)
   {
     if( a->pos < b->pos)
       return true;
+    else if(a->pos == b->pos)
+    {
+      if(a->type == IPType::iptMark  && b->type == IPType::iptMark)
+      {
+        if (((IMark*)a)->begin == false && ((IMark*)b)->begin == true)
+          return true;
+        else if (((IMark*)a)->begin == ((IMark*)b)->begin)
+          return (int)a < (int)b;
+        else
+          return false;
+      }
+    }
   }
   return false;
 }

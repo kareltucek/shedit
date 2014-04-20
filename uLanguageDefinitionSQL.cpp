@@ -17,6 +17,7 @@ using namespace SHEdit;
 :  LanguageDefinition()
 {
   foreground = clBlack;
+  background = clWhite;
   number = (TColor)0x008888;
   comment =clGreen;
   commentback =(TColor)0xddffdd;
@@ -35,15 +36,15 @@ using namespace SHEdit;
 
   FontStyle * commentstyle = new FontStyle(&comment, &commentback);
   TreeNode * commentTree = AddPair(L"/*", L"*/", commentstyle);
-  AddJump(L"--", commentstyle, LangDefSpecType::LineTag, NULL, commentTree);
-  AddJump(L"prompt", commentstyle, LangDefSpecType::LineTag, NULL, commentTree);
+  AddLine(L"--", commentstyle, NULL, commentTree);
+  AddLine(L"prompt", commentstyle, NULL, commentTree);
 
-  AddKeywords(L"TODO", new FontStyle(&foreground), commentTree);
+  AddKeywords(L"TODO", new FontStyle(&foreground, &background), commentTree);
 
-  AddWord(L":", new FontStyle(&variable, NULL, TFontStyles()));
+  AddWord(L":", new FontStyle(&variable, &background, TFontStyles()));
 
 
-  FontStyle * stringstyle = new FontStyle(&string);
+  FontStyle * stringstyle = new FontStyle(&string, &background);
   AddPair(L"'", L"'", stringstyle);
   AddPair(L"\"", L"\"", stringstyle);
 

@@ -46,6 +46,9 @@ using namespace SHEdit;
   SetDefaultColor(&htmlFG);
   SetCaseSensitive(true);
 
+
+  phpTree = AddNewTree(new FontStyle(&phpFG,&phpBG));
+
   //html
   htmlTree = GetTree();
   SetTreeCaseSensitive(htmlTree, false);
@@ -54,16 +57,16 @@ using namespace SHEdit;
 
   ConstructHtml(htmlTree, &htmlBG, &htmlFG);
 
-  phpTree = AddPair(L"<?", L"?>", new FontStyle(&phpFG,&phpBG), htmlTree, NULL);
-  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, htmlCommentTree, phpTree);
-  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, htmlTagTree, phpTree);
+  AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), htmlTree, phpTree, PUSH_ALWAYS);
+  AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), htmlCommentTree, phpTree, PUSH_ALWAYS);
+  AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), htmlTagTree, phpTree, PUSH_ALWAYS);
 
   //php
   phpCommentTree = NULL;
   ConstructPhp(phpTree, &phpBG, &phpFG);
-  AddJump(L"?>", new FontStyle(&phpComments, &phpBG), LangDefSpecType::Jump, phpCommentTree, htmlTree);
 
   //echo html parsing
+  /*
   phpHtmlEnterTree = AddDupTree(phpTree, NULL);
   phpHtmlEnterTree->map[(int)'"'] = NULL;
   phpHtmlEnterTree->map[(int)'\''] = NULL;
@@ -73,43 +76,65 @@ using namespace SHEdit;
   AddPushFront(L"'", new FontStyle(&phpQuotes, &phpBG), phpHtmlEnterTree, htmlTree, MASK_ECHO_MODE, MASK_PHP_APOSTROPHE | MASK_PREDICTION);
   AddPushFront(L"\"", new FontStyle(&phpQuotes, &phpBG), phpHtmlEnterTree, htmlTree, MASK_ECHO_MODE, MASK_PHP_QUOTE | MASK_PREDICTION);
   AddPop(L";", new FontStyle(), phpHtmlEnterTree, MASK_ECHO_MODE, POP_AUTO);
-  AddJumpFront(L"?>", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, phpTree, htmlTree, 0, MASK_PREDICTION);
+  AddJumpFront(L"?>", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, phpTree, htmlTree, 0, MASK_PREDICTION);    */
+
+  AddJump(L"echo", NULL, LangDefJumpType::tMask, phpTree, phpTree, PUSH_ALWAYS, MASK_ECHO_MODE);
+  AddPush(L"[", NULL, phpTree, phpTree, MASK_ECHO_IGNORE, 0);
+  AddPush(L"[", NULL, phpTree, phpTree, MASK_ECHO_MODE, MASK_ECHO_IGNORE | MASK_ECHO_MODE);
+  AddPop(L"]", NULL, phpTree, MASK_ECHO_IGNORE, 1);
+  AddJump(L";", NULL, LangDefJumpType::tMask, phpTree, phpTree,  MASK_ECHO_MODE, MASK_ECHO_MODE);
+  AddPop(L"'", new FontStyle(&phpQuotes, &phpBG), phpTree, MASK_ECHO_MODE, 1, MASK_PHP_APOSTROPHE | MASK_PREDICTION);
+  AddPop(L"\"", new FontStyle(&phpQuotes, &phpBG), phpTree, MASK_ECHO_MODE, 1, MASK_PHP_QUOTE | MASK_PREDICTION);
+  AddPop(L"?>", new FontStyle(&phpFG,&phpBG), phpTree, 0, 1);
 
   //css
   cssPropertyTree = NULL;
   cssValueTree = NULL;
-  cssEnterTree = AddDupTree(htmlTagTree, new FontStyle(&cssFG, &cssBG));
   cssTree = AddNewTree( new FontStyle(&cssFG, &cssBG));
   ConstructCss(cssTree, &cssBG, &cssFG);
   //AddJump(L"style", new FontStyle(&htmlTags, &cssBG), LangDefSpecType::Jump, tagTree, cssEnterTree);
-  AddJump(L"<style", new FontStyle(&htmlTags, &cssBG), LangDefSpecType::Jump, htmlTree, cssEnterTree);
+
   AddPush(L"style='", new FontStyle(&htmlAttribs, &cssBG), htmlTagTree, cssPropertyTree, PUSH_ALWAYS, MASK_APOSTROPHE);
   AddPop(L"style='", NULL, htmlTagTree, MASK_APOSTROPHE, POP_AUTO);
   AddPush(L"style=\"", new FontStyle(&htmlAttribs, &cssBG), htmlTagTree, cssPropertyTree, PUSH_ALWAYS, MASK_QUOTE);
   AddPop(L"style=\"", NULL, htmlTagTree, MASK_QUOTE, POP_AUTO);
   AddPush(L"style=\\\"", new FontStyle(&htmlAttribs, &cssBG), htmlTagTree, cssPropertyTree, PUSH_ALWAYS, MASK_DOUBLE_QUOTE);
   AddPop(L"style=\\\"", NULL, htmlTagTree, MASK_DOUBLE_QUOTE, POP_AUTO);
+  AddPushFront(L"style='", new FontStyle(&htmlAttribs, &cssBG), htmlTagTree, phpTree, MASK_PHP_APOSTROPHE, MASK_ECHO_MODE, MASK_PHP_APOSTROPHE);
+  AddPushFront(L"style=\"", new FontStyle(&htmlAttribs, &cssBG), htmlTagTree, phpTree, MASK_PHP_QUOTE, MASK_ECHO_MODE, MASK_PHP_QUOTE);
+
+  cssEnterTree = AddDupTree(htmlTagTree, new FontStyle(&cssFG, &cssBG));
+  AddJump(L"<style", new FontStyle(&htmlTags, &cssBG), LangDefJumpType::tJump, htmlTree, cssEnterTree);
   cssEnterTree->map[(int)'>'] = NULL;
-  AddJump(L">", new FontStyle(&htmlTags, &cssBG), LangDefSpecType::Jump, cssEnterTree, cssTree);
-  AddJump(L"</style", new FontStyle(&htmlTags, &cssBG), LangDefSpecType::Jump, cssTree, htmlTagTree);
-  AddJump(L"</style>", new FontStyle(&htmlTags, &cssBG), LangDefSpecType::Jump, cssTree, htmlTree);
+  AddJump(L">", new FontStyle(&htmlTags, &cssBG), LangDefJumpType::tJump, cssEnterTree, cssTree);
+  AddJump(L"</style", new FontStyle(&htmlTags, &cssBG), LangDefJumpType::tJump, cssTree, htmlTagTree);
+  AddJump(L"</style>", new FontStyle(&htmlTags, &cssBG), LangDefJumpType::tJump, cssTree, htmlTree);
+  /*
   AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssTree, phpTree);
   AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssEnterTree, phpTree);
   AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssValueTree, phpTree);
-  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssPropertyTree, phpTree);
+  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssPropertyTree, phpTree);  */
+  AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), cssTree, phpTree, PUSH_ALWAYS);
+  AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), cssEnterTree, phpTree, PUSH_ALWAYS);
+  AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), cssValueTree, phpTree, PUSH_ALWAYS);
+  AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), cssPropertyTree, phpTree, PUSH_ALWAYS);
   AddPops(cssEnterTree);
 
   //javascript
   jvTree = AddNewTree(new FontStyle(&jvFG, &jvBG));
   jvEnterTree = AddDupTree(htmlTagTree, new FontStyle(&htmlFG, &htmlBG));
   ConstructJavascript(jvTree, &jvBG, &jvFG);
-  AddJump(L"<script", new FontStyle(&htmlTags, &htmlBG), LangDefSpecType::Jump, htmlTree, jvEnterTree);
+  AddJump(L"<script", new FontStyle(&htmlTags, &htmlBG), LangDefJumpType::tJump, htmlTree, jvEnterTree);
   jvEnterTree->map[(int)'>'] = NULL;
-  AddJump(L">", new FontStyle(&htmlTags, &htmlBG), LangDefSpecType::Jump, jvEnterTree, jvTree);
-  AddJump(L"</script>", new FontStyle(&htmlTags, &htmlBG), LangDefSpecType::Jump, jvTree, htmlTree);
+  AddJump(L">", new FontStyle(&htmlTags, &htmlBG), LangDefJumpType::tJump, jvEnterTree, jvTree);
+  AddJump(L"</script>", new FontStyle(&htmlTags, &htmlBG), LangDefJumpType::tJump, jvTree, htmlTree);
+  /*
   AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, jvTree, phpTree);
   AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, jvEnterTree, phpTree);
-  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, jvCommentTree, phpTree);
+  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, jvCommentTree, phpTree);    */
+  AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), jvTree, phpTree, PUSH_ALWAYS);
+  AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), jvEnterTree, phpTree, PUSH_ALWAYS);
+  AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), jvCommentTree, phpTree, PUSH_ALWAYS);
   AddPops(jvEnterTree);
 
   //inline javascript
@@ -140,7 +165,7 @@ using namespace SHEdit;
   cssValueTree->Name = L"css value";
   cssEnterTree->Name = L"css entertree";
   cssTree->Name = L"css";
-  phpHtmlEnterTree->Name = L"php html enter tree";
+  //phpHtmlEnterTree->Name = L"php html enter tree";
 #endif
 
 /*
@@ -209,9 +234,9 @@ void LanguageDefinitionWebLangs::ConstructCss(LanguageDefinition::TreeNode * at,
 
   FontStyle * defstyle = new FontStyle(fg, bg);
   cssValueTree = AddNewTree(defstyle);
-  AddJump(L"}", defstyle, LangDefSpecType::Jump, cssValueTree, at);
-  AddJump(L":", defstyle, LangDefSpecType::Jump, cssPropertyTree, cssValueTree);
-  AddJump(L";", defstyle, LangDefSpecType::Jump, cssValueTree, cssPropertyTree);
+  AddJump(L"}", defstyle, LangDefJumpType::tJump, cssValueTree, at);
+  AddJump(L":", defstyle, LangDefJumpType::tJump, cssPropertyTree, cssValueTree);
+  AddJump(L";", defstyle, LangDefJumpType::tJump, cssValueTree, cssPropertyTree);
 
 
   FontStyle * valstyle = new FontStyle(&cssVal, bg);
@@ -254,28 +279,28 @@ void LanguageDefinitionWebLangs::AddSafetyJumps()
     cssTree,  jvTree, jvEnterTree,
     jvCommentTree};
 
-  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, htmlTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
-  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, cssTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
-  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, cssPropertyTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
-  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, cssValueTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+  AddJumpFront(L"<", NULL, LangDefJumpType::tJump, htmlTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+  AddJumpFront(L"<", NULL, LangDefJumpType::tJump, cssTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+  AddJumpFront(L"<", NULL, LangDefJumpType::tJump, cssPropertyTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+  AddJumpFront(L"<", NULL, LangDefJumpType::tJump, cssValueTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
 
-  AddJumpFront(L"{", NULL, LangDefSpecType::Jump, htmlTagTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
-  AddJumpFront(L"{", NULL, LangDefSpecType::Jump, htmlTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+  AddJumpFront(L"{", NULL, LangDefJumpType::tJump, htmlTagTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
+  AddJumpFront(L"{", NULL, LangDefJumpType::tJump, htmlTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION);
 
 
 
   TreeNode* qarray[3] =  {htmlQuoteTree, cssQuoteTree, jvQuoteTree};
-  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, htmlQuoteTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
-  AddJumpFront(L"<", NULL, LangDefSpecType::Jump, cssQuoteTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
-  AddJumpFront(L"{", NULL, LangDefSpecType::Jump, htmlQuoteTree, cssPropertyTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
-  AddJumpFront(L"}", NULL, LangDefSpecType::Jump, htmlQuoteTree, cssTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
+  AddJumpFront(L"<", NULL, LangDefJumpType::tJump, htmlQuoteTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
+  AddJumpFront(L"<", NULL, LangDefJumpType::tJump, cssQuoteTree, htmlTagTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
+  AddJumpFront(L"{", NULL, LangDefJumpType::tJump, htmlQuoteTree, cssPropertyTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
+  AddJumpFront(L"}", NULL, LangDefJumpType::tJump, htmlQuoteTree, cssTree, MASK_PREDICTION, MASK_PREDICTION, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE);
 
 
 }
 //---------------------------------------------------------------------------
 void LanguageDefinitionWebLangs::ConstructJavascript(LanguageDefinition::TreeNode * at, TColor * bg, TColor * fg)
 {
-  AddKeywords(L" break const condition ? ifTrue : ifFalse continue delete do...while export for for...in function if...else import in instanceOf label let new return switch this throw try...catch typeof var void while with yield"
+  AddKeywords(L" break const condition ? ifTrue : ifFalse continue delete do while export for for in function if else import in instanceOf label let new return switch this throw try catch typeof var void while with yield"
       , new FontStyle(&jvKeywords, NULL, TFontStyles() << fsBold), at);
 
   jvQuoteTree = AddPushPopPair(L"\"", L"\"", new FontStyle(&jvQuotes, bg), at, NULL, MASK_QUOTE);
@@ -299,6 +324,6 @@ void LanguageDefinitionWebLangs::AddPops(LanguageDefinition::TreeNode * at)
   AddPop(L"'", NULL, at, MASK_APOSTROPHE, POP_AUTO);
   AddPop(L"\"", NULL, at, MASK_QUOTE, POP_AUTO);
   AddPop(L"\\\"", NULL, at, MASK_DOUBLE_QUOTE, POP_AUTO);
-  AddPop(L"'", NULL, at, MASK_PHP_APOSTROPHE, POP_AUTO);
-  AddPop(L"\"", NULL, at, MASK_PHP_QUOTE, POP_AUTO);
+  AddPushFront(L"'", new FontStyle(&phpQuotes, &phpBG), at, phpTree, MASK_PHP_APOSTROPHE, MASK_ECHO_MODE, MASK_PHP_APOSTROPHE);
+  AddPushFront(L"\"", new FontStyle(&phpQuotes, &phpBG), at, phpTree, MASK_PHP_QUOTE, MASK_ECHO_MODE, MASK_PHP_QUOTE);
 }

@@ -447,6 +447,7 @@ proc:
         }
         break;    */
       case LangDefSpecType::Jump:
+      /*
         if(PerformPop(searchiter))
         {
           if(paint)
@@ -466,7 +467,16 @@ proc:
           }
           PerformJumpPush(searchiter);
           actFormat = *searchiter->current->format ;
+        }                           */
+        if(paint)
+        {
+          AddChar(itr, pos);
+          actFormat += *(searchiter->current->format);
         }
+        if(!PerformPop(searchiter))
+          PerformJumpPush(searchiter);
+        if(paint)
+          Flush();
         searchiter->current = searchiter->base;
         actFormat = *searchiter->current->format ;
         break;
@@ -526,6 +536,7 @@ proc:
   actFormat = *(state.searchStateStack.top->data.base->format);
   actFormat += actMarkupCombined;
   drawer->DrawEndl(linenum, actFormat);
+  //parent->Log(String("mask is ")+String(searchiter->mask)+String(" glmask is ")+String(state.globalMask));
 
   return;
 
@@ -540,13 +551,15 @@ bool Parser::PerformPop(LanguageDefinition::SearchIter *& sit)
   {
     if(sit->current->pops[i].popmask & (sit->mask | state.globalMask) || sit->current->pops[i].popmask == 0)
     {
+      if(sit->current->pops[i].format != NULL)
+        actFormat += *(sit->current->pops[i].format);
       LanguageDefinition::TreeNode * dbg = sit->current;
       int popmask = (sit->mask | state.globalMask) & sit->current->pops[i].popmask;
       int newgmask = sit->current->pops[i].newgmask;
       if(sit->current->pops[i].popcount >= 0)
       {
         //Write(String(" manualpopping"));
-        for(int i = sit->current->pops[i].popcount ; i > 0; i--)
+        for(int j = sit->current->pops[i].popcount ; j > 0; j--)
           state.searchStateStack.Pop();
       }
       else
@@ -589,6 +602,9 @@ void Parser::PerformJumpPush(LanguageDefinition::SearchIter *& sit)
   {
     if((sit->current->jumps[i].pushmask & (sit->mask | state.globalMask)) > 0 || sit->current->jumps[i].pushmask == 0)
     {
+      if(sit->current->jumps[i].format != NULL)
+        actFormat += *(sit->current->jumps[i].format);
+
       int newmask = sit->current->jumps[i].newmask;
       int newgmask = sit->current->jumps[i].newgmask;
 
@@ -601,7 +617,7 @@ void Parser::PerformJumpPush(LanguageDefinition::SearchIter *& sit)
           state.searchStateStack.Push(*sit);
           sit = &(state.searchStateStack.top->data);
         }
-        sit->base = newtree;
+         sit->base = newtree;
       }
 
       state.globalMask = state.globalMask  ^ newgmask;
