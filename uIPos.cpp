@@ -13,8 +13,6 @@
 
 using namespace SHEdit;
 //---------------------------------------------------------------------------
-
-
 IPos::IPos(Buffer * buffer, NSpan * line, int linenum, int pos)
 {
   this->type = IPType::iptPos;
@@ -22,6 +20,17 @@ IPos::IPos(Buffer * buffer, NSpan * line, int linenum, int pos)
   this->linenum = linenum;
   this->line = line;
   this->buffer = buffer;
+  if(buffer)
+    buffer->RegisterIP(this);
+}
+//---------------------------------------------------------------------------
+IPos::IPos(const IPos& ip)
+{
+  this->type = ip.type;
+  this->pos = ip.pos;
+  this->linenum = ip.linenum;
+  this->line = ip.line;
+  this->buffer = ip.buffer;
   if(buffer)
     buffer->RegisterIP(this);
 }
@@ -60,6 +69,7 @@ FontStyle IPos::ReconstructIMarkFontStyle()
   for (std::set<Format*>::iterator itr = buffer->FormatList.begin(); itr != buffer->FormatList.end(); itr++)
   {
     IMark * m = (*itr)->GetMarkBefore(this);
+    assert(m==NULL || m->type == IPType::iptMark);
     if(m != NULL && m->begin)
       searchtree.push_back(m);
   }
@@ -73,6 +83,11 @@ bool IPos::compare::operator()(const IPos* a, const IPos* b) const
 {
   return IPos::Compare(a, b);
 }
+//---------------------------------------------------------------------------
+      bool IPos::operator==(const IPos& p)
+      {
+        return (p.pos == this->pos && p.linenum == this->linenum);
+      }
 //---------------------------------------------------------------------------
 bool IPos::Compare(const IPos*& a, const IPos*& b)
 {

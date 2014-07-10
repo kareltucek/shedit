@@ -39,6 +39,7 @@ std::ofstream myfile;
 //---------------------------------------------------------------------------
 Parser::ParserState::~ParserState()
 {
+  searchStateStack.Erase();
   markupStack.Erase();
 }
 //---------------------------------------------------------------------------
@@ -168,7 +169,8 @@ bool __fastcall Parser::Execute()
       newline = true;
       first = false;
       //take care of line
-      itr->line->parserState = this->state;
+      if(itr->line->prevline != NULL) //otherwise sets a format to the first line -> changing langdef will never iterate change in buffer
+        itr->line->parserState = this->state;
 
       tasklistprior.remove(pt);
       tasklist.remove(pt);

@@ -319,6 +319,8 @@ void LanguageDefinition::_AddJump(bool begin, wchar_t * string, FontStyle * form
       ptr++;
     }
     item->type = LangDefSpecType::Jump;
+    if(item->format == NULL)              //WORKAROUND!!! TODO this is the simple way to fix rendering of branching statements; Proper way is to rewrite the lookahead parser feature
+      item->format = format;
     FontStyle * fmt = item->format;
     if(format != NULL)
       fmt = format;

@@ -25,6 +25,7 @@ namespace SHEdit
     public:
       enum IPType{iptPos, iptIter, iptMark};
 
+      IPos(const IPos& ipos);
       IPos(Buffer * buffer, NSpan * line, int linenum, int pos);
       ~IPos();
 
@@ -37,6 +38,8 @@ namespace SHEdit
       virtual void Update(); /*!< Is called when structure of underlying buffer changed, to allow descendants to update their links to the physical structure. */
       virtual void UpdatePos(); /*!< Basically same as Update(), but handles repositioning */
       virtual void RecalcPos(); /*!< Recalculates IPos::pos, according to descendant's own positioning */
+
+      bool operator==(const IPos& p);
 
       static bool Compare(const IPos*& a, const IPos*& b); /*!< Returns true if "a" is to be considered to go befor "b" in buffer. For descendants should be also able to take into acount their positioning needs (i.e. when the position itself is the same, but some markup should be processed before other; its implemented this way to work with template asociative containers that do not allow comparing against other then template type) */
       struct compare

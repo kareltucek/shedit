@@ -184,6 +184,8 @@ IMark * Format::GetMarkBefore(IPos* ipos)
   if(imarks.empty())
     return NULL;
   std::set<IPos*, IMark::compare>::iterator it = imarks.upper_bound(ipos);
+  if(it == imarks.begin())
+    return NULL;
   it--;
   return (IMark*)*it;
 }

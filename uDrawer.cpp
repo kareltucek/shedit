@@ -47,7 +47,7 @@ __fastcall Drawer::Drawer(TCanvas * canvas, TSHEdit * parent)
 
   HMax = 200;
   HPos = 0;
-  x = 2;
+  x = X_OFF;
   y = Y_OFF;
   cx = -2;
   cy = 2;
@@ -65,7 +65,7 @@ void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontS
   if(newline)
   {
     HPos = parent->HBar->Position;
-    x = 2-HPos+GetLinenumWidth();
+    x = X_OFF-HPos+GetLinenumWidth();
   }
 
   if(x > parent->Width)
@@ -74,7 +74,7 @@ void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontS
     return;
   }
 #ifndef QUICKDRAW
-  if(newline || format.background == NULL || *format.background != drawcanvas->Brush->Color )
+  if(true || newline || format.background == NULL || *format.background != drawcanvas->Brush->Color )
   {
     if(format.background != NULL)
     {
@@ -115,7 +115,7 @@ void __fastcall Drawer::DrawMove(int from, int to, int by)
 #define TO to
 #define BY by
   {
-    int adjustment = linesize*(TO+1) > BottomBorder() ? BottomBorder() - linesize*(TO+1)-2 : -2;
+    int adjustment = linesize*(TO+1) > BottomBorder() ? BottomBorder() - linesize*(TO+1)-X_OFF: -X_OFF;
     TRect source2(from == 0 ? 0 : GetLinenumWidth(), 0, 0, 1);
     TRect source(from == 0 ? 0 : GetLinenumWidth(), linesize*FROM, RightBorder(), linesize*(TO+1)-adjustment);
     TRect dest(from == 0 ? 0 : GetLinenumWidth(), linesize*(FROM+BY), RightBorder(), linesize*(TO+BY+1)-adjustment);
@@ -176,14 +176,14 @@ void __fastcall Drawer::DrawEndl(short linenum, FontStyle format)
   con = false;
   y = Y_OFF+linesize*linenum;
   if(x < parent->Width)
-    drawcanvas->Rectangle(x == 2 ? 0 : x, y,RightBorder(), y+linesize);
+    drawcanvas->Rectangle(x == X_OFF ? 0 : x, y,RightBorder(), y+linesize);
   if(x+HPos-2+200 > HMax)
   {
-    HMax = x+HPos-2+200;
+    HMax = x+HPos-X_OFF+200;
     parent->UpdateHBar();
   }
   HPos = parent->HBar->Position;
-  x = 2-HPos;
+  x = X_OFF-HPos;
 
   if(linenumsenabled)
   {
@@ -192,7 +192,7 @@ void __fastcall Drawer::DrawEndl(short linenum, FontStyle format)
     drawcanvas->Brush->Color = (TColor)0xEEEEEE;
     drawcanvas->Font->Style = TFontStyles();
     drawcanvas->Rectangle(0, y, GetLinenumWidth(), y+linesize);
-    drawcanvas->TextOut(2, y, String(parent->itrLine->linenum+linenum));
+    drawcanvas->TextOut(X_OFF, y, String(parent->itrLine->linenum+linenum));
     drawcanvas->MoveTo(GetLinenumWidth(), y);
     drawcanvas->Pen->Color = (TColor)0x444444;
     drawcanvas->LineTo(GetLinenumWidth(), y+linesize);
@@ -213,8 +213,8 @@ void __fastcall Drawer::Paint()
   //DrawLinenum();
 #endif
 
-  parent->VBar->Repaint();
-  parent->HBar->Repaint();
+  parent->VBar->Refresh();
+  parent->HBar->Refresh();
 
 #ifdef DRAW_POS
   canvas->Brush->Style = bsClear;
@@ -262,7 +262,7 @@ void __fastcall Drawer::DrawLinenum(int from)
   drawcanvas->Brush->Color = (TColor)0xEEEEEE;
   drawcanvas->Rectangle(0, from*linesize, GetLinenumWidth(), parent->Height);
   for(int i = parent->Height/linesize, j = from; j <= i; j++)
-    drawcanvas->TextOut(2, j*linesize, String(parent->itrLine->linenum+j));
+    drawcanvas->TextOut(X_OFF, j*linesize, String(parent->itrLine->linenum+j));
 
   drawcanvas->Pen->Color = (TColor)0x444444;
   drawcanvas->MoveTo(GetLinenumWidth(), 0);
@@ -316,7 +316,15 @@ bool __fastcall Drawer::UpdateLinenumWidth(int count)
   if(count < 100)
     count = 100;
   String str(count);
-  int w = drawcanvas->TextWidth(count)+5; //2*2 margins + 1 line width
+  int w;
+
+  Graphics::TBitmap * bitmap = new Graphics::TBitmap();
+  bitmap->SetSize(1, 1);
+  bitmap->Canvas->Font->Size = fontsize;
+  bitmap->Canvas->Font->Name = "Courier New";
+  w = bitmap->Canvas->TextWidth(count)+5; //2*2 margins + 1 line width
+  delete bitmap;
+
   bool ret = linenumwidth != w;
   linenumwidth = w;
   return ret;

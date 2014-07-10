@@ -15,9 +15,15 @@
 #include <Clipbrd.hpp>
 #include <time.h>
 #include "uIter.h"
+#include "uIPos.h"
+#include "uLanguageDefinition.h"
+#include "uLanguageDefinitionSQL.h"
+#include "uSpan.h"
+#include "uMark.h"
 #include "uBuffer.h"
 #include "uDrawer.h"
 #include "uParser.h"
+#include <windows.h>
 
 using namespace SHEdit;
 
@@ -25,11 +31,16 @@ namespace SHEdit
 {
   LRESULT CALLBACK ProcessKeyCall(int code, WPARAM wParam, LPARAM lParam);
 
-  typedef void __fastcall (__closure *TKeyPressEvent)(System::TObject* Sender, int &Key, bool &Captured);
+
+  typedef void __fastcall (__closure *TMessage)(System::TObject* Sender);
+
+  typedef void __fastcall (__closure *TMouseEvent)(System::TObject* Sender, TMouseButton Button, Classes::TShiftState Shift, int X, int Y);
+  typedef void __fastcall (__closure *TKeyEvent)(System::TObject* Sender, System::Word &Key, Classes::TShiftState Shift);
+  typedef void __fastcall (__closure *TKeyPressEvent)(System::TObject* Sender, System::WideChar &Key);
 
   /** \mainpage
-   * overrview
-   * ========
+   * 0. overrview
+   * ============
    * TSHEdit is a syntax highlight source code editing component.
    *
    * TSHEdit consists of 4 main parts. The component class TSHEdit, Buffer, Parser and Drawer. Originally parser and drawer were designed to work in their own thread, but as it turned out, it was not possible due to the fact that vcl is not thread safe and thus text rendering was not possible, so I merged everything into just one thread, and cut off a lot of heavy stuff for thread sync.
@@ -48,7 +59,7 @@ namespace SHEdit
    *
    * Editting/Getting data into/out of component
    * -------------------------------------------
-   *  All editing etc should be done through the public members of TSHEdit and Iterators that were obtained from the TSHEdit instance. Members are quite self-explaining, so it should not be problem to find out yourself.
+   *  All editing etc should be done through the public members of TSHEdit and Iterators that were obtained from the TSHEdit instance (not manually created). Members are quite self-explaining, so it should not be problem to find out yourself.
    *
    *  Line numbering starts from 1. Line position numbering starts from 0. Each position refers to position on one line - i.e. pos higher than line width is not interpretted as position on next line but should end up at end of line. There is no global position numbering - just line + line position pairs.
    *
@@ -56,7 +67,7 @@ namespace SHEdit
    * ---------
    * TSHEdit provides 3 ways of formatting documents:
    * 1. The syntax highlight feature. For more information visit LanguageDefinition class documentation.
-   * 2. A positionless markup that is hardlinked to the buffer structure, that is kept up-to date through Parser. It is quite efficient for large amounts of local formatting, but lacks responsivity regarding global formating changes. For more information see Mark class and Iter::MarkupBegin and Iter::MarkupEnd methods.
+   * 2. A positionless markup that is hardlinked to the buffer structure, which is kept up-to date through the Parser. It is quite efficient for large amounts of local formatting, but lacks responsivity regarding global formating changes. For more information see Mark class and Iter::MarkupBegin and Iter::MarkupEnd methods.
    * 3. An Iterator-handled global markup, that is established using system of binary search trees. It is efficient for markup changes over large areas and can quickly find current format at any point of buffer. Where it lacks is that Iterators has to be kept up to date throught editing of buffer (and amount of such iterators is thus somehow limited). For more information see IMark class and IPos::IMarkupBegin and IPos::IMarkupEnd methods.
    *
    * The syntax highlight has the lowest priority while Iterator-handled markup has the highest (that's how they are put together in Parser class).
@@ -65,9 +76,12 @@ namespace SHEdit
    * ----------------------------------
    *  - Config file parser for language definitions.
    *  - Memory optimalization - new container template beside the Stack should be implemented that would store data at one place and would allow fast assigning and comparing.
-   *  - Search capability.
+   *  done - Search capability.
    *  - Dictionary structure should be somehow rewritten.
-   *
+   *  - Add new layer between iterator and cursor to allow comfortable cursor movement without need of manual redrawing
+   *  - Extend api to provide EVERYTHING neccessary
+   *  - Debug, debug, debug
+   *  - Add some sensible documentation export
    *
    * Content of Documentation
    * ------------------------
@@ -121,14 +135,24 @@ namespace SHEdit
       void UpdateVBar();
       void UpdateHBar();
 
+      bool msgLock;
+
       TTimer * timer;
+
+      TColor selColor;
+      TColor searchColor;
+
+      bool readonly;
+
+      int GetScrollStep();
+      int maxScrollStep;
 
       Iter * XYtoItr(int& x, int& y);                                                               /*!< Converts coordinates to coresponding iterator. */
       void UpdateCursor(bool paint);                                                                /*!< Recalculates position of itrCursor, and posts results to the drawer. If paint is set to true, it also asks drawer to redraw window.*/
       void ProcessMouseMove(int& x, int& y);                                                        /*!< processes mouse drag info (called from mouse move and mouse up handlers). */
       void ProcessMouseClear(bool redraw, bool deletecursord);                                      /*!< clears selection */
       Format * selectionFormat;
-      Format * testFormat;
+      Format * searchFormat;
       bool mouseDown;
       bool mouseSelect;                                                                             /*!< Whether component is in text-selection (=mouse drag) mode.*/
       bool cursorsInInvOrder;                                                                       /*!< obsolete*/
@@ -138,8 +162,7 @@ namespace SHEdit
       int cursorLeftOffset;                                                                         /*!< Column of the cursor, taking into account tabulators. This does NOT equal iterator position.*/
       int scrolldelta;                                                                              /*!< used by ms to treat smooth-scroll wheels...*/
       int scrolldeltafontsize;                                                                      /*!< used by ms to treat smooth-scroll wheels...*/
-
-      void AdjustLine(bool paint);                                                                  /*!< On edit and movement edjusts screen so that cursor is visible*/
+                                                                 /*!< On edit and movement edjusts screen so that cursor is visible*/
       void Scroll(int by);
       void __fastcall OnVScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);
       void __fastcall OnHScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);
@@ -150,7 +173,6 @@ namespace SHEdit
     protected:
       virtual void __fastcall Paint();
       virtual void __fastcall PaintWindow(HDC DC);
-      virtual void __fastcall RepaintWindow(bool force);
 
       virtual void __fastcall WndProc(Messages::TMessage &Message);                                 /*!< self-explaining, note that some keyboard events are handled by separate callback */
 
@@ -158,11 +180,13 @@ namespace SHEdit
       DYNAMIC void __fastcall MouseMove(Classes::TShiftState Shift, int X, int Y);
       DYNAMIC void __fastcall MouseUp(TMouseButton Button, Classes::TShiftState Shift, int X, int Y);
 
+      void __fastcall KeyDownHandler(System::TObject * Sender, System::Word &Key, Classes::TShiftState Shift)     ;
+      void __fastcall KeyPressHandler(System::TObject * Sender,System::WideChar &Key)     ;
+      void __fastcall KeyUpHandler(System::TObject * Sender,System::Word &Key, Classes::TShiftState Shift)         ;
+
       TClipboard * clipboard;
-      void Copy();
-      void Paste();
       void DeleteSel(bool allowsync = true);                                                        /*!< Handles all deletion tasks (except load file)*/
-      void Insert(wchar_t * text);                                                                  /*!< Handles all insertions.*/
+      void Insert(const wchar_t * text);                                                                  /*!< Handles all insertions.*/
       void ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed);                      /*!< Handles painting of most actions that need just partial movement of some data - line insertions and deletions, scrolling, etc.*/
 
       void ParseScreenBetween(Iter * it1, Iter * it2);                                              /*!< Pushes visible lines between it1 and it2 to parser. Takes care of right order of iters, and of trimming the. */
@@ -173,7 +197,23 @@ namespace SHEdit
       Iter * __fastcall GetLineByNum(int num);                                                      /*!< returns iterator of line numth visible line*/
 
       TKeyPressEvent FOnKeyPress;
+      TKeyEvent FOnKeyDown;
+      TKeyEvent FOnKeyUp;
+      TMessage FOnChange;
+      TMessage FOnClick;
+      TMessage FOnEnter;
+      TMessage FOnExit;
+      TMouseEvent FOnMouseUp;
 
+     void __fastcall SetSelLen(int SelLen);
+     int __fastcall GetSelLen();
+     void __fastcall SetSelText(String SelText);
+     String __fastcall GetSelText();
+     void __fastcall SetText(String);
+     String __fastcall GetText();
+     bool Visible(Iter * itr);
+
+     void ProcessNewSelection();
     public:
 #ifdef DEBUG
       void __fastcall dbgIter();
@@ -196,25 +236,69 @@ namespace SHEdit
 
       int __fastcall GetFontsize();
       void __fastcall SetFontsize(int size);
+      int __fastcall GetLineHeight();
 
       int __fastcall GetActLine();                                                                  /*!< returns line number of cursor (absolute position in buffer)*/
+
+      void AdjustLine(bool paint);
 
       Iter * GetCursor();                                                                           /*!< If part of text is selected, returns pointer to the beginning of selection (or cursor, if nothing is selected). Pointer points to the component's private iterator - do not modify it unless you know what you are doing. */
       Iter * GetCursorEnd();                                                                        /*!< If part of text is selected, returns pointer to the end of selection (or NULL, if nothing is selected). Pointer points to the component's private iterator - do not modify it unless you know what you are doing. */
 
+      Iter * Begin();
+      Iter * End();
+      Iter begin();
+      Iter end();
+
+      int GetCursorX();
+      int GetCursorY();
+      int GetCursorCaretX();
+      int GetCursorCaretY();
+      void ItrToXY(Iter * itr, int& x, int& y);
+
+      void Copy();
+      void Paste();
+
       void SelectAll();
-      void LoadFile(char * filename);
+
+      virtual void __fastcall RepaintWindow(bool force = true);
+
+      void Clear();
+      void AddLine(const String& string);
+      void AddLines(const String& string);
+      String GetLine(Iter* itr);
+      String GetLine(int index);
+
+      void LoadFile(const wchar_t * filename);
+      void SaveFile(const wchar_t * filename);
+
+      void MarkAll(const String& text, bool caseSensitive = false, bool wholeWord = false);
+      void UnMarkMarked();
 
       virtual LRESULT CALLBACK ProcessKey(int code, WPARAM wParam, LPARAM lParam);                  /*!< intercepts key messages that would not be otherwise handed to the component.*/
 
       __fastcall TSHEdit(TComponent* Owner);
       __fastcall ~TSHEdit();
 
+      void SetSelection(Iter * first, Iter* second);
+      String GetRange(Iter * begin, Iter * end);
+
+     __property int SelLen = {read=GetSelLen, write=SetSelLen};
+     __property String SelText = {read=GetSelText, write=SetSelText};
+     __property String Text = {read=GetText, write=SetText};
 __published:
       __property TAlign Align = {read=FAlign, write=SetAlign, default=0};
       __property int FontSize = {read=GetFontsize, write=SetFontsize, default=DEFONTSIZE};
       __property TKeyPressEvent OnKeyPress = {read=FOnKeyPress, write=FOnKeyPress, default=NULL};
-      __property bool LineNums = {write=SetLinenumsEnabled, default=true};
+      __property TKeyEvent OnKeyDown = {read=FOnKeyDown, write=FOnKeyDown, default=NULL};
+      __property TKeyEvent OnKeyUp = {read=FOnKeyUp, write=FOnKeyUp, default=NULL};
+      __property TMessage OnChange = {read=FOnChange, write=FOnChange, default=NULL};
+      __property TMessage OnClick = {read=FOnClick, write=FOnClick, default=NULL};
+      __property TMessage OnEnter = {read=FOnEnter, write=FOnEnter, default=NULL};
+      __property TMessage OnExit = {read=FOnExit, write=FOnExit, default=NULL};
+      __property TMouseEvent OnMouseUp = {read=FOnMouseUp, write=FOnMouseUp, default=NULL};
+      __property bool LineNums = {read=GetLinenumsEnabled,write=SetLinenumsEnabled, default=true};
+      __property bool ReadOnly= {read=readonly,write=readonly, default=false};
   };
   //---------------------------------------------------------------------------
 }

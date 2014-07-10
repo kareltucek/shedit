@@ -4,6 +4,7 @@
 #define uIterH
 
 #include "uIPos.h"
+#include <vcl.h>
 
 namespace SHEdit
 {
@@ -31,6 +32,7 @@ namespace SHEdit
   class Iter : public IPos
   {
     public:
+      Iter(const Iter& itr);
       Iter(NSpan * line);
       Iter(NSpan * line, int linenum, int pos, Buffer * buffer);
       Iter(int offset, Span * word, NSpan * line, Buffer * buffer, int linenum = -1);
@@ -57,8 +59,11 @@ namespace SHEdit
       wchar_t GetNextChar();
 
       int GetLeftOffset(); /*!< Returns left offset counting tabs as multiple characters according to the tabstop */
-      void GoByOffset(int chars); /*!< Goes forward countint tabs as multiple characters according to the tabstop. Always remains on the same line. */
-      void GoBy(int chars); /*!< Goes forward counting tabs as single character. Always remains on the same line. */ 
+      void GoByOffset(int chars); /*!< Goes forward countint tabs as multiple characters according to the tabstop. Always stays on the same line. */
+      void GoBy(int chars, bool multiline = false); /*!< Goes forward counting tabs as single character. Always stays on the same line. */
+      void GoLeft(int chars, bool multiline = false); /*!< Goes forward counting tabs as single character. always stays on the same line */
+
+      int GetDistance(Iter* itr);
 
       void MarkupBegin(SHEdit::Format * format); /*!< Adds positionless markup. For formatting overview see \ref index */
       void MarkupEnd(SHEdit::Format * format);/*!< Adds positionless markup. For formatting overview see \ref index */
@@ -70,9 +75,17 @@ namespace SHEdit
       virtual void RecalcPos();/*!< Recalculates IPos::pos, according to descendant's own positioning */
       void UpdateNextImark();/*!< See the Iter class info for explanation */
 
+      bool FindNext(wchar_t * string, bool skip = true, bool caseSensitive = true, bool wholeword = false); /*!< skip defines whether to match word directly at cursor or not */
+      bool FindPrev(wchar_t * string, bool skip = true, bool caseSensitive = true, bool wholeword= false);    /*!< same as findnext */
+      inline bool IsUnderCursor(const wchar_t *& string, bool caseSensitive, bool wholeword);  //used as test for search;
+      bool LineIsEmpty();
+
       void GoToLine(int line);
+      String GetLine();
 
       bool operator==(const Iter& itr);
+      bool operator>(const Iter& itr);
+      bool operator<(const Iter& itr);
       bool operator!=(const Iter& itr);
       wchar_t& operator++();
       wchar_t& operator--();

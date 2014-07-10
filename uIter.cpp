@@ -9,6 +9,9 @@
 //#include "uMark.h"
 #include "uFormat.h"
 #include "uBuffer.h"
+#include <assert.h>
+
+#include <vcl.h>
 
 using namespace SHEdit;
 
@@ -27,6 +30,16 @@ using namespace SHEdit;
     this->line = line;
   if(word->next)
     GoChar();
+}
+//---------------------------------------------------------------------------
+  Iter::Iter(const Iter& it)
+: IPos(it)
+{
+  this->offset = it.offset;
+  this->ptr = it.ptr;
+  this->word = it.word;
+  this->nextimark = it.nextimark;
+  this->nextimarkln = it.nextimarkln;
 }
 //---------------------------------------------------------------------------
   Iter::Iter(NSpan * line, int linenum, int pos, Buffer * buffer)
@@ -242,14 +255,33 @@ void Iter::Update()
   ptr = word->string + offset;
 }
 //---------------------------------------------------------------------------
+bool Iter::operator<(const Iter& itr)
+{
+  if(linenum < itr.linenum)
+    return true;
+  if(linenum == itr.linenum && pos <= itr.pos)
+    return true;
+  return false;
+}
+//---------------------------------------------------------------------------
+bool Iter::operator>(const Iter& itr)
+{
+  if(linenum < itr.linenum)
+    return false;
+  if(linenum == itr.linenum && pos <= itr.pos)
+    return false;
+  return true;
+}
+//---------------------------------------------------------------------------
 bool Iter::operator==(const Iter& itr)
 {
+  assert(!(!(this->word == itr.word && this->offset == itr.offset) && ((IPos)(*this) == (IPos)itr)));
   return (this->word == itr.word && this->offset == itr.offset);
 }
 //---------------------------------------------------------------------------
 bool Iter::operator!=(const Iter& itr)
 {
-  return !(this->word == itr.word && this->offset == itr.offset);
+  return !(*this == itr);
 }
 //---------------------------------------------------------------------------
 wchar_t& Iter::operator++()
@@ -324,23 +356,51 @@ void Iter::GoByOffset(int chars)
 #endif
 }
 //---------------------------------------------------------------------------
-void Iter::GoBy(int chars)
+void Iter::GoBy(int chars, bool multiline)
 {
-  if(line->next == NULL)
+  if(word->next == NULL)
     return;
-  while(this->word->length - this->offset <= chars && *(word->string) != '\n')
+    if(chars < 0)
+    GoLeft(-chars, multiline);
+  while(this->word->length - this->offset <= chars && (multiline || *(word->string) != '\n'))
   {
     chars -= this->word->length - this->offset;
-    GoWord();
+    if(!GoWord())
+      break;
   }
-  if(*(word->string) != '\n')
+  this->offset += chars;
+  this->pos += chars;
+  if(this->offset > word->length)
   {
-    this->offset = chars;
-    this->pos += chars;
+    this->offset = word->length-1;
+    this->pos = -chars+word->length-1;
   }
   Update();
 }
+//---------------------------------------------------------------------------
+void Iter::GoLeft(int chars, bool multiline)
+{
+  if(word->prev == NULL || (word->prev->prev == NULL && offset == 0))
+    return;
+    if(chars < 0)
+    GoBy(-chars, multiline);
+  while(this->offset < chars && (multiline || word->prev != (Span*)line))
+  {
+    chars -= 1+ this->offset;
+    if(!RevWord())
+      break;
+  }
 
+  this->offset -= chars;
+  this->pos -= chars;
+
+  if(this->offset < 0)
+  {
+    this->pos = 0;
+    this->offset = 0;
+  }
+  Update();
+}
 //---------------------------------------------------------------------------
 void Iter::MarkupRem(SHEdit::Format * format)
 {
@@ -390,4 +450,104 @@ void Iter::UpdateNextImark()
   }
 }
 //---------------------------------------------------------------------------
+int Iter::GetDistance(Iter* second)
+{
+  if(buffer == NULL || second->buffer == NULL)
+  {
+    throw std::invalid_argument( "cant get distance of a positionless iterator" );
+    return -1;
+  }
 
+  if(*second < *this)
+    return second->GetDistance(this);
+
+  Iter* itr = this->Duplicate();
+  int len=0;
+  while(itr->word != second->word)
+  {
+    len += itr->word->length - itr->offset;
+  }
+  len += second->offset;
+  delete itr;
+  return len;
+}
+//---------------------------------------------------------------------------
+String Iter::GetLine()
+{
+  if(buffer == NULL)
+  {
+    throw std::invalid_argument( "Cant return line from positionless iterator; use Buffer::GetLine(Iter*) instead" );
+    return "";
+  }
+  else
+    return buffer->GetLine(this, false);
+
+}
+//---------------------------------------------------------------------------
+bool Iter::FindNext(wchar_t * string, bool skip, bool caseSensitive, bool wholeword)
+{
+  if(skip)
+    GoChar();
+
+  do
+  {
+    if(IsUnderCursor(string, caseSensitive, wholeword))
+      return true;
+  }
+  while (GoChar());
+
+  return false;
+}
+//---------------------------------------------------------------------------
+bool Iter::FindPrev(wchar_t * string, bool skip, bool caseSensitive, bool wholeword)
+{
+  if(skip)
+    RevChar();
+
+  do
+  {
+    if(IsUnderCursor(string, caseSensitive, wholeword))
+      return true;
+  }
+  while (RevChar());
+
+  return false;
+}
+//---------------------------------------------------------------------------
+bool Iter::IsUnderCursor(const wchar_t *& string, bool caseSensitive, bool wholeword)
+{
+  if(towupper(*ptr) != towupper(*string) || (caseSensitive && *ptr != *string))
+    return false;
+
+  Iter * itr = this->Duplicate();
+  itr->GoChar();
+
+  const wchar_t * xptr = string+1;
+
+  while(*xptr != '\0')
+  {
+    if(*xptr == *(itr->ptr) || (!caseSensitive && towupper(*(itr->ptr) == towupper(*xptr))))
+      xptr++;
+    else
+    {
+      delete itr;
+      return false;
+    }
+
+    if(!itr->GoChar())
+    {
+      delete itr;
+      return false;
+    }
+  }
+  bool result = !wholeword || !iswalpha(itr->GetNextChar());
+  delete itr;
+  return result;
+}
+//---------------------------------------------------------------------------
+bool Iter::LineIsEmpty()
+{
+  if(line->next != NULL && line->next == (Span*)line->nextline)
+    return true;
+    return false;
+}

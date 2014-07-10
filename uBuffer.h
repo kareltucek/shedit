@@ -90,13 +90,13 @@ namespace SHEdit
       void _Insert(NSpan * word);
       void _Delete(NSpan * word);
 
-      Range * _InsertAt(NSpan * line, Span * word, int pos, wchar_t * string, bool writeundo, bool forcenew);
+      Range * _InsertAt(NSpan * line, Span * word, int pos, const wchar_t * string, bool writeundo, bool forcenew);
       Range * _DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew);
       Span* _SplitAt(Iter * At);
       Span* _SplitBegin(Iter * At);
       Span* _SplitEnd(Iter * At);
 
-      wchar_t * _ParseWord(wchar_t*& ptr, wchar_t*& ptrend);
+      wchar_t * _ParseWord(const wchar_t *& ptr, const wchar_t * ptrend);
 
       Iter * UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*> * stackRedo, Iter *& begin);
       void UndoPush(UndoTask * event);
@@ -118,15 +118,16 @@ namespace SHEdit
       Iter * Undo(Iter *& begin);
       Iter * Redo(Iter *& begin);
 
-      int Insert(Iter * At, wchar_t * string);
+      int Insert(Iter * At, const wchar_t * string);
       int Delete(Iter * From, Iter * To);
 
       wchar_t* GetText(Iter * From, Iter * To);
       String GetLine(Iter * line, bool replaceTabs);
       String GetLineTo(Iter * To, bool replaceTabs);
 
-      void SimpleLoadFile(char * filename);
-      /*
+      void SimpleLoadFile(const wchar_t * filename);
+      void SimpleSaveFile(const wchar_t * filename);
+      /*                                    //multithreaded
          void LoadFile(wchar_t * filename);
          void LoadFileAsync(wchar_t * filename);
          bool Preload(int lines);
@@ -145,9 +146,14 @@ namespace SHEdit
       Iter * First();
       Iter * End();
 
+
+      Iter begin();
+      Iter first();
+      Iter end();
+
       NSpan * FirstLine();
 
-      bool IsPlainWord(wchar_t * string);
+      bool IsPlainWord(const wchar_t * string);
 
       int CheckIntegrity(int& emptyCount);
 

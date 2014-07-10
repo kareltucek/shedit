@@ -73,6 +73,16 @@ Iter * Buffer::First()   //technically shows wrong location - just if we NEED to
   return new Iter(1, data->first, data->firstLine, this, 1);
 }
 //---------------------------------------------------------------------------
+Iter Buffer::begin()
+{
+  return  Iter(0, data->first->next, data->firstLine, this, 1);
+}
+//---------------------------------------------------------------------------
+Iter Buffer::first()   //technically shows wrong location - just if we NEED to maintain a link to fist link no matter what gets inserted
+{
+  return Iter(1, data->first, data->firstLine, this, 1);
+}
+//---------------------------------------------------------------------------
 NSpan * Buffer::FirstLine()
 {
   return data->firstLine;
@@ -81,6 +91,11 @@ NSpan * Buffer::FirstLine()
 Iter * Buffer::End()
 {
   return new Iter(0, data->last, data->lastLine->prevline, this, data->linecount);
+}
+//---------------------------------------------------------------------------
+Iter Buffer::end()
+{
+  return Iter(0, data->last, data->lastLine->prevline, this, data->linecount);
 }
 //---------------------------------------------------------------------------
 void Buffer::_Insert(Span * word)
@@ -165,7 +180,7 @@ Span* Buffer::_SplitAt(Iter * At)
   return firstnew;
 }
 //---------------------------------------------------------------------------
-int Buffer::Insert(Iter * At, wchar_t * string)
+int Buffer::Insert(Iter * At, const wchar_t * string)
 {
   if(IsPlainWord(string))
   {
@@ -187,8 +202,8 @@ int Buffer::Insert(Iter * At, wchar_t * string)
     }
   }
 
-  wchar_t * ptrend = string + wcslen(string);
-  wchar_t * ptr = string;
+  const wchar_t * ptrend = string + wcslen(string);
+  const wchar_t * ptr = string;
   int linesInserted = 0;
   Span * prev;
   NSpan * prevN;
@@ -222,6 +237,7 @@ int Buffer::Insert(Iter * At, wchar_t * string)
       _Insert(prevN);
       linesInserted++;
       pos = 0;
+      delete[] word;
     }
     else
     {
@@ -230,7 +246,7 @@ int Buffer::Insert(Iter * At, wchar_t * string)
       _Insert(prev);
     }
   }
-  delete[] string;
+  //delete[] string;
   wordBeingEdited = prev;
   data->linecount += linesInserted;
   r->linecount = -linesInserted;
@@ -368,7 +384,7 @@ Range * Buffer::_DeleteAt(Iter * From, Iter * To, bool writeundo, bool forcenew)
 /*!
  * returns range for undo event
  */
-Range * Buffer::_InsertAt(NSpan * line, Span * word, int pos, wchar_t * string, bool writeundo, bool forcenew)   //OK
+Range * Buffer::_InsertAt(NSpan * line, Span * word, int pos, const wchar_t * string, bool writeundo, bool forcenew)   //OK
 {
   //wchar_t* newstr = (wchar_t*) malloc((at->word->length+wcslen(string)+1) * sizeof(wchar_t));
   Range * r = NULL;
@@ -405,10 +421,10 @@ Range * Buffer::_InsertAt(NSpan * line, Span * word, int pos, wchar_t * string, 
 }
 
 //---------------------------------------------------------------------------
-wchar_t* Buffer::_ParseWord(wchar_t*& ptr, wchar_t*& ptrend)             //OK
+wchar_t* Buffer::_ParseWord(const wchar_t *& ptr, const wchar_t * ptrend)             //OK
 {
   short type;
-  wchar_t * ptrstart = ptr;
+  const wchar_t * ptrstart = ptr;
 #ifdef BREAK
   /*
      if(IsAl(*ptr))
@@ -459,7 +475,7 @@ wchar_t* Buffer::_ParseWord(wchar_t*& ptr, wchar_t*& ptrend)             //OK
 
 }
 //---------------------------------------------------------------------------
-bool Buffer::IsPlainWord(wchar_t * string)                //OK
+bool Buffer::IsPlainWord(const wchar_t * string)                //OK
 {
 #ifdef BREAK
   /*
@@ -668,7 +684,7 @@ Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*>
 #endif
 }
 //---------------------------------------------------------------------------
-void Buffer::SimpleLoadFile(char * filename)
+void Buffer::SimpleLoadFile(const wchar_t * filename)
 {
   std::ifstream * file = new std::ifstream();
   file->open(filename);
@@ -705,7 +721,29 @@ void Buffer::SimpleLoadFile(char * filename)
     UndoPush(new UndoTask(ac, r));
     ItersTranslateInsert(1, 1, 1, 1, data->firstLine);
   }
-
+  delete file;
+}
+//---------------------------------------------------------------------------
+void Buffer::SimpleSaveFile(const wchar_t * filename)
+{
+  std::ofstream * file = new std::ofstream();
+  file->open(filename);
+  if (file && file->is_open())
+  {
+    Iter * itr = Begin();
+    while(itr->line->nextline != NULL)
+    {
+      int size_needed = WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, NULL, 0, NULL, NULL);
+      std::string strTo( size_needed, 0 );
+      char * utf8 = new char[size_needed+1];
+      utf8[size_needed] = '\0';
+      WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, utf8, size_needed, NULL, NULL);
+      *file << utf8;
+      delete utf8;
+    }
+    delete itr;
+  }
+  delete file;
 }
 //---------------------------------------------------------------------------
 /*
@@ -841,6 +879,7 @@ wchar_t * Buffer::GetText(Iter * From, Iter* To)
 String Buffer::GetLine(Iter * line, bool replaceTabs)
 {
   Iter * itr = line->Duplicate();
+  itr->GoLineStart();
   String str;
   int pos = 0;
   while(*(itr->ptr) != '\n')

@@ -62,10 +62,6 @@ namespace SHEdit
       void Write(AnsiString message);
       void QueueDump();
 #endif
-    public:
-
-      __fastcall Drawer(TCanvas * Canvas, TSHEdit * parent) ;
-      virtual __fastcall ~Drawer();
 
       void DrawCursor();
       void __fastcall DrawText(String text, bool newline, short linenum, FontStyle format);
@@ -76,6 +72,15 @@ namespace SHEdit
       void __fastcall DrawEndl(short linenum, FontStyle format);
       void __fastcall DrawLinenum(int from);
       void __fastcall Paint();
+
+      friend class TSHEdit;
+      friend class Parser;
+    public:
+
+      __fastcall Drawer(TCanvas * Canvas, TSHEdit * parent) ;
+      virtual __fastcall ~Drawer();
+
+
 
       void __fastcall SetFontsize(int size);
       bool __fastcall UpdateLinenumWidth(int count);

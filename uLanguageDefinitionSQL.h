@@ -12,7 +12,7 @@ namespace SHEdit
   /*!
    * SQL example class
    * -----------------
-   * This is the simplest example of how to construct lexer for a SQL language. You may probably want to store formats in separate configuration object...
+   * This is the simplest example of how to construct a lexer for the SQL language. You may probably want to store formats in separate configuration object...
    *
    * For details of how to use these functions see LanguageDefinition's members method's documentation.
    * */
@@ -26,7 +26,6 @@ namespace SHEdit
     TColor string ;
     TColor variable;
     TColor reserved;
-    TColor preprocessor;
     TColor background;
 
     public:
