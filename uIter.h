@@ -3,6 +3,7 @@
 #ifndef uIterH
 #define uIterH
 
+#include "config.h"
 #include "uIPos.h"
 #include <vcl.h>
 

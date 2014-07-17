@@ -38,7 +38,7 @@ using namespace SHEdit;
 
 #ifdef DEBUG
 #include <fstream>
-std::ofstream myfile;
+std::wofstream myfile;
 #endif
 
 //---------------------------------------------------------------------------
@@ -50,7 +50,8 @@ TSHEdit * TSHEditFocused; //callback musi jit na statickou metodu...
 : TCustomControl(Owner)
 {
 #ifdef DEBUG
-  myfile.open("main.txt", ios::out );
+  if(!myfile.is_open())
+    myfile.open("main.txt", ios::out );
 #endif
   msgLock = false;
 
@@ -91,6 +92,8 @@ TSHEdit * TSHEditFocused; //callback musi jit na statickou metodu...
   //this->TWinControl::OnKeyDown = KeyDownHandler;
   //this->TWinControl::OnKeyPress = KeyPressHandler;
   //this->TWinControl::OnKeyUp = KeyUpHandler;
+
+  //this->TWinControl::OnEnter = OnEnterHandler; just a test
 
   //this->DoubleBuffered = true;
 
@@ -230,7 +233,8 @@ LRESULT CALLBACK TSHEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
 //---------------------------------------------------------------------------
 void TSHEdit::Scroll(int by)
 {
-  if(by == 0 || buffer->GetLineCount() < GetVisLineCount()*4/3)
+  Action("scrolling");
+  if(by == 0 || buffer->GetLineCount() < GetVisLineCount()*3/4)
     return;
   int scrolled = 0;
   if(-by < GetVisLineCount() && by < GetVisLineCount())
@@ -266,10 +270,12 @@ void TSHEdit::Scroll(int by)
 //---------------------------------------------------------------------------
 void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &Key, Classes::TShiftState Shift)
 {
+#ifndef DEBUG_FORCE_SHORTCUTTS
   if(FOnKeyDown != NULL)
   {
     FOnKeyDown(this, Key, Shift);
   }
+#endif
   switch(Key)
   {
     case VK_DELETE:
@@ -303,13 +309,9 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
        LoadFile(L"test.txt");
        return;
      case VK_F3:
-       if(GetCursorEnd() != NULL)
-       {
-       GetCursor()->IMarkupBegin(testFormat);
-       GetCursorEnd()->IMarkupEnd(testFormat);
-       ParseScreenBetween(GetCursor(), GetCursorEnd());
-       }
-       return;
+      parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 2);
+      parser->Execute();
+      return;
      case VK_F5:
        UpdateCursor(false);
        RepaintWindow(true);
@@ -417,10 +419,13 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
 {
   NSpan* changed = NULL;
   int linesMovedFrom = 0;
+
+#ifndef DEBUG_FORCE_SHORTCUTTS
       if(FOnKeyPress != NULL)
       {
         FOnKeyPress(this, Key);
       };
+      #endif
       switch(Key)
       {
         case 0x09: // Process a tab.
@@ -476,10 +481,12 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
             Iter * itrbegin;
             if (virtkey & 0x8000)
             {
+              Action("Undo");
               itr = buffer->Redo(itrbegin);
             }
             else
             {
+              Action("Redo");
               itr = buffer->Undo(itrbegin);
             }
             if(itr != NULL)
@@ -501,6 +508,8 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
             UpdateVBar();
             UpdateCursor(false);
             RepaintWindow(true);
+
+            Action("  done");
 
 #ifdef DEBUG
             /*
@@ -553,15 +562,23 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
 //---------------------------------------------------------------------------
 void __fastcall TSHEdit::KeyUpHandler(System::TObject * Sender,System::Word &Key, Classes::TShiftState Shift)
 {
+
+#ifndef DEBUG_FORCE_SHORTCUTTS
   if(FOnKeyUp != NULL)
   {
     FOnKeyUp(this, Key, Shift);
   }
+#endif
   switch (Key)
   {
     default:
     break;
   }
+}
+//---------------------------------------------------------------------------
+void __fastcall TSHEdit::OnEnterHandler(TObject * Sender)
+{
+  int test =666;
 }
 //---------------------------------------------------------------------------
 void __fastcall TSHEdit::WndProc(Messages::TMessage &Message)
@@ -586,8 +603,8 @@ void __fastcall TSHEdit::WndProc(Messages::TMessage &Message)
           if(scrolled > 0 && drawer->GetFontsize()+scrolled <= 30)
             drawer->SetFontsize(drawer->GetFontsize()+scrolled);
           drawer->HMax = 100;
-          UpdateCursor(false);
           drawer->UpdateLinenumWidth(buffer->GetLineCount());
+          UpdateCursor(false);
           RepaintWindow(true);
           UpdateVBar();
           UpdateHBar();
@@ -604,19 +621,22 @@ void __fastcall TSHEdit::WndProc(Messages::TMessage &Message)
     case WM_SETFOCUS:
       if(!KBHook)
         KBHook = SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)ProcessKeyCall, NULL, GetCurrentThreadId());
+      Parent->SetFocus();  //workaround - otherwise the parent form wont get focus
+      this->SetFocus();
       TSHEditFocused = this;
       timer->Enabled = true;
       if(FOnEnter != NULL)
         FOnEnter(this);
-      return;
+      goto def;
     case WM_KILLFOCUS:
       if(FOnExit != NULL)
         FOnExit(this);
       UnhookWindowsHookEx(KBHook);
       KBHook = NULL;
       timer->Enabled = false;
-      return;
+      goto def;
     default:
+      def:
       this->TControl::WndProc(Message);
       return;
   }
@@ -719,10 +739,8 @@ void TSHEdit::CheckIntegrity()
 {
   int empty = 0;
   int eno = buffer->CheckIntegrity(empty);
-  if(empty)
-    Log(String("IntegrityCheck found ")+String(empty)+String(" null strings"));
-  if(errno)
-    Log(String("IntegrityCheck: ")+String(eno));
+  assert(empty == 0);
+  assert(eno == 0);
 }
 //---------------------------------------------------------------------------
 void TSHEdit::CheckIterIntegrity(Iter * itr)
@@ -730,29 +748,27 @@ void TSHEdit::CheckIterIntegrity(Iter * itr)
   Span * sp = itr->word->prev;
   while(sp->string == NULL ||*(sp->string) != '\n')
     sp = sp->prev;
-  if((Span*)itr->line != sp)
-    Log("IterIntegrityCheck - iter on bad line");
+  assert((Span*)itr->line == sp);
+    //("IterIntegrityCheck - iter on bad line");
   Iter * tmp = buffer->Begin();
   NSpan * np = itr->line;
   NSpan * dt = tmp->line;
   int j = 1;
   while(np->prevline != NULL)
   {
-    if(dt->nextline == NULL)
-    {
-      Log("IterIntegrityCheck - iter out of buffer - null in forward seek");
-      break;
-    }
+    assert(dt->nextline != NULL); //("IterIntegrityCheck - iter out of buffer - null in forward seek");
     j++;
     np = np->prevline;
     dt = dt->nextline;
   }
-  if(np != tmp->line)
-    Log("IterIntegrityCheck - backward seek fail");
-  if(dt != itr->line)
-    Log("IterIntegrityCheck - forward seek fail");
-  if(j != itr->linenum)
-    Log("IterIntegrityCheck - wrong linenum");
+  assert(np == tmp->line);
+    //("IterIntegrityCheck - backward seek fail");
+  assert(dt == itr->line);
+    //("IterIntegrityCheck - forward seek fail");
+  assert(j == itr->linenum);
+  //if(j != itr->linenum)
+  //  int dbg=666;
+    //("IterIntegrityCheck - wrong linenum");
   delete tmp;
 }
 #endif DEBUG
@@ -785,6 +801,7 @@ void TSHEdit::UpdateCursor(bool paint)
 void __fastcall TSHEdit::MouseDown(TMouseButton Button, Classes::TShiftState Shift, int X, int Y)
 {
   this->SetFocus();
+  Action("Placing cursor", false);
 
   if(FOnClick != NULL)
     FOnClick(this);
@@ -809,6 +826,7 @@ void __fastcall TSHEdit::MouseDown(TMouseButton Button, Classes::TShiftState Shi
   //parser->Execute();
 
   mouseDown = true;
+  Action("    Cursor placed");
 }
 //---------------------------------------------------------------------------
 void __fastcall TSHEdit::MouseMove(Classes::TShiftState Shift, int X, int Y)
@@ -831,7 +849,11 @@ void __fastcall TSHEdit::MouseUp(TMouseButton Button, Classes::TShiftState Shift
     FOnMouseUp(this, Button, Shift, X, Y);
 
   if(mouseSelect)
+  {
+    Action("    Selecting ...", false);
     ProcessMouseMove(X, Y);
+    Action("    Selected " + Escape(SelText));
+  }
 
   mouseDown = false;
   mouseSelect = false;
@@ -885,13 +907,14 @@ void TSHEdit::ProcessNewSelection()
     GetCursorEnd()->IMarkupEnd(selectionFormat);
   }
 
-    ParseScreenBetween(itrCursor, itrCursorSecond);
+  ParseScreenBetween(itrCursor, itrCursorSecond);
 
   parser->Execute();
 }
 //---------------------------------------------------------------------------
 void TSHEdit::SetSelection(Iter * first, Iter* second)
 {
+  Action("Setting new selection");
   selectionFormat->RemoveAllMarks();
   ParseScreenBetween(GetCursor(), GetCursorEnd());
   //if(first->buffer == NULL || second->buffer == NULL)
@@ -1062,6 +1085,7 @@ int __fastcall TSHEdit::GetLineNum(NSpan * line)
 //---------------------------------------------------------------------------
 void TSHEdit::DeleteSel(bool allowsync)
 {
+  Action("Deleting selection '" + Escape(SelText) + "' ...", false);
   int linesMovedFrom = (GetCursorEnd()->linenum-itrLine->linenum)+1;
 
   int linesMoved = -buffer->Delete(GetCursor(), GetCursorEnd());
@@ -1088,12 +1112,17 @@ void TSHEdit::DeleteSel(bool allowsync)
   {
     ProcessChange(linesMovedFrom < 0 ? 0 : linesMovedFrom, linesMoved, changed);
   }
+  #ifdef DEBUG_UNDO
+  UndoCheck();
+  #endif
   if(FOnChange != NULL)
     FOnChange(this);
+  Action("    done");
 }
 //---------------------------------------------------------------------------
 void TSHEdit::Insert(const wchar_t * text)
 {
+  Action(String("Inserting text '") + Escape(text) + L"' ... ", false);
   bool atStart = itrLine->linenum == 1 && itrLine->pos == 0 && *itrCursor == *itrLine;
   bool changeSent = false;
   if(itrCursorSecond)
@@ -1123,8 +1152,15 @@ void TSHEdit::Insert(const wchar_t * text)
   else
     ProcessChange(linesMovedFrom, linesMoved, changed);
 
+  #ifdef DEBUG_UNDO
+  UndoCheck();
+  #endif
+
   if(FOnChange != NULL && !changeSent)
     FOnChange(this);
+  Action("    done");
+
+
 }
 //---------------------------------------------------------------------------
 void TSHEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed)
@@ -1181,7 +1217,7 @@ void TSHEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed)
 //---------------------------------------------------------------------------
 void TSHEdit::UpdateVBar()
 {
-  if(buffer->GetLineCount() >= GetVisLineCount() - 5 && buffer->GetLineCount() >= GetVisLineCount()*4/3)
+  if(buffer->GetLineCount() >= GetVisLineCount() - 5 && buffer->GetLineCount() >= GetVisLineCount()*3/4)
   {
     if(!VBar->Visible)
     {
@@ -1425,20 +1461,61 @@ void __fastcall TSHEdit::SetLanguageDefinition(LanguageDefinition * def)
   parser->SetLangDef(def);
 }
 //---------------------------------------------------------------------------
-
+ void TSHEdit::Action(String msg, bool end)
+{
+  #ifdef DEBUG
+  Write(msg + PositionDescription(), end);
+  CheckIntegrity();
+  CheckIterIntegrity(itrLine);
+  CheckIterIntegrity(itrCursor);
+  #endif
+}
+//---------------------------------------------------------------------------
 #ifdef DEBUG
 void __fastcall TSHEdit::Log(String str)
 {
   if(dbgLog != NULL)
     this->dbgLog->Lines->Add(str);
 }
-#endif
 //---------------------------------------------------------------------------
-#ifdef DEBUG
-void TSHEdit::Write(AnsiString message)
+void TSHEdit::UndoCheck()
+{
+  Action("UndoCheck", false);
+  int x = itrCursor->GetLeftOffset();
+  int y = itrCursor->linenum;
+  Iter * a;
+  Iter * b;
+  a = buffer->Undo(b);
+  delete a;
+  delete b;
+  Action("RedoCheck", false);
+  a = buffer->Redo(b);
+  delete a;
+  delete b;
+  Action("done", false);
+}
+//---------------------------------------------------------------------------
+String TSHEdit::Escape(String str)
+{
+  for(int i = 1; i <= str.Length(); i++)
+    if( str[i] < 32)
+      str[i] = '_';
+  return str;
+}
+//---------------------------------------------------------------------------
+String TSHEdit::PositionDescription()
+{
+  return String(" --- ") + GetCursorCaretY() + ":" + GetCursorCaretX() + " '" + Escape(SelText) + "'";
+}
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+void TSHEdit::Write(String message, bool end)
 {
 #ifdef DEBUG_LOGGING
-  myfile << message.c_str() << std::endl;
+  assert(myfile.is_open());
+  myfile << UTF8String(message.c_str()).c_str();
+  if(end)
+    myfile << std::endl;
 #endif
 }
 #endif
@@ -1470,6 +1547,8 @@ void TSHEdit::Write(AnsiString message)
 //---------------------------------------------------------------------------
      String __fastcall TSHEdit::GetSelText()
      {
+      if(GetCursor() == NULL || GetCursorEnd() == NULL)
+        return L"";
       //memoryleak?
        return String(buffer->GetText(GetCursor(), GetCursorEnd()));
      }
@@ -1522,7 +1601,7 @@ Iter * TSHEdit::End()
 //---------------------------------------------------------------------------
       int TSHEdit::GetCursorCaretY()
       {
-      return GetCursor()->GetLeftOffset();
+      return GetCursor()->pos;
 }
 //---------------------------------------------------------------------------
       int __fastcall TSHEdit::GetLineHeight()
@@ -1532,6 +1611,7 @@ Iter * TSHEdit::End()
 //---------------------------------------------------------------------------
       void TSHEdit::Clear()
       {
+       Action("Clearing");
         Iter * beg = buffer->Begin();
         Iter * end = buffer->End();
         buffer->Delete(beg,end);
@@ -1542,6 +1622,8 @@ Iter * TSHEdit::End()
 //---------------------------------------------------------------------------
       void TSHEdit::AddLine(const String& string)
       {
+
+  Action("Adding line");
         Iter * end = buffer->End();
         bool begin = *end == *itrLine && itrLine->linenum == 1;
         parser->ParseFromLine(end->line, end->linenum, Visible(end) ? 2 : 0);

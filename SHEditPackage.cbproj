@@ -33,16 +33,16 @@
 			<Multithreaded>true</Multithreaded>
 			<DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE</DCC_UnitAlias>
-			<DynamicRTL>true</DynamicRTL>
-			<UsePackages>true</UsePackages>
 			<IntermediateOutputDir>.\$(Config)\$(Platform)</IntermediateOutputDir>
 			<BCC_wpar>false</BCC_wpar>
 			<BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
 			<BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
 			<BCC_DisableOptimizations>true</BCC_DisableOptimizations>
+			<BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
+			<DynamicRTL>false</DynamicRTL>
+			<ILINK_AdditionalOptions>-Gl</ILINK_AdditionalOptions>
 			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
 			<Defines>_DEBUG;$(Defines)</Defines>
@@ -58,6 +58,7 @@
 			<ILINK_LibraryPath>$(BDSLIB)\$(PLATFORM)\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DynamicRTL>false</DynamicRTL>
 			<Defines>NDEBUG;$(Defines)</Defines>
 			<TASM_Debugging>None</TASM_Debugging>
 		</PropertyGroup>
@@ -176,7 +177,6 @@
 						<Excluded_Packages Name="$(BDS)\Components\Bpl\MCComponents.bpl">Medicalc Components</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\bcboffice2k150.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\bcbofficexp150.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
-						<Excluded_Packages Name="K:\Bpl\DScintillaSQL.bpl">DScintillaSQL</Excluded_Packages>
 					</Excluded_Packages>
 					<ProjectProperties>
 						<ProjectProperties Name="AutoShowDeps">False</ProjectProperties>

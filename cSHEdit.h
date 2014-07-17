@@ -170,6 +170,9 @@ namespace SHEdit
 
       void __fastcall OnTimer(TObject * Sender);                                                    /*!< ensures cursor blinking :) */
 
+      void __fastcall OnEnterHandler(TObject * Sender);
+
+      void Action(String name, bool end = true);
     protected:
       virtual void __fastcall Paint();
       virtual void __fastcall PaintWindow(HDC DC);
@@ -220,7 +223,10 @@ namespace SHEdit
       void __fastcall Log(String str);
       void CheckIntegrity();
       void CheckIterIntegrity(Iter * itr);
-      void Write(AnsiString message);
+      void UndoCheck();
+      void Write(String message, bool endl = true);
+      String PositionDescription();
+      String Escape(String str);
 #endif
       friend class Drawer;
       friend class Parser;

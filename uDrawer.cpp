@@ -86,7 +86,7 @@ void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontS
       drawcanvas->Pen->Color = (TColor)0xFFFFFF;
       drawcanvas->Brush->Color = (TColor)0xFFFFFF;
     }
-    drawcanvas->Rectangle(x > linenumwidth+3 ? x+1 : x, y, parent->Width, y+linesize);
+    drawcanvas->Rectangle(x > linenumwidth+3 ? x+1 : x-1, y, parent->Width, y+linesize);
   }
 #endif
 

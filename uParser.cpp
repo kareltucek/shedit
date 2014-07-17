@@ -668,8 +668,11 @@ jmp:
   }
   if(*(it2->ptr) == '\n' || type == LangDefSpecType::Empty || (inword && langdef->IsAlNum(it2->GetNextChar())))
   {
+    bool rtn=false;
+    if (*(it2->ptr) != '\n' && type != LangDefSpecType::Empty && inword && langdef->IsAlNum(it2->GetNextChar())) //recursivity is not an option here
+      rtn = CanGoFurther(sit, it2, inword, false, recursive);
     delete it2;
-    return false;
+    return rtn;
   }
   actFormat += *(sit.current->format);
   if(recursive)

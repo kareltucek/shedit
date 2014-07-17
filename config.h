@@ -1,10 +1,16 @@
-//define DEBUG                       //includes debug bindings
-//define DEBUG_LOGGING              //enables logging to files
+#define DEBUG                       //includes debug bindings
+#define DEBUG_LOGGING              //enables logging to files
+//define DEBUG_UNDO                 //test undo each time a change is made to buffer
+//define DEBUG_FORCE_SHORTCUTTS      //disables onkey_whatever events that may override the debug keys
 //define DEBUG_PARSELINELOOP
 //define DEBUG_CURSOR               //For debug of mouse-selection; disables movement updates
 #define DEBUG_REPAINT false
 
-//#define DOUBLE_BUFFERED
+#ifndef DEBUG
+  #define NDEBUG       //disables asserts (iff this header is included before the assert header)3
+#endif
+
+#define DOUBLE_BUFFERED
 #define FULL_WIDTH_PAINT
 #define TAB_WIDTH 2
 //define DRAW_POS

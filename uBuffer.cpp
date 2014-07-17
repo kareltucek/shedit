@@ -277,7 +277,7 @@ int Buffer::Delete(Iter * From, Iter * To)
   }
   else if(*(From->word->string) == '\n' && From->word->next == To->word && To->offset == 0)
   {
-    Range * r = new Range(From->word, From->word, false, From->line->nextline, From->line, false, 1);
+    Range * r = new Range(From->word, From->word, false, From->line->nextline, From->line->nextline, false, 1);
     _Delete((NSpan*)(From->word));
     data->linecount--;
     UndoPush(new UndoTask(new Action(From->linenum, To->linenum, From->pos, To->pos, Action::ActionType::deletion), r));
