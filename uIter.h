@@ -3,9 +3,9 @@
 #ifndef uIterH
 #define uIterH
 
+#include <vcl.h>
 #include "config.h"
 #include "uIPos.h"
-#include <vcl.h>
 
 namespace SHEdit
 {
