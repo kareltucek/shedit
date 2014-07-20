@@ -75,12 +75,16 @@ sub parse{
       {
         push(@lines, "$_\n");
       }
-
+      
     }
     close FILE;
     open (FILE, '>', $file);
       for (@lines)
       {
+        if(m/^(.*?)[ ]*(\/\*\!\<.*)/)
+        {
+          $_ = sprintf("%-100s %s\n", $1, $2);
+        }
         print FILE $_;
       }
       close FILE;

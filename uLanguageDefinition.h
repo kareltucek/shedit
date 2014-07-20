@@ -87,7 +87,7 @@ namespace SHEdit
       TreeNode * tree;
 
       TreeNode* FindOrCreateItem(TreeNode * item, wchar_t c, TreeNode * at);
-      LangDefSpecType Go(SearchIter * item, wchar_t c, bool & lookahead); /*!< Serves Parser for retrieving information about where to go further. Lookahead is set to true, if item was returned to empty and directly went to first unmatched character */
+      LangDefSpecType Go(SearchIter * item, wchar_t c, bool & lookahead);                            /*!< Serves Parser for retrieving information about where to go further. Lookahead is set to true, if item was returned to empty and directly went to first unmatched character */
 
       void _AddPush(bool tobegin, wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short newgmask);
       void _AddJump(bool tobegin, wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short newgmask); /*!< Adds a custom jump from "at" tree to "to" tree.*/
@@ -155,26 +155,26 @@ namespace SHEdit
         bool operator!=(const SearchIter& sit);
       };
 
-      void AddPops(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2, short newgmask = 0);  /*!< Just an abreviation. */
+      void AddPops(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2, short newgmask = 0); /*!< Just an abreviation. */
       void AddJumps(wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0, short newgmask= 0); /*!< Just an abreviation. */
       void AddJumpsFront(wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0, short newgmask= 0); /*!< Just an abreviation. */
-      void AddPushes(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0);  /*!< Just an abreviation. */
-      void AddPushesFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0);   /*!< Just an abreviation. */
+      void AddPushes(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0); /*!< Just an abreviation. */
+      void AddPushesFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0); /*!< Just an abreviation. */
 
-      void AddKeywords(wchar_t * string, FontStyle * format, TreeNode * at = NULL); /*!< Adds all words that are contained in string (as space-separated list) to the tree given as "at". If tree is not given, then the main root is used */
+      void AddKeywords(wchar_t * string, FontStyle * format, TreeNode * at = NULL);                  /*!< Adds all words that are contained in string (as space-separated list) to the tree given as "at". If tree is not given, then the main root is used */
       void AddJump(wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0, short gmask= 0); /*!< Adds a custom jump from "at" tree to "to" tree. String is a space separated list.*/
       void AddJumpFront(wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask = 0, short newmask = 0, short gmask= 0); /*!< Like AddJump but adds new jumps to the beginning of jump list.*/
       void AddPush(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0); /*!< Adds pushes specified by string (as space separated list. */
       void AddPushFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0);
       void AddPop(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2, short newgmask = 0);
-      void AddWord(wchar_t * string, FontStyle * format, TreeNode * at = NULL); /*!< Adds a wordtag item (i.e. for highlighting php variables as $test just by $) */
+      void AddWord(wchar_t * string, FontStyle * format, TreeNode * at = NULL);                      /*!< Adds a wordtag item (i.e. for highlighting php variables as $test just by $) */
       TreeNode * AddLine(wchar_t * string, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); /*!< Adds a linetag item - as c commenting //. Returns new tree that was created for the line's formatting. Is an abbreviation for double jump. */
       TreeNode * AddLineStrong(wchar_t * string, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); /*!< as AddLine, but stores entire state of parser and at the end of line it restores it back. */
       TreeNode * AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); /*!< Is just an abreviation for two jumps. Adds jump from "opening" tag at "at" tree to newly created tree and then corresponding jump back */
       TreeNode * AddPushPopPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at, TreeNode * to, short mask); /*!< Is just an abreviation for push that adds the mask and pop that is conditioned by the same mask.*/
-      TreeNode * AddNewTree(FontStyle * format); /*!< Just creates and returns an empty new tree with format as the default format */
-      TreeNode * AddNewTree(FontStyle * format, bool caseSensitive); /*!< Just creates and returns an empty new tree with format as the default format */
-      TreeNode * AddDupTree(TreeNode * tree, FontStyle * format); /*!< Duplicates the base of tree provided with the format provided. All pointers remain intact - one tree may have more than one bases. By making changes that are deeper than the duplicated TreeNode's member pointers, then you are making changes to both trees. */
+      TreeNode * AddNewTree(FontStyle * format);                                                     /*!< Just creates and returns an empty new tree with format as the default format */
+      TreeNode * AddNewTree(FontStyle * format, bool caseSensitive);                                 /*!< Just creates and returns an empty new tree with format as the default format */
+      TreeNode * AddDupTree(TreeNode * tree, FontStyle * format);                                    /*!< Duplicates the base of tree provided with the format provided. All pointers remain intact - one tree may have more than one bases. By making changes that are deeper than the duplicated TreeNode's member pointers, then you are making changes to both trees. */
 
       void SetTreeCaseSensitive(TreeNode * item, bool caseSensitive);
 
@@ -188,12 +188,12 @@ namespace SHEdit
       virtual bool IsAl(wchar_t c);
       virtual bool IsAlNum(wchar_t c);
       virtual bool IsNum(wchar_t c);
-      virtual bool IsWhite(wchar_t c); /*!< not used anywhere in project if I am not mistaken */
+      virtual bool IsWhite(wchar_t c);                                                               /*!< not used anywhere in project if I am not mistaken */
 
       TreeNode* GetTree();
       SearchIter GetDefSC(short id);
 
-      //TreeNode* GetSpecItem(short id); /*!< returns item corresponding with mask (mask is actually just identifier atm */
+      //TreeNode* GetSpecItem(short id);                                                             /*!< returns item corresponding with mask (mask is actually just identifier atm */
   };
 }
 //---------------------------------------------------------------------------

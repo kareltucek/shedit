@@ -272,7 +272,7 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
   }
 #endif
   if(itrCursor == itrCursorSecond)
-    itrCursorSecond = NULL;
+    itrCursorSecond.Invalidate();
   switch(Key)
   {
     case VK_DELETE:
@@ -935,12 +935,12 @@ void TSHEdit::ProcessMouseClear(bool redraw, bool deleteiter)
 //---------------------------------------------------------------------------
 Iter * TSHEdit::GetCursorIter()
 {
-  return itrCursor < itrCursorSecond ? &itrCursor : &itrCursorSecond;
+  return (itrCursorSecond.Valid() && itrCursor > itrCursorSecond) ? &itrCursorSecond : &itrCursor;
 }
 //---------------------------------------------------------------------------
 Iter * TSHEdit::GetCursorIterEnd()
 {
-  return itrCursor > itrCursorSecond ? &itrCursor : &itrCursorSecond;
+  return (itrCursorSecond.Valid() && itrCursor < itrCursorSecond) ? &itrCursorSecond : &itrCursor;
 }
 //---------------------------------------------------------------------------
 
@@ -1366,8 +1366,11 @@ void TSHEdit::SelectAll()
   this->ProcessMouseClear(false, true);
   itrCursor = buffer->begin();
   itrCursorSecond = buffer->end();
-  itrCursor.IMarkupBegin(this->selectionFormat);
-  itrLine.IMarkupBegin(this->selectionFormat);
+  if(itrCursor != itrCursorSecond)
+  {
+    itrCursor.IMarkupBegin(this->selectionFormat);
+    itrCursorSecond.IMarkupEnd(this->selectionFormat);
+  }
   parser->ParseFromToLine(itrLine.line, itrLine.linenum, GetVisLineCount(), 2);
   UpdateCursor(false);
   parser->Execute();
@@ -1572,12 +1575,12 @@ CIter TSHEdit::end()
 //---------------------------------------------------------------------------
 CIter TSHEdit::GetCursor()
 {
-  return CIter(this, GetCursor(), false, false);
+  return CIter(this, *GetCursorIter(), false, false);
 }
 //---------------------------------------------------------------------------
 CIter TSHEdit::GetCursorEnd()
 {
-  return CIter(this, GetCursorEnd(), true, false);
+  return CIter(this, *GetCursorIterEnd(), true, false);
 }
 //---------------------------------------------------------------------------
       int TSHEdit::GetCursorX()

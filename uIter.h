@@ -41,23 +41,22 @@ namespace SHEdit
       friend class Span;
       friend class NSpan;
 
-      Span * word; /*!< Pointer to current Span in buffer's structure */
-      int offset; /*!< Offset from beginning of current Span */
-      wchar_t * ptr; /*!< Direct pointer to current character */
+      Span * word;                                                                                   /*!< Pointer to current Span in buffer's structure */
+      int offset;                                                                                    /*!< Offset from beginning of current Span */
+      wchar_t * ptr;                                                                                 /*!< Direct pointer to current character */
 
-      int nextimark;/*!< See the Iter class info for explanation */
-      int nextimarkln;/*!< See the Iter class info for explanation */
+      int nextimark;                                                                                 /*!< See the Iter class info for explanation */
+      int nextimarkln;                                                                               /*!< See the Iter class info for explanation */
 
-      bool GoWord(); /*!< Goes to beginning of next Span */
+      bool GoWord();                                                                                 /*!< Goes to beginning of next Span */
       bool RevWord();
       bool RevWordBegin();
 
-      virtual void Update();/*!< Is called when structure of underlying buffer changed, to allow descendants to update their links to the physical structure. */
-      virtual void UpdatePos();/*!< Basically same as Update(), but handles repositioning */
-      virtual void RecalcPos();/*!< Recalculates IPos::pos, according to descendant's own positioning */
-      void UpdateNextImark();/*!< See the Iter class info for explanation */
-      void Invalidate();
-      bool Valid();
+      virtual void Update();                                                                         /*!< Is called when structure of underlying buffer changed, to allow descendants to update their links to the physical structure. */
+      virtual void UpdatePos();                                                                      /*!< Basically same as Update(), but handles repositioning */
+      virtual void RecalcPos();                                                                      /*!< Recalculates IPos::pos, according to descendant's own positioning */
+      void UpdateNextImark();                                                                        /*!< See the Iter class info for explanation */
+
 
     public:
       Iter();
@@ -67,12 +66,15 @@ namespace SHEdit
       Iter(int offset, Span * word, NSpan * line, Buffer * buffer, int linenum = -1);
       ~Iter();
 
-      bool GoLine(bool allowEnd = false)/*AUTOGEN_UPDATE*/; /*!< Goes to the pos 0 of next line. That is the offset 0 of first Span after nextline NSpan */
+      void Invalidate();
+      bool Valid() /*AUTOGEN_PASS*/;
+
+      bool GoLine(bool allowEnd = false)/*AUTOGEN_UPDATE*/;                                          /*!< Goes to the pos 0 of next line. That is the offset 0 of first Span after nextline NSpan */
       bool GoLineEnd()/*AUTOGEN_UPDATE*/;
       bool GoLineStart()/*AUTOGEN_UPDATE*/;
       bool RevLine()/*AUTOGEN_UPDATE*/;
       bool RevLineBegin()/*AUTOGEN_UPDATE*/;
-      bool GoChar()/*AUTOGEN_UPDATE*/; /*!< Increments iterator by 1 */
+      bool GoChar()/*AUTOGEN_UPDATE*/;                                                               /*!< Increments iterator by 1 */
       bool RevChar()/*AUTOGEN_UPDATE*/;
 
       wchar_t GetNextChar()/*AUTOGEN_PASS*/;
@@ -80,26 +82,26 @@ namespace SHEdit
 
       int GetLineNum()/*AUTOGEN_PASS*/;
 
-      int GetLeftOffset()/*AUTOGEN_PASS*/; /*!< Returns left offset counting tabs as multiple characters according to the tabstop */
-      void GoByOffset(int chars)/*AUTOGEN_UPDATE*/; /*!< Goes forward countint tabs as multiple characters according to the tabstop. Always stays on the same line. */
-      void GoBy(int chars, bool multiline = false)/*AUTOGEN_UPDATE*/; /*!< Goes forward counting tabs as single character. Always stays on the same line. */
-      void GoLeft(int chars, bool multiline = false)/*AUTOGEN_UPDATE*/; /*!< Goes forward counting tabs as single character. always stays on the same line */
+      int GetLeftOffset()/*AUTOGEN_PASS*/;                                                           /*!< Returns left offset counting tabs as multiple characters according to the tabstop */
+      void GoByOffset(int chars)/*AUTOGEN_UPDATE*/;                                                  /*!< Goes forward countint tabs as multiple characters according to the tabstop. Always stays on the same line. */
+      void GoBy(int chars, bool multiline = false)/*AUTOGEN_UPDATE*/;                                /*!< Goes forward counting tabs as single character. Always stays on the same line. */
+      void GoLeft(int chars, bool multiline = false)/*AUTOGEN_UPDATE*/;                              /*!< Goes forward counting tabs as single character. always stays on the same line */
 
       int GetDistance(Iter* itr)/*AUTOGEN_PASS*/;
 
-      void MarkupBegin(SHEdit::Format * format)/*AUTOGEN_PASS*/; /*!< Adds positionless markup. For formatting overview see \ref index */
-      void MarkupEnd(SHEdit::Format * format)/*AUTOGEN_PASS*/;/*!< Adds positionless markup. For formatting overview see \ref index */
-      void MarkupRem(SHEdit::Format * format)/*AUTOGEN_PASS*/;/*!< Removes all positionless markup from current position. For formatting overview see \ref index */
+      void MarkupBegin(SHEdit::Format * format)/*AUTOGEN_PASS*/;                                     /*!< Adds positionless markup. For formatting overview see \ref index */
+      void MarkupEnd(SHEdit::Format * format)/*AUTOGEN_PASS*/;                                       /*!< Adds positionless markup. For formatting overview see \ref index */
+      void MarkupRem(SHEdit::Format * format)/*AUTOGEN_PASS*/;                                       /*!< Removes all positionless markup from current position. For formatting overview see \ref index */
 
       bool FindNext(wchar_t * string, bool skip = true, bool caseSensitive = true, bool wholeword = false)/*AUTOGEN_UPDATE*/; /*!< skip defines whether to match word directly at cursor or not */
-      bool FindPrev(wchar_t * string, bool skip = true, bool caseSensitive = true, bool wholeword= false)/*AUTOGEN_UPDATE*/;    /*!< same as findnext */
-      bool IsUnderCursor(const wchar_t *& string, bool caseSensitive, bool wholeword)/*AUTOGEN_PASS*/;  //used as test for search;
+      bool FindPrev(wchar_t * string, bool skip = true, bool caseSensitive = true, bool wholeword= false)/*AUTOGEN_UPDATE*/; /*!< same as findnext */
+      bool IsUnderCursor(const wchar_t *& string, bool caseSensitive, bool wholeword)/*AUTOGEN_PASS*/; /*!< Tests if the string is at the position of cursor. Serves for FindNext/FindNext. */
       bool LineIsEmpty()/*AUTOGEN_PASS*/;
 
       void GoToLine(int line)/*AUTOGEN_UPDATE*/;
       String GetLine()/*AUTOGEN_PASS*/;
 
-      Iter * Duplicate(); /*!<  returns pointer to valid duplicate of Iter. */
+      Iter * Duplicate();                                                                            /*!<  returns pointer to valid duplicate of Iter. */
 
       Iter& operator=(const Iter& itr);
       bool operator==(const Iter& itr);

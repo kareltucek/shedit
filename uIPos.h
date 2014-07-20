@@ -41,28 +41,28 @@ namespace SHEdit
       void Invalidate();
       bool Valid();
 
-      Buffer * buffer;  /*!< A pointer to buffer that owns data pointed to by IPos instance. If buffer is null, then IPos or Iter respectively works in a "position less mode", and in that case does not guarantee to remain valid*/
-      NSpan * line; /*!< Pointer to the befinning of current line. Positioning relies on correct line and linenum initialization. Other members can be recalculated */
-      int linenum; /*!< Line number of relative line. Is correct as long as it was correctly initialized and the buffer pointer is valid */
-      int pos; /*!< Left offset. Does treat tabs as characters. */
-      IPType type; /*!< Determines type of object - allows IPos casted IMark/Iter comparisons without requiring dynamic casting. */
+      Buffer * buffer;                                                                               /*!< A pointer to buffer that owns data pointed to by IPos instance. If buffer is null, then IPos or Iter respectively works in a "position less mode", and in that case does not guarantee to remain valid*/
+      NSpan * line;                                                                                  /*!< Pointer to the befinning of current line. Positioning relies on correct line and linenum initialization. Other members can be recalculated */
+      int linenum;                                                                                   /*!< Line number of relative line. Is correct as long as it was correctly initialized and the buffer pointer is valid */
+      int pos;                                                                                       /*!< Left offset. Does treat tabs as characters. */
+      IPType type;                                                                                   /*!< Determines type of object - allows IPos casted IMark/Iter comparisons without requiring dynamic casting. */
 
-      virtual void Update(); /*!< Is called when structure of underlying buffer changed, to allow descendants to update their links to the physical structure. */
-      virtual void UpdatePos(); /*!< Basically same as Update(), but handles repositioning */
-      virtual void RecalcPos(); /*!< Recalculates IPos::pos, according to descendant's own positioning */
+      virtual void Update();                                                                         /*!< Is called when structure of underlying buffer changed, to allow descendants to update their links to the physical structure. */
+      virtual void UpdatePos();                                                                      /*!< Basically same as Update(), but handles repositioning */
+      virtual void RecalcPos();                                                                      /*!< Recalculates IPos::pos, according to descendant's own positioning */
 
       bool operator==(const IPos& p);
       IPos& operator=(const IPos& p);
 
-      static bool Compare(const IPos*& a, const IPos*& b); /*!< Returns true if "a" is to be considered to go befor "b" in buffer. For descendants should be also able to take into acount their positioning needs (i.e. when the position itself is the same, but some markup should be processed before other; its implemented this way to work with template asociative containers that do not allow comparing against other then template type) */
+      static bool Compare(const IPos*& a, const IPos*& b);                                           /*!< Returns true if "a" is to be considered to go befor "b" in buffer. For descendants should be also able to take into acount their positioning needs (i.e. when the position itself is the same, but some markup should be processed before other; its implemented this way to work with template asociative containers that do not allow comparing against other then template type) */
       struct compare
       {
         bool operator()(const IPos* a, const IPos* b) const;
       };
 
-      IMark* IMarkupBegin(SHEdit::Format * format); /*!< Places Iterator handled mark at IPos's position. For formatting overview see \ref index . For more specific info see IMark class */
-      IMark* IMarkupEnd(SHEdit::Format * format);/*!< Places Iterator handled mark at IPos's position. For formatting overview see \ref index . For more specific info see IMark class */
-      FontStyle ReconstructIMarkFontStyle();/*!< Returns current FontStyle determined by Iterator handled markup. For formatting overview see \ref index . For more specific info see IMark class */
+      IMark* IMarkupBegin(SHEdit::Format * format);                                                  /*!< Places Iterator handled mark at IPos's position. For formatting overview see \ref index . For more specific info see IMark class */
+      IMark* IMarkupEnd(SHEdit::Format * format);                                                    /*!< Places Iterator handled mark at IPos's position. For formatting overview see \ref index . For more specific info see IMark class */
+      FontStyle ReconstructIMarkFontStyle();                                                         /*!< Returns current FontStyle determined by Iterator handled markup. For formatting overview see \ref index . For more specific info see IMark class */
   };
 }
 //---------------------------------------------------------------------------

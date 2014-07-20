@@ -105,7 +105,7 @@ namespace SHEdit
       FontStyle actIMarkup;
       int recurse;
 
-      void ReconstructMarkup(); /*!< Reconstructs ActMarkup (that holds positionless markup). Does not update actMarkupCombined. */
+      void ReconstructMarkup();                                                                      /*!< Reconstructs ActMarkup (that holds positionless markup). Does not update actMarkupCombined. */
 
       void Flush();
       void FlushAll();

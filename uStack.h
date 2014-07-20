@@ -34,7 +34,7 @@ template <class T_data> class Stack
       Node * next;
       Node ** prev;
 
-      Node* Remove();                                                         /*!< Returns pointer to the next node, for easier removal of elements while iterating through. Any item of Stack can be removed directly from outside of stack by this. Removed node is directly deleted. */
+      Node* Remove();                                                                                /*!< Returns pointer to the next node, for easier removal of elements while iterating through. Any item of Stack can be removed directly from outside of stack by this. Removed node is directly deleted. */
     };
 
     Node * top;
