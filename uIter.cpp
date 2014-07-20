@@ -32,6 +32,11 @@ using namespace SHEdit;
     GoChar();
 }
 //---------------------------------------------------------------------------
+  Iter::Iter()
+: IPos(), word(NULL), offset(0), ptr(NULL)
+{
+}
+//---------------------------------------------------------------------------
   Iter::Iter(const Iter& it)
 : IPos(it)
 {
@@ -64,6 +69,19 @@ using namespace SHEdit;
 //---------------------------------------------------------------------------
 Iter::~Iter()
 {
+}
+//---------------------------------------------------------------------------
+bool Iter::Valid()
+{
+  return this->IPos::Valid();
+}
+//---------------------------------------------------------------------------
+void Iter::Invalidate()
+{
+  this->IPos::Invalidate();
+  word = NULL;
+  offset = 0;
+  ptr = NULL;
 }
 //---------------------------------------------------------------------------
 bool Iter::GoLine(bool allowEnd)
@@ -192,6 +210,11 @@ wchar_t Iter::GetNextChar()
   return c;
 }
 //---------------------------------------------------------------------------
+wchar_t Iter::GetChar()
+{
+  return *ptr;
+}
+//---------------------------------------------------------------------------
 bool Iter::RevWord()
 {
   if(word->prev->prev)
@@ -284,16 +307,34 @@ bool Iter::operator!=(const Iter& itr)
   return !(*this == itr);
 }
 //---------------------------------------------------------------------------
-wchar_t& Iter::operator++()
+Iter& Iter::operator++()
 {
   GoChar();
-  return *ptr;
+  return *this;
 }
 //---------------------------------------------------------------------------
-wchar_t& Iter::operator--()
+Iter& Iter::operator--()
 {
   RevChar();
-  return *ptr;
+  return *this;
+}
+//---------------------------------------------------------------------------
+wchar_t& Iter::operator*()
+{
+  return *(this->ptr);
+}
+
+//---------------------------------------------------------------------------
+Iter& Iter::operator=(const Iter& itr)
+{
+  if(&itr == this)
+    return *this;
+
+  ((IPos*)this)->operator=((const IPos&)itr);
+  word = itr.word;
+  offset = itr.offset;
+  ptr = itr.ptr;
+  return *this;
 }
 //---------------------------------------------------------------------------
 void Iter::MarkupBegin( SHEdit::Format * format)
@@ -550,4 +591,9 @@ bool Iter::LineIsEmpty()
   if(line->next != NULL && line->next == (Span*)line->nextline)
     return true;
     return false;
+}
+//---------------------------------------------------------------------------
+int Iter::GetLineNum()
+{
+  return linenum;
 }

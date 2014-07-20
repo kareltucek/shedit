@@ -22,12 +22,24 @@ namespace SHEdit
 
   class IPos
   {
+    private:
+      friend class TSHEdit;
+      friend class Buffer;
+      friend class Parser;
+      friend class Span;
+      friend class NSpan;
+
+      void Copy(const IPos& ip);
     public:
       enum IPType{iptPos, iptIter, iptMark};
 
+      IPos();
       IPos(const IPos& ipos);
       IPos(Buffer * buffer, NSpan * line, int linenum, int pos);
       ~IPos();
+
+      void Invalidate();
+      bool Valid();
 
       Buffer * buffer;  /*!< A pointer to buffer that owns data pointed to by IPos instance. If buffer is null, then IPos or Iter respectively works in a "position less mode", and in that case does not guarantee to remain valid*/
       NSpan * line; /*!< Pointer to the befinning of current line. Positioning relies on correct line and linenum initialization. Other members can be recalculated */
@@ -40,6 +52,7 @@ namespace SHEdit
       virtual void RecalcPos(); /*!< Recalculates IPos::pos, according to descendant's own positioning */
 
       bool operator==(const IPos& p);
+      IPos& operator=(const IPos& p);
 
       static bool Compare(const IPos*& a, const IPos*& b); /*!< Returns true if "a" is to be considered to go befor "b" in buffer. For descendants should be also able to take into acount their positioning needs (i.e. when the position itself is the same, but some markup should be processed before other; its implemented this way to work with template asociative containers that do not allow comparing against other then template type) */
       struct compare

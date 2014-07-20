@@ -23,6 +23,7 @@
 #include "uBuffer.h"
 #include "uDrawer.h"
 #include "uParser.h"
+#include "uCursor.h"
 #include <windows.h>
 
 using namespace SHEdit;
@@ -59,7 +60,8 @@ namespace SHEdit
    *
    * Editting/Getting data into/out of component
    * -------------------------------------------
-   *  All editing etc should be done through the public members of TSHEdit and Iterators that were obtained from the TSHEdit instance (not manually created). Members are quite self-explaining, so it should not be problem to find out yourself.
+   * All editing etc should be done through the public members of TSHEdit and Cursor iterators that were obtained from the TSHEdit instance (not manually created). Members are quite self-explaining, so it should not be problem to find out yourself. Note that difference between the classes Iter and CIter is that the CIter is an interface of the Iter that takes care of Updating the component - You can get hold of iters, but you should not use them for making changes in buffer, as long as you do not want to have to take care of repainting the screen manually.
+   *
    *
    *  Line numbering starts from 1. Line position numbering starts from 0. Each position refers to position on one line - i.e. pos higher than line width is not interpretted as position on next line but should end up at end of line. There is no global position numbering - just line + line position pairs.
    *
@@ -118,9 +120,9 @@ namespace SHEdit
   class PACKAGE TSHEdit : public TCustomControl
   {
     private:
-      Iter * itrLine;                                                                               /*!< Iterator that points to the first line of window*/
-      Iter * itrCursor;                                                                             /*!< Points to actually edited position. If there is mouse drag occuring, then itrCursor is always position where drag started, To get begenning of selected area, use GetCursor() function*/
-      Iter * itrCursorSecond;                                                                       /*!< Serves for mouse dragging - always is the iterator that is dragged along*/
+      Iter itrLine;                                                                               /*!< Iterator that points to the first line of window*/
+      Iter itrCursor;                                                                             /*!< Points to actually edited position. If there is mouse drag occuring, then itrCursor is always position where drag started, To get begenning of selected area, use GetCursor() function*/
+      Iter itrCursorSecond;                                                                       /*!< Serves for mouse dragging - always is the iterator that is dragged along*/
       Buffer * buffer;                                                                              /*!< */
 
       HHOOK KBHook;                                                                                 /*!< Serves for intercepting of keyboard events, that are not by default passed to components*/
@@ -147,7 +149,7 @@ namespace SHEdit
       int GetScrollStep();
       int maxScrollStep;
 
-      Iter * XYtoItr(int& x, int& y);                                                               /*!< Converts coordinates to coresponding iterator. */
+      Iter XYtoItr(int& x, int& y);                                                               /*!< Converts coordinates to coresponding iterator. */
       void UpdateCursor(bool paint);                                                                /*!< Recalculates position of itrCursor, and posts results to the drawer. If paint is set to true, it also asks drawer to redraw window.*/
       void ProcessMouseMove(int& x, int& y);                                                        /*!< processes mouse drag info (called from mouse move and mouse up handlers). */
       void ProcessMouseClear(bool redraw, bool deletecursord);                                      /*!< clears selection */
@@ -155,7 +157,6 @@ namespace SHEdit
       Format * searchFormat;
       bool mouseDown;
       bool mouseSelect;                                                                             /*!< Whether component is in text-selection (=mouse drag) mode.*/
-      bool cursorsInInvOrder;                                                                       /*!< obsolete*/
       int dx, dy;                                                                                   /*!< Position of mouse down.*/
       int cx, cy;                                                                                   /*!< Cursor position*/
       int mx, my;                                                                                   /*!< Position of itrCursorSecond*/
@@ -188,16 +189,16 @@ namespace SHEdit
       void __fastcall KeyUpHandler(System::TObject * Sender,System::Word &Key, Classes::TShiftState Shift)         ;
 
       TClipboard * clipboard;
-      void DeleteSel(bool allowsync = true);                                                        /*!< Handles all deletion tasks (except load file)*/
-      void Insert(const wchar_t * text);                                                                  /*!< Handles all insertions.*/
+      void DeleteSel(bool allowsync = true, Iter * start = NULL, Iter * end = NULL);                  /*!< Handles all deletion tasks (except load file). If start or end are NULL, then the deletion is performed on the selection*/
+      void Insert(const wchar_t * text, Iter * itr = NULL);                                          /*!< Handles all insertions.*/
       void ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed);                      /*!< Handles painting of most actions that need just partial movement of some data - line insertions and deletions, scrolling, etc.*/
 
       void ParseScreenBetween(Iter * it1, Iter * it2);                                              /*!< Pushes visible lines between it1 and it2 to parser. Takes care of right order of iters, and of trimming the. */
 
       int __fastcall GetLineNum(NSpan * line);                                                      /*!< Returns line number relative to the first visible line. Relic of a positionless handling*/
-      bool __fastcall GetLineFirst(NSpan * line);
-      Iter * __fastcall GetLineByNum(int num, bool allowEnd);                                       /*!< returns iterator of line numth visible line*/
-      Iter * __fastcall GetLineByNum(int num);                                                      /*!< returns iterator of line numth visible line*/
+      bool __fastcall IsLineFirstVisible(NSpan * line);
+      Iter __fastcall GetLineByNum(int num, bool allowEnd);                                       /*!< returns iterator of line numth visible line*/
+      Iter __fastcall GetLineByNum(int num);                                                      /*!< returns iterator of line numth visible line*/
 
       TKeyPressEvent FOnKeyPress;
       TKeyEvent FOnKeyDown;
@@ -217,6 +218,7 @@ namespace SHEdit
      bool Visible(Iter * itr);
 
      void ProcessNewSelection();
+
     public:
 #ifdef DEBUG
       void __fastcall dbgIter();
@@ -230,6 +232,7 @@ namespace SHEdit
 #endif
       friend class Drawer;
       friend class Parser;
+      friend class CIter;
 
       TMemo * dbgLog;
       int __fastcall GetVisLineCount();
@@ -248,13 +251,14 @@ namespace SHEdit
 
       void AdjustLine(bool paint);
 
-      Iter * GetCursor();                                                                           /*!< If part of text is selected, returns pointer to the beginning of selection (or cursor, if nothing is selected). Pointer points to the component's private iterator - do not modify it unless you know what you are doing. */
-      Iter * GetCursorEnd();                                                                        /*!< If part of text is selected, returns pointer to the end of selection (or NULL, if nothing is selected). Pointer points to the component's private iterator - do not modify it unless you know what you are doing. */
+      CIter GetCursor();                                                                           /*!< */
+      CIter GetCursorEnd();                                                                        /*!<  */
 
-      Iter * Begin();
-      Iter * End();
-      Iter begin();
-      Iter end();
+      Iter * GetCursorIter();                                                                           /*!< If part of text is selected, returns pointer to the beginning of selection (or cursor, if nothing is selected). Pointer points to the component's private iterator - do not modify it unless you know what you are doing. */
+      Iter * GetCursorIterEnd();                                                                        /*!< If part of text is selected, returns pointer to the end of selection (or NULL, if nothing is selected). Pointer points to the component's private iterator - do not modify it unless you know what you are doing. */
+
+      CIter begin();
+      CIter end();
 
       int GetCursorX();
       int GetCursorY();
@@ -286,7 +290,7 @@ namespace SHEdit
       __fastcall TSHEdit(TComponent* Owner);
       __fastcall ~TSHEdit();
 
-      void SetSelection(Iter * first, Iter* second);
+      void SetSelection(Iter * first, Iter *  second);
       String GetRange(Iter * begin, Iter * end);
 
      __property int SelLen = {read=GetSelLen, write=SetSelLen};

@@ -24,7 +24,22 @@ IPos::IPos(Buffer * buffer, NSpan * line, int linenum, int pos)
     buffer->RegisterIP(this);
 }
 //---------------------------------------------------------------------------
+IPos::IPos()
+{
+  Invalidate();
+}
+//---------------------------------------------------------------------------
+bool IPos::Valid()
+{
+  return line != NULL;
+}
+//---------------------------------------------------------------------------
 IPos::IPos(const IPos& ip)
+{
+  Copy(ip);
+}
+//---------------------------------------------------------------------------
+void IPos::Copy(const IPos& ip)
 {
   this->type = ip.type;
   this->pos = ip.pos;
@@ -39,6 +54,17 @@ IPos::~IPos()
 {
   if(buffer != NULL)
     buffer->UnregisterIP(this);
+}
+//---------------------------------------------------------------------------
+void IPos::Invalidate()
+{
+  if(buffer != NULL)
+    buffer->UnregisterIP(this);
+  this->type = IPType::iptPos;
+  this->pos = 0;
+  this->linenum = -1;
+  this->line = NULL;
+  this->buffer = NULL;
 }
 //---------------------------------------------------------------------------
 void IPos::Update()
@@ -84,10 +110,21 @@ bool IPos::compare::operator()(const IPos* a, const IPos* b) const
   return IPos::Compare(a, b);
 }
 //---------------------------------------------------------------------------
-      bool IPos::operator==(const IPos& p)
-      {
-        return (p.pos == this->pos && p.linenum == this->linenum);
-      }
+ bool IPos::operator==(const IPos& p)
+ {
+   return (p.pos == this->pos && p.linenum == this->linenum);
+ }
+//---------------------------------------------------------------------------
+IPos& IPos::operator=(const IPos& p)
+{
+  if(&p == this)
+    return *this;
+
+  if(Valid())
+    Invalidate();
+  Copy(p);
+  return *this;
+}
 //---------------------------------------------------------------------------
 bool IPos::Compare(const IPos*& a, const IPos*& b)
 {

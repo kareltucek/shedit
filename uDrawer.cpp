@@ -192,7 +192,7 @@ void __fastcall Drawer::DrawEndl(short linenum, FontStyle format)
     drawcanvas->Brush->Color = (TColor)0xEEEEEE;
     drawcanvas->Font->Style = TFontStyles();
     drawcanvas->Rectangle(0, y, GetLinenumWidth(), y+linesize);
-    drawcanvas->TextOut(X_OFF, y, String(parent->itrLine->linenum+linenum));
+    drawcanvas->TextOut(X_OFF, y, String(parent->GetActLine()+linenum));
     drawcanvas->MoveTo(GetLinenumWidth(), y);
     drawcanvas->Pen->Color = (TColor)0x444444;
     drawcanvas->LineTo(GetLinenumWidth(), y+linesize);
@@ -262,7 +262,7 @@ void __fastcall Drawer::DrawLinenum(int from)
   drawcanvas->Brush->Color = (TColor)0xEEEEEE;
   drawcanvas->Rectangle(0, from*linesize, GetLinenumWidth(), parent->Height);
   for(int i = parent->Height/linesize, j = from; j <= i; j++)
-    drawcanvas->TextOut(X_OFF, j*linesize, String(parent->itrLine->linenum+j));
+    drawcanvas->TextOut(X_OFF, j*linesize, String(parent->GetActLine()+j));
 
   drawcanvas->Pen->Color = (TColor)0x444444;
   drawcanvas->MoveTo(GetLinenumWidth(), 0);

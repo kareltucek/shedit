@@ -146,6 +146,7 @@ namespace SHEdit
       Iter * First();
       Iter * End();
 
+      int GetItrCount();
 
       Iter begin();
       Iter first();

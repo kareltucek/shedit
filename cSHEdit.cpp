@@ -1,5 +1,4 @@
 //---------------------------------------------------------------------------
-
 #include <vcl.h>
 
 #pragma hdrstop
@@ -85,9 +84,9 @@ TSHEdit * TSHEditFocused; //callback musi jit na statickou metodu...
   OnResize = OnResizeCallback;
 
   buffer = new Buffer();
-  itrLine = buffer->Begin();
-  itrCursor = buffer->End();
-  itrCursorSecond = NULL;
+  itrLine = buffer->begin();
+  itrCursor = buffer->end();
+  itrCursorSecond = Iter();
 
   //this->TWinControl::OnKeyDown = KeyDownHandler;
   //this->TWinControl::OnKeyPress = KeyPressHandler;
@@ -110,7 +109,6 @@ TSHEdit * TSHEditFocused; //callback musi jit na statickou metodu...
   searchColor = clYellow;
   selectionFormat = new Format(NULL, &selColor);
   searchFormat = new Format(NULL, &searchColor);
-  cursorsInInvOrder = false;
 
   clipboard = Clipboard();
 
@@ -135,12 +133,9 @@ __fastcall TSHEdit::~TSHEdit()
   UnhookWindowsHookEx(KBHook);
   if(this == TSHEditFocused)
     TSHEditFocused = NULL;
-  if(itrCursor != NULL)
-    delete itrCursor;
-  if(itrCursorSecond != NULL)
-    delete itrCursorSecond;
-  if(itrLine != NULL)
-    delete itrLine;
+  itrLine.Invalidate();
+  itrCursor.Invalidate();
+  itrCursorSecond.Invalidate();
   delete drawer;
   delete parser;
   delete buffer;
@@ -164,10 +159,10 @@ void __fastcall TSHEdit::RepaintWindow(bool force)
 {
   if(!DEBUG_REPAINT || force)
   {
-    NSpan * line = itrLine->line;
+    NSpan * line = itrLine.line;
     for(int j = GetVisLineCount(), i = 0; i < j; i++)
     {
-      parser->ParseFromLine(line, itrLine->linenum+i, 2);
+      parser->ParseFromLine(line, itrLine.linenum+i, 2);
       if(line->nextline && line->nextline->nextline)
         line = line->nextline;
       else
@@ -243,24 +238,24 @@ void TSHEdit::Scroll(int by)
     {
       if(by > 0)
       {
-        if(itrLine->line->prevline)
+        if(itrLine.line->prevline)
         {
-          itrLine->RevLine();
+          itrLine.RevLine();
           scrolled++;
         }
         by--;
       }
       else
       {
-        if(itrLine->line->nextline && itrLine->line->nextline->nextline && itrLine->line->nextline->nextline->nextline)
+        if(itrLine.line->nextline && itrLine.line->nextline->nextline && itrLine.line->nextline->nextline->nextline)
         {
-          itrLine->GoLine();
+          itrLine.GoLine();
           scrolled--;
         }
         by++;
       }
     }
-    VBar->Position = itrLine->linenum;
+    VBar->Position = itrLine.linenum;
     VBar->PageSize = GetVisLineCount();
     ProcessChange(0, scrolled, NULL);
     UpdateCursor(true);
@@ -276,31 +271,33 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
     FOnKeyDown(this, Key, Shift);
   }
 #endif
+  if(itrCursor == itrCursorSecond)
+    itrCursorSecond = NULL;
   switch(Key)
   {
     case VK_DELETE:
     case VK_BACK:
       if(readonly)
         break;
-      if(!itrCursorSecond)
+      if(!itrCursorSecond.Valid())
       {
-        if(Key == VK_BACK && !(itrCursor->word->prev->prev || (itrCursor->word->prev && itrCursor->offset > 0)))  //have to stop after the head, not on it
+        if(Key == VK_BACK && !(itrCursor.word->prev->prev || (itrCursor.word->prev && itrCursor.offset > 0)))  //have to stop after the head, not on it
         {
           break;
         }
-        if(Key == VK_DELETE && !(itrCursor->word->next))  //have to stop after the head, not on it
+        if(Key == VK_DELETE && !(itrCursor.word->next))  //have to stop after the head, not on it
         {
           break;
         }
-        itrCursorSecond = itrCursor->Duplicate();
+        itrCursorSecond = itrCursor;
         if(Key == VK_BACK)
-          itrCursor->RevChar();
+          itrCursor.RevChar();
         else
-          itrCursorSecond->GoChar();
+          itrCursorSecond.GoChar();
       }
-      if(itrCursorSecond)
+      if(itrCursorSecond.Valid())
         DeleteSel();
-      cursorLeftOffset = itrCursor->GetLeftOffset();
+      cursorLeftOffset = itrCursor.GetLeftOffset();
       AdjustLine(true);
       UpdateCursor(true);
       break;
@@ -309,7 +306,7 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
        LoadFile(L"test.txt");
        return;
      case VK_F3:
-      parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 2);
+      parser->ParseFromLine(itrCursor.line, itrCursor.linenum, 2);
       parser->Execute();
       return;
      case VK_F5:
@@ -335,7 +332,7 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
        return;
      case VK_F9:
        {
-         itrCursor->GoLeft(3);
+         itrCursor.GoLeft(3);
          UpdateCursor(true);
          RepaintWindow(true);
        }
@@ -344,34 +341,34 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
       case VK_F10:
         {
           CheckIntegrity();
-          CheckIterIntegrity(itrCursor);
+          CheckIterIntegrity(&itrCursor);
         }
         break;
 #endif
       case VK_LEFT:
-        itrCursor->RevChar();
+        itrCursor.RevChar();
         AdjustLine(true);
         UpdateCursor(true);
-        cursorLeftOffset = itrCursor->GetLeftOffset();
+        cursorLeftOffset = itrCursor.GetLeftOffset();
         Key = 0;
         break;
       case VK_RIGHT:
-        itrCursor->GoChar();
+        itrCursor.GoChar();
         AdjustLine(true);
         UpdateCursor(true);
-        cursorLeftOffset = itrCursor->GetLeftOffset();
+        cursorLeftOffset = itrCursor.GetLeftOffset();
         Key = 0;
         break;
       case VK_UP:
-        itrCursor->RevLine();
-        itrCursor->GoByOffset(cursorLeftOffset);
+        itrCursor.RevLine();
+        itrCursor.GoByOffset(cursorLeftOffset);
         AdjustLine(true);
         UpdateCursor(true);
         Key = 0;
         break;
       case VK_DOWN:
-        itrCursor->GoLine();
-        itrCursor->GoByOffset(cursorLeftOffset);
+        itrCursor.GoLine();
+        itrCursor.GoByOffset(cursorLeftOffset);
         AdjustLine(true);
         UpdateCursor(true);
         Key = 0;
@@ -384,21 +381,21 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
      for(int i = GetVisLineCount(); i > 0; i--)
      {
        if(Key == VK_PRIOR)
-         itrLine->RevLine();
+         itrLine.RevLine();
        else
-         itrLine->GoLine();
+         itrLine.GoLine();
      }
      UpdateCursor(false);
      UpdateVBar();
      RepaintWindow(true);
      break;
    case VK_HOME:
-     itrCursor->GoLineStart();
+     itrCursor.GoLineStart();
      UpdateCursor(true);
      AdjustLine(true);
      break;
    case VK_END:
-     itrCursor->GoLineEnd();
+     itrCursor.GoLineEnd();
      UpdateCursor(true);
      AdjustLine(true);
      break;
@@ -437,7 +434,7 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
           str[1] = '\0';
           AdjustLine(true);
           Insert(str);
-          cursorLeftOffset = itrCursor->GetLeftOffset();
+          cursorLeftOffset = itrCursor.GetLeftOffset();
           delete str;
         }
         break;
@@ -489,21 +486,20 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
               Action("Redo");
               itr = buffer->Undo(itrbegin);
             }
-            if(itr != NULL)
+            if(itr->Valid())
             {
-              delete itrCursor;
-              itrCursor = itr;
+              itrCursor = *itr;
               if(buffer->GetLineCount() < GetVisLineCount())
               {
-                delete itrLine;
-                itrLine = buffer->Begin();
+                itrLine = buffer->begin();
               }
               AdjustLine(false);
-              if(itrbegin != NULL)
+              if(itrbegin->Valid())
               {
                 parser->ParseFromLine(itrbegin->line, itrbegin->linenum, 0);
                 delete itrbegin;
               }
+              delete itr;
             }
             UpdateVBar();
             UpdateCursor(false);
@@ -540,7 +536,7 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
           {
             return;
           }
-          changed = itrCursor->line;
+          changed = itrCursor.line;
           wchar_t * str = new wchar_t[2];
           str[0] = Key;
           str[1] = '\0';
@@ -548,13 +544,13 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
           {
             str[0] = '\n';
             linesMovedFrom = GetLineNum(changed)+1;
-            if(itrLine->line->prevline == NULL)    //prevent line iter from being moved by insertion
-              itrLine->pos = -1;
+            if(itrLine.line->prevline == NULL)    //prevent line iter from being moved by insertion
+              itrLine.pos = -1;
           }
           //linesMoved = buffer->Insert(itrCursor, str);
           AdjustLine(true);
           Insert(str);
-          cursorLeftOffset = itrCursor->GetLeftOffset();
+          cursorLeftOffset = itrCursor.GetLeftOffset();
           break;
       }
       Key = 0;
@@ -644,19 +640,19 @@ void __fastcall TSHEdit::WndProc(Messages::TMessage &Message)
 //---------------------------------------------------------------------------
 void TSHEdit::AdjustLine(bool paint)
 {
-  int l = GetLineNum(itrCursor->line);
+  int l = GetLineNum(itrCursor.line);
 
   bool needsFullRepaint = false;
   bool needsHAdjustment = ((cx-HBar->Position) < drawer->GetLinenumWidth()+MARGINS && HBar->Position != 0) || (cx-HBar->Position) > this->Width - MARGINS;
 
   int movingby = 0;
-  if(l >= 0 && l <= KEEP_VIS_TOP && itrLine->line->prevline != NULL)
+  if(l >= 0 && l <= KEEP_VIS_TOP && itrLine.line->prevline != NULL)
   {
     for(int i = 0; i < KEEP_VIS_TOP - l; i++)
     {
-      if(itrLine->line->prevline)
+      if(itrLine.line->prevline)
       {
-        itrLine->RevLine();
+        itrLine.RevLine();
         movingby--;
       }
     }
@@ -665,26 +661,25 @@ void TSHEdit::AdjustLine(bool paint)
   {
     for(int i = l; i > GetVisLineCount() - KEEP_VIS_BOTTOM; i--)
     {
-      if(itrLine->line->nextline)
+      if(itrLine.line->nextline)
       {
-        itrLine->GoLine();
+        itrLine.GoLine();
         movingby++;
       }
     }
   }
   else if(l == -1)
   {
-    delete itrLine;
     if(buffer->GetLineCount() <= GetVisLineCount())
     {
-      itrLine = buffer->Begin();
+      itrLine = buffer->begin();
     }
     else
     {
-      itrLine = itrCursor->Duplicate();
-      itrLine->GoLineStart();
+      itrLine = itrCursor;
+      itrLine.GoLineStart();
       for(int i = 0; i < KEEP_VIS_TOP; i++)
-        itrLine->RevLine();
+        itrLine.RevLine();
     }
     needsFullRepaint = true;
   }
@@ -711,25 +706,23 @@ void TSHEdit::AdjustLine(bool paint)
       drawer->DrawMove(0, GetVisLineCount(), -movingby);
     if(movingby < 0)
     {
-      Iter * itr = itrLine->Duplicate();
+      Iter itr = itrLine;
       for(int i = movingby; i <= 0; i++)
       {
-        parser->ParseFromLine(itr->line, itr->linenum, 2);
-        itr->GoLine();
+        parser->ParseFromLine(itr.line, itr.linenum, 2);
+        itr.GoLine();
       }
       parser->Execute();
-      delete itr;
     }
     if(movingby > 0)
     {
-      Iter * itr = GetLineByNum(GetVisLineCount()-movingby);
+      Iter itr = GetLineByNum(GetVisLineCount()-movingby);
       for(int i = movingby; i >= 0; i--)
       {
-        parser->ParseFromLine(itr->line, itr->linenum, 2);
-        itr->RevLine();
+        parser->ParseFromLine(itr.line, itr.linenum, 2);
+        itr.RevLine();
       }
       parser->Execute();
-      delete itr;
     }
   }
 }
@@ -741,6 +734,7 @@ void TSHEdit::CheckIntegrity()
   int eno = buffer->CheckIntegrity(empty);
   assert(empty == 0);
   assert(eno == 0);
+  assert(buffer->GetItrCount() < 20);
 }
 //---------------------------------------------------------------------------
 void TSHEdit::CheckIterIntegrity(Iter * itr)
@@ -785,12 +779,12 @@ void TSHEdit::ItrToXY(Iter * itr, int& x, int& y)
     if(!str.IsEmpty() && *(str.LastChar()) != '\0')           //null string is not an empty string... and null char gets drawn if it is only char in string
       x += this->Canvas->TextWidth(str);
   }
-  y = (+itrCursor->linenum-itrLine->linenum)*drawer->GetLinesize();
+  y = (+itrCursor.linenum-itrLine.linenum)*drawer->GetLinesize();
 }
 //---------------------------------------------------------------------------
 void TSHEdit::UpdateCursor(bool paint)
 {
-  ItrToXY(itrCursor, cx, cy);
+  ItrToXY(&itrCursor, cx, cy);
   drawer->UpdateCursor(cx,cy);
   if(paint)
   {
@@ -810,9 +804,8 @@ void __fastcall TSHEdit::MouseDown(TMouseButton Button, Classes::TShiftState Shi
   dy = Y;
 
   ProcessMouseClear(true, true);
-  delete itrCursor;
   itrCursor = XYtoItr(X, Y);
-  cursorLeftOffset = itrCursor->GetLeftOffset();
+  cursorLeftOffset = itrCursor.GetLeftOffset();
 
   cx = X;
   cy = Y;
@@ -862,25 +855,23 @@ void __fastcall TSHEdit::MouseUp(TMouseButton Button, Classes::TShiftState Shift
 //---------------------------------------------------------------------------
 void TSHEdit::ProcessMouseMove(int &x, int &y)
 {
-  Iter * oldIter = itrCursorSecond;
+  Iter oldIter = itrCursorSecond;
 
-  Iter * tmp  = XYtoItr(x, y);
-  if(itrCursorSecond != NULL && *tmp == *itrCursorSecond)
+  Iter tmp  = XYtoItr(x, y);
+  if(itrCursorSecond.Valid() && tmp == itrCursorSecond)
   {
-    delete tmp;
     return;
   }
   ProcessMouseClear(false, false);
   itrCursorSecond = tmp;
 
-  if(oldIter != NULL)
-    ParseScreenBetween(oldIter, itrCursorSecond);
+  if(oldIter.Valid())
+    ParseScreenBetween(&oldIter, &itrCursorSecond);
 
   ProcessNewSelection();
 
   mx = x;
   my = y;
-  delete oldIter;
   parser->Execute();
   /*
      if(!recmsg)
@@ -894,37 +885,35 @@ void TSHEdit::ProcessMouseMove(int &x, int &y)
 //---------------------------------------------------------------------------
 void TSHEdit::ProcessNewSelection()
 {
-  if(itrCursorSecond == NULL)
+  if(itrCursor == itrCursorSecond)
+    itrCursorSecond.Invalidate();
+  if(!itrCursorSecond.Valid())
   {
     UpdateCursor(true);
     return;
   }
   UpdateCursor(false);
-  cursorsInInvOrder = *itrCursor > *itrCursorSecond;
-  if(*itrCursor != *itrCursorSecond)
+  if(itrCursor != itrCursorSecond)
   {
-    GetCursor()->IMarkupBegin(selectionFormat);
-    GetCursorEnd()->IMarkupEnd(selectionFormat);
+    GetCursorIter()->IMarkupBegin(selectionFormat);
+    GetCursorIterEnd()->IMarkupEnd(selectionFormat);
   }
 
-  ParseScreenBetween(itrCursor, itrCursorSecond);
+  ParseScreenBetween(&itrCursor, &itrCursorSecond);
 
   parser->Execute();
 }
 //---------------------------------------------------------------------------
-void TSHEdit::SetSelection(Iter * first, Iter* second)
+void TSHEdit::SetSelection(Iter * first, Iter * second)
 {
   Action("Setting new selection");
   selectionFormat->RemoveAllMarks();
-  ParseScreenBetween(GetCursor(), GetCursorEnd());
+  ParseScreenBetween(GetCursorIter(), first);
+  ParseScreenBetween(GetCursorIterEnd(), second);
   //if(first->buffer == NULL || second->buffer == NULL)
   //  std::cout << "positionless iterators passed to set selection" << std::endl;
-  if(itrCursor != NULL && itrCursor != first && itrCursor != second)
-    delete itrCursor;
-  itrCursor = first;
-  if(itrCursorSecond != NULL && itrCursorSecond != first && itrCursor != second)
-    delete itrCursorSecond;
-  itrCursorSecond = second;
+  itrCursor = *first;
+  itrCursorSecond = *second;
   AdjustLine(true);
   ProcessNewSelection();
 }
@@ -933,36 +922,29 @@ void TSHEdit::ProcessMouseClear(bool redraw, bool deleteiter)
 {
   selectionFormat->RemoveAllMarks();
 
-  if(itrCursorSecond)
+  if(itrCursorSecond.Valid())
   {
-    if(*itrCursor != *itrCursorSecond && redraw)
+    if(itrCursor != itrCursorSecond && redraw)
     {
-      ParseScreenBetween(GetCursor(), GetCursorEnd());
+      ParseScreenBetween(GetCursorIter(), GetCursorIterEnd());
       parser->Execute();
     }
-    if(deleteiter)
-      delete itrCursorSecond;
-    cursorsInInvOrder = false;
-    itrCursorSecond = NULL;
+    itrCursorSecond.Invalidate();
   }
 }
 //---------------------------------------------------------------------------
-Iter * TSHEdit::GetCursor()
+Iter * TSHEdit::GetCursorIter()
 {
-
-  return cursorsInInvOrder ? itrCursorSecond : itrCursor;
-
+  return itrCursor < itrCursorSecond ? &itrCursor : &itrCursorSecond;
 }
 //---------------------------------------------------------------------------
-Iter * TSHEdit::GetCursorEnd()
+Iter * TSHEdit::GetCursorIterEnd()
 {
-
-  return cursorsInInvOrder ? itrCursor : itrCursorSecond;
-
+  return itrCursor > itrCursorSecond ? &itrCursor : &itrCursorSecond;
 }
 //---------------------------------------------------------------------------
 
-Iter * TSHEdit::XYtoItr(int& x, int& y)
+Iter TSHEdit::XYtoItr(int& x, int& y)
 {             /*
                  Iter * itr = GetLineByNum(y/LINESIZE, false);
                  Span * stop = itr->line->nextline;
@@ -1006,16 +988,16 @@ Iter * TSHEdit::XYtoItr(int& x, int& y)
 
                  return itr;    */
 
-  Iter * itr = GetLineByNum(y/drawer->GetLinesize(), false);
+  Iter itr = GetLineByNum(y/drawer->GetLinesize(), false);
   int xSum = X_OFF-HBar->Position+drawer->GetLinenumWidth();
-  y = (itr->line->nextline->next) ? drawer->GetLinesize()*(y/drawer->GetLinesize()) : drawer->GetLinesize()*GetLineNum(itr->line); //to normalize cursor position; to prevent problems with end of file; and to optimize both
-  String line = buffer->GetLine(itr, true);
+  y = (itr.line->nextline->next) ? drawer->GetLinesize()*(y/drawer->GetLinesize()) : drawer->GetLinesize()*GetLineNum(itr.line); //to normalize cursor position; to prevent problems with end of file; and to optimize both
+  String line = buffer->GetLine(&itr, true);
   int w = Canvas->TextWidth(line);
 
   if(w+xSum < x || w == 0)
   {
     x = xSum+w;
-    itr->GoLineEnd();
+    itr.GoLineEnd();
     return itr;
   }
   else
@@ -1028,22 +1010,22 @@ Iter * TSHEdit::XYtoItr(int& x, int& y)
     offset--;
     xSum += this->Canvas->TextWidth(line.SubString(0, offset));
     x = xSum + HBar->Position;
-    itr->GoByOffset(offset);
+    itr.GoByOffset(offset);
     return itr;
   }
 }
 //---------------------------------------------------------------------------
-Iter * __fastcall TSHEdit::GetLineByNum(int no, bool allowEnd)
+Iter __fastcall TSHEdit::GetLineByNum(int no, bool allowEnd)
 {
-  Iter * itr = itrLine->Duplicate();
+  Iter itr = itrLine;
   for(int i = 0; i < no; i++)
-    if(!itr->GoLine(allowEnd))
+    if(!itr.GoLine(allowEnd))
       break;
   return itr;
 }
 //---------------------------------------------------------------------------
 //nope, default value does not work... it passes the value EVERY time, no matter whether specified or not
-Iter * __fastcall TSHEdit::GetLineByNum(int no)
+Iter __fastcall TSHEdit::GetLineByNum(int no)
 {
   return GetLineByNum(no, false);
 }
@@ -1061,13 +1043,13 @@ int __fastcall TSHEdit::GetLineCount()
 #ifdef DEBUG
 void __fastcall TSHEdit::dbgIter()
 {
-  Log("cursor pos at "+String(itrCursor->offset)+":"+itrCursor->word->string+" at line "+itrCursor->line->next->string+"; prevline "+(itrCursor->line->prevline != NULL ? itrCursor->line->prevline->next->string : L"")+"+ nextline "+(itrCursor->line->nextline != NULL ? itrCursor->line->nextline->string : L""));
+  Log("cursor pos at "+String(itrCursor.offset)+":"+itrCursor.word->string+" at line "+itrCursor.line->next->string+"; prevline "+(itrCursor.line->prevline != NULL ? itrCursor.line->prevline->next->string : L"")+"+ nextline "+(itrCursor.line->nextline != NULL ? itrCursor.line->nextline->string : L""));
 }
 #endif
 //---------------------------------------------------------------------------
 int __fastcall TSHEdit::GetLineNum(NSpan * line)
 {
-  NSpan * testline = itrLine->line;
+  NSpan * testline = itrLine.line;
   for(int i = 0, b = GetVisLineCount(); i <= b; i++)
   {
     if(line == testline)
@@ -1083,28 +1065,29 @@ int __fastcall TSHEdit::GetLineNum(NSpan * line)
   return -1;
 }
 //---------------------------------------------------------------------------
-void TSHEdit::DeleteSel(bool allowsync)
+void TSHEdit::DeleteSel(bool allowsync, Iter * start, Iter * end)
 {
+  if(start == NULL)
+    start = GetCursorIter();
+  if(end == NULL)
+    end = GetCursorIterEnd();
   Action("Deleting selection '" + Escape(SelText) + "' ...", false);
-  int linesMovedFrom = (GetCursorEnd()->linenum-itrLine->linenum)+1;
+  int linesMovedFrom = (end->linenum-itrLine.linenum)+1;
 
-  int linesMoved = -buffer->Delete(GetCursor(), GetCursorEnd());
+  int linesMoved = -buffer->Delete(start, end);
 
-  bool needRepaint = GetCursor()->linenum < itrLine->linenum;
+  bool needRepaint = start->linenum < itrLine.linenum;
 
-  NSpan* changed = itrCursor->line;
+  NSpan* changed = itrCursor.line;
   selectionFormat->RemoveAllMarks();
-  delete itrCursorSecond;
-  cursorsInInvOrder = false;
-  itrCursorSecond = NULL;
+  itrCursorSecond.Invalidate();
 
   if(linesMoved != 0)
     needRepaint |= drawer->UpdateLinenumWidth(buffer->GetLineCount());
 
   if(needRepaint) //means that line iterator has been moved as well
   {
-    delete itrLine;
-    itrLine = itrCursor->Duplicate();
+    itrLine = itrCursor;
     AdjustLine(false);
     RepaintWindow(true);
   }
@@ -1120,28 +1103,35 @@ void TSHEdit::DeleteSel(bool allowsync)
   Action("    done");
 }
 //---------------------------------------------------------------------------
-void TSHEdit::Insert(const wchar_t * text)
+void TSHEdit::Insert(const wchar_t * text, Iter * itr)
 {
   Action(String("Inserting text '") + Escape(text) + L"' ... ", false);
-  bool atStart = itrLine->linenum == 1 && itrLine->pos == 0 && *itrCursor == *itrLine;
+  bool atStart = itrLine.linenum == 1 && itrLine.pos == 0 && itrCursor == itrLine;
   bool changeSent = false;
-  if(itrCursorSecond)
+
+  if(itr == NULL)
+  {
+  if(itrCursorSecond == itrCursor)
+    itrCursorSecond.Invalidate();
+  if(itrCursorSecond.Valid())
   {
     changeSent = true;
     DeleteSel(false);
     }
+    itr = &itrCursor;
+  }
 
-  parser->ParseFromLine(itrCursor->line, itrCursor->linenum, 0);
 
-  NSpan* changed = itrCursor->line;
-  int linesMovedFrom = GetLineNum(itrCursor->line)+1;
-  int linesMoved = buffer->Insert(itrCursor, text);
-  itrLine->GoLineStart();
+  parser->ParseFromLine(itr->line, itr->linenum, 0);
+
+  NSpan* changed = itr->line;
+  int linesMovedFrom = GetLineNum(itr->line)+1;
+  int linesMoved = buffer->Insert(itr, text);
+  itrLine.GoLineStart();
   #ifdef FIXSCREENTOP
   if(atStart)
   {
-    delete itrLine;
-    itrLine = buffer->Begin();
+    itrLine = buffer->begin();
   }
   #endif
   //itrCursor->linenum += linesMoved;
@@ -1159,8 +1149,6 @@ void TSHEdit::Insert(const wchar_t * text)
   if(FOnChange != NULL && !changeSent)
     FOnChange(this);
   Action("    done");
-
-
 }
 //---------------------------------------------------------------------------
 void TSHEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed)
@@ -1175,18 +1163,16 @@ void TSHEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed)
     {
       //scroll down (move image up)
       int barcorrection = HBar->Visible ? HBar->Height/drawer->GetLinesize()+2 : 2;
-      Iter * it = GetLineByNum(GetVisLineCount()+linesMoved-barcorrection);
-      for(int i = linesMoved-barcorrection; i < 0 && it->line->nextline; i++, it->GoLine())
-        parser->ParseFromLine(it->line, it->linenum, 2);
-      delete it;
+      Iter it = GetLineByNum(GetVisLineCount()+linesMoved-barcorrection);
+      for(int i = linesMoved-barcorrection; i < 0 && it.line->nextline; i++, it.GoLine())
+        parser->ParseFromLine(it.line, it.linenum, 2);
     }
     if(linesMoved > 0)
     {
       //scroll up (move image down)
-      Iter * it = itrLine->Duplicate();
-      for(int i = 0; i < linesMoved && it->line->nextline && i < GetVisLineCount(); i++, it->GoLine())
-        parser->ParseFromLine(it->line, it->linenum,2);
-      delete it;
+      Iter it = itrLine;
+      for(int i = 0; i < linesMoved && it.line->nextline && i < GetVisLineCount(); i++, it.GoLine())
+        parser->ParseFromLine(it.line, it.linenum,2);
     }
     UpdateVBar();
   }
@@ -1201,8 +1187,8 @@ void TSHEdit::ProcessChange(int linesMovedFrom, int linesMoved, NSpan * changed)
   {
     UpdateCursor(false);
     short linenum = GetLineNum(changed);
-    parser->ParseFromLine(changed, itrLine->linenum+linenum, linenum >= 0 ? 2 : 1);
-    parser->ParseFromLine(itrCursor->line, itrCursor->linenum, linenum >= 0 ? 2 : 1);
+    parser->ParseFromLine(changed, itrLine.linenum+linenum, linenum >= 0 ? 2 : 1);
+    parser->ParseFromLine(itrCursor.line, itrCursor.linenum, linenum >= 0 ? 2 : 1);
   }
   parser->Execute();
   /*
@@ -1228,14 +1214,13 @@ void TSHEdit::UpdateVBar()
     VBar->LargeChange = GetVisLineCount()-5;
     VBar->Min = 1;
     VBar->Max = buffer->GetLineCount()+GetVisLineCount()-2;
-    VBar->Position = itrLine->linenum;
+    VBar->Position = itrLine.linenum;
   }
   else if(VBar->Visible)
   {
     VBar->Hide();
     drawer->DrawResize(this->Width, this->Height);
-    delete itrLine;
-    itrLine = buffer->Begin();
+    itrLine = buffer->begin();
     RepaintWindow(true);
     return;
   }
@@ -1265,9 +1250,11 @@ void TSHEdit::UpdateHBar()
 //---------------------------------------------------------------------------
 void TSHEdit::Copy()
 {
-  if(itrCursorSecond)
+  if(itrCursorSecond == itrCursor)
+    itrCursorSecond.Invalidate();
+  if(itrCursorSecond.Valid())
   {
-    wchar_t * str = buffer->GetText(GetCursor(), GetCursorEnd());
+    wchar_t * str = buffer->GetText(GetCursorIter(), GetCursorIterEnd());
     clipboard->SetTextBuf(str);
     delete[] str;
   }
@@ -1290,30 +1277,29 @@ void __fastcall TSHEdit::OnVScroll(TObject *Sender, TScrollCode ScrollCode, int 
          Application->ProcessMessages();
          } */
 
-  if(abs(ScrollPos-itrLine->linenum) < GetVisLineCount())
+  if(abs(ScrollPos-itrLine.linenum) < GetVisLineCount())
   {
-    Scroll(itrLine->linenum-ScrollPos);
+    Scroll(itrLine.linenum-ScrollPos);
   }
   else
   {
 
-    cy += drawer->GetLinesize() * (itrLine->linenum - ScrollPos);
-    my += drawer->GetLinesize() * (itrLine->linenum - ScrollPos);
-    dy += drawer->GetLinesize() * (itrLine->linenum - ScrollPos);
-    if(ScrollPos < itrLine->linenum)
+    cy += drawer->GetLinesize() * (itrLine.linenum - ScrollPos);
+    my += drawer->GetLinesize() * (itrLine.linenum - ScrollPos);
+    dy += drawer->GetLinesize() * (itrLine.linenum - ScrollPos);
+    if(ScrollPos < itrLine.linenum)
     {
-      if(ScrollPos > itrLine->linenum/2 && ScrollPos > 100)
-        itrLine->GoToLine(ScrollPos);
+      if(ScrollPos > itrLine.linenum/2 && ScrollPos > 100)
+        itrLine.GoToLine(ScrollPos);
       else
       {
-        delete itrLine;
-        itrLine = buffer->Begin();
-        itrLine->GoToLine(ScrollPos);
+        itrLine = buffer->begin();
+        itrLine.GoToLine(ScrollPos);
       }
     }
     else
     {
-      itrLine->GoToLine(ScrollPos);
+      itrLine.GoToLine(ScrollPos);
     }
     ScrollPos = -1;
     drawer->UpdateCursor(cx, cy);
@@ -1335,7 +1321,7 @@ void __fastcall TSHEdit::OnHScroll(TObject *Sender, TScrollCode ScrollCode, int 
 //---------------------------------------------------------------------------
 int __fastcall TSHEdit::GetActLine()
 {
-  return itrLine->linenum;
+  return itrLine.linenum;
 }
 //---------------------------------------------------------------------------
 void TSHEdit::Paste()
@@ -1370,20 +1356,19 @@ void __fastcall TSHEdit::OnTimer(TObject * Sender)
   drawer->Paint();
 }
 //---------------------------------------------------------------------------
-bool __fastcall TSHEdit::GetLineFirst(NSpan * line)
+bool __fastcall TSHEdit::IsLineFirstVisible(NSpan * line)
 {
-  return line == itrLine->line;
+  return line == itrLine.line;
 }
 //---------------------------------------------------------------------------
 void TSHEdit::SelectAll()
 {
   this->ProcessMouseClear(false, true);
-  delete itrCursor;
-  itrCursor = buffer->Begin();
-  itrCursorSecond = buffer->End();
-  itrCursor->IMarkupBegin(this->selectionFormat);
-  itrLine->IMarkupBegin(this->selectionFormat);
-  parser->ParseFromToLine(itrLine->line, itrLine->linenum, GetVisLineCount(), 2);
+  itrCursor = buffer->begin();
+  itrCursorSecond = buffer->end();
+  itrCursor.IMarkupBegin(this->selectionFormat);
+  itrLine.IMarkupBegin(this->selectionFormat);
+  parser->ParseFromToLine(itrLine.line, itrLine.linenum, GetVisLineCount(), 2);
   UpdateCursor(false);
   parser->Execute();
 }
@@ -1391,12 +1376,10 @@ void TSHEdit::SelectAll()
 void TSHEdit::LoadFile(const wchar_t * filename)
 {
   buffer->SimpleLoadFile(filename);
-  delete itrCursor;
-  delete itrLine;
-  itrCursor = buffer->Begin();
-  itrLine = buffer->Begin();
+  itrCursor = buffer->begin();
+  itrLine = buffer->begin();
   parser->InvalidateAll();
-  parser->ParseFromLine(itrLine->line, 1, 0);
+  parser->ParseFromLine(itrLine.line, 1, 0);
   UpdateCursor(false);
   UpdateVBar();
   RepaintWindow(true);
@@ -1409,11 +1392,11 @@ void TSHEdit::SaveFile(const wchar_t * filename)
 //---------------------------------------------------------------------------
 void TSHEdit::ParseScreenBetween(Iter * it1, Iter * it2)
 {
-  if(it1 == NULL || it2 == NULL)
+  if(it1 == NULL || it2 == NULL || !it1->Valid() || !it2->Valid())
   {
-    if(it1 != NULL)
+    if(it1 != NULL || ! it1->Valid())
       parser->ParseFromLine(it1->line, it1->linenum, 2);
-    if(it2 != NULL)
+    if(it2 != NULL || !it2->Valid())
       parser->ParseFromLine(it2->line, it2->linenum, 2);
     return;
   }
@@ -1423,11 +1406,11 @@ void TSHEdit::ParseScreenBetween(Iter * it1, Iter * it2)
     it1 = it2;
     it2 = tmp;
   }
-  if(it2->linenum < itrLine->linenum)
+  if(it2->linenum < itrLine.linenum)
     return;
 
-  if(it1->linenum < itrLine->linenum)
-    it1 = itrLine;
+  if(it1->linenum < itrLine.linenum)
+    it1 = &itrLine;
 
   int count = it2->linenum - it1->linenum+1;
   if(count > GetVisLineCount())
@@ -1466,8 +1449,8 @@ void __fastcall TSHEdit::SetLanguageDefinition(LanguageDefinition * def)
   #ifdef DEBUG
   Write(msg + PositionDescription(), end);
   CheckIntegrity();
-  CheckIterIntegrity(itrLine);
-  CheckIterIntegrity(itrCursor);
+  CheckIterIntegrity(&itrLine);
+  CheckIterIntegrity(&itrCursor);
   #endif
 }
 //---------------------------------------------------------------------------
@@ -1481,8 +1464,8 @@ void __fastcall TSHEdit::Log(String str)
 void TSHEdit::UndoCheck()
 {
   Action("UndoCheck", false);
-  int x = itrCursor->GetLeftOffset();
-  int y = itrCursor->linenum;
+  int x = itrCursor.GetLeftOffset();
+  int y = itrCursor.linenum;
   Iter * a;
   Iter * b;
   a = buffer->Undo(b);
@@ -1522,22 +1505,22 @@ void TSHEdit::Write(String message, bool end)
 //---------------------------------------------------------------------------
      void __fastcall TSHEdit::SetSelLen(int SelLen)
      {
-       if(itrCursorSecond != NULL)
+       if(itrCursorSecond.Valid())
        {
          ProcessMouseClear(false, true);
        }
-       Iter* itr = itrCursor->Duplicate();
-       itr->GoBy(SelLen, true);
-       SetSelection(itrCursor, itr);
+       Iter itr = itrCursor;
+       itr.GoBy(SelLen, true);
+       SetSelection(&itrCursor, &itr);
        //ProcessNewSelection(); //already done in setselection
      }
 //---------------------------------------------------------------------------
      int __fastcall TSHEdit::GetSelLen()
      {
-       if(itrCursorSecond == NULL)
+       if(!itrCursorSecond.Valid())
         return 0;
       else
-        return GetCursor()->GetDistance(GetCursorEnd());
+        return GetCursorIter()->GetDistance(GetCursorIterEnd());
      }
 //---------------------------------------------------------------------------
      void __fastcall TSHEdit::SetSelText(String SelText)
@@ -1547,41 +1530,54 @@ void TSHEdit::Write(String message, bool end)
 //---------------------------------------------------------------------------
      String __fastcall TSHEdit::GetSelText()
      {
-      if(GetCursor() == NULL || GetCursorEnd() == NULL)
+      if(!GetCursorIter()->Valid() || !GetCursorIterEnd()->Valid() == NULL)
         return L"";
-      //memoryleak?
-       return String(buffer->GetText(GetCursor(), GetCursorEnd()));
+       {
+          wchar_t* str = buffer->GetText(GetCursorIter(), GetCursorIterEnd());
+          String rtn = String(str);
+         delete [] str;
+         return rtn;
+       }
      }
 //---------------------------------------------------------------------------
 String TSHEdit::GetRange(Iter * begin, Iter * end)
      {
-     //memoryleak?
        if(*begin < *end)
-          return String(buffer->GetText(begin, end));
+       {
+          wchar_t* str = buffer->GetText(begin, end);
+          String rtn = String(str);
+         delete [] str;
+         return rtn;
+       }
        else if (*begin > *end)
-          return String(buffer->GetText(end, begin));
+       {
+          wchar_t * str = buffer->GetText(begin, end);
+          String rtn = String(str);
+         delete [] str;
+         return rtn;
+       }
        else
           return L"";
      }
 //---------------------------------------------------------------------------
-Iter TSHEdit::begin()
+CIter TSHEdit::begin()
 {
-  return buffer->begin();
+  return CIter(this, buffer->begin(), false, true);
 }
 //---------------------------------------------------------------------------
-Iter TSHEdit::end()
+CIter TSHEdit::end()
 {
-  return buffer->end();
+  return CIter(this, buffer->end(), false, true);
 }
 //---------------------------------------------------------------------------
-Iter * TSHEdit::Begin()
+CIter TSHEdit::GetCursor()
 {
-  return buffer->Begin();
+  return CIter(this, GetCursor(), false, false);
 }
 //---------------------------------------------------------------------------
-Iter * TSHEdit::End()
+CIter TSHEdit::GetCursorEnd()
 {
-  return buffer->End();
+  return CIter(this, GetCursorEnd(), true, false);
 }
 //---------------------------------------------------------------------------
       int TSHEdit::GetCursorX()
@@ -1596,12 +1592,12 @@ Iter * TSHEdit::End()
 //---------------------------------------------------------------------------
       int TSHEdit::GetCursorCaretX()
       {
-      return GetCursor()->linenum;
+      return GetCursorIter()->linenum;
 }
 //---------------------------------------------------------------------------
       int TSHEdit::GetCursorCaretY()
       {
-      return GetCursor()->pos;
+      return GetCursorIter()->pos;
 }
 //---------------------------------------------------------------------------
       int __fastcall TSHEdit::GetLineHeight()
@@ -1624,19 +1620,16 @@ Iter * TSHEdit::End()
       {
 
   Action("Adding line");
-        Iter * end = buffer->End();
-        bool begin = *end == *itrLine && itrLine->linenum == 1;
-        parser->ParseFromLine(end->line, end->linenum, Visible(end) ? 2 : 0);
-        buffer->Insert(end, string.c_str());
-        buffer->Insert(end, L"\n");
+        Iter end = buffer->end();
+        bool begin = end == itrLine && itrLine.linenum == 1;
+        parser->ParseFromLine(end.line, end.linenum, Visible(&end) ? 2 : 0);
+        buffer->Insert(&end, string.c_str());
+        buffer->Insert(&end, L"\n");
         if(begin)
-        {
-          delete itrLine;
-          itrLine = buffer->Begin();
-        }
+          itrLine = buffer->begin();
+
         UpdateCursor(false); //mohl byt posunut insertem
         parser->Execute();
-        delete end;
       }
 //---------------------------------------------------------------------------
       void TSHEdit::AddLines(const String& string)
@@ -1662,7 +1655,7 @@ Iter * TSHEdit::End()
 //---------------------------------------------------------------------------
  bool TSHEdit::Visible(Iter * itr)
  {
-   return itrLine->linenum <= itr->linenum && itr->linenum <= itrLine->linenum+GetVisLineCount();
+   return itrLine.linenum <= itr->linenum && itr->linenum <= itrLine.linenum+GetVisLineCount();
  }
 //---------------------------------------------------------------------------
 void TSHEdit::MarkAll(const String& text, bool caseSensitive, bool wholeWord)
@@ -1701,3 +1694,4 @@ int TSHEdit::GetScrollStep()
 {
   return maxScrollStep > GetVisLineCount() ? GetVisLineCount()/2 : maxScrollStep;
 }
+//---------------------------------------------------------------------------

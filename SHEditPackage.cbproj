@@ -80,6 +80,10 @@
 				<DependentOn>uBuffer.h</DependentOn>
 				<BuildOrder>5</BuildOrder>
 			</CppCompile>
+			<CppCompile Include="uCursor.cpp">
+				<DependentOn>uCursor.h</DependentOn>
+				<BuildOrder>17</BuildOrder>
+			</CppCompile>
 			<CppCompile Include="uDrawer.cpp">
 				<DependentOn>uDrawer.h</DependentOn>
 				<BuildOrder>6</BuildOrder>
@@ -190,6 +194,7 @@
 				<Platforms>
 					<Platform value="Win32">True</Platform>
 				</Platforms>
+				<ModelSupport>False</ModelSupport>
 			</BorlandProject>
 			<ProjectFileVersion>12</ProjectFileVersion>
 		</ProjectExtensions>

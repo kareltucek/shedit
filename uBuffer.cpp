@@ -46,7 +46,7 @@ Buffer::~Buffer()
 {
   while(!ItrList.empty())
   {
-    delete ItrList.front();
+    ItrList.front()->Invalidate();
     ItrList.pop_front();
   }
   while(!stackUndo.empty())
@@ -1093,4 +1093,9 @@ void Buffer::Write(AnsiString message)
 #endif
 }
 #endif
+//---------------------------------------------------------------------------
+int Buffer::GetItrCount()
+{
+  return ItrList.size();
+}
 //---------------------------------------------------------------------------

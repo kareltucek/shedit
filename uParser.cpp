@@ -136,7 +136,7 @@ bool __fastcall Parser::Execute()
     linenum = parent->GetLineNum(pt.line);
     bool first = true;
     painted = linenum >= 0 | painted;
-    Iter * itr = new Iter(pt.line, linenum >= 0 ? parent->itrLine->linenum+linenum : pt.linenum, 0, parent->buffer);
+    Iter * itr = new Iter(pt.line, linenum >= 0 ? parent->itrLine.linenum+linenum : pt.linenum, 0, parent->buffer);
     state = itr->line->parserState;
 
     if(itr->linenum == 1)
@@ -185,9 +185,9 @@ bool __fastcall Parser::Execute()
         painted = true;
         linenum = parent->GetLineNum(itr->line);
       }
-      else if(parent->GetLineFirst(itr->line))
+      else if(parent->IsLineFirstVisible(itr->line))
       {
-        itr->linenum = parent->itrLine->linenum;
+        itr->linenum = parent->GetActLine();
         ReconstructMarkup();
         actIMarkup = itr->ReconstructIMarkFontStyle();
         actMarkupCombined = actMarkup;
