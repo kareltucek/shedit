@@ -228,8 +228,9 @@ namespace SHEdit
       void UndoCheck();
       void Write(String message, bool endl = true);
       String PositionDescription();
-      String Escape(String str);
 #endif
+      String Escape(String str);    //debug as well
+
       friend class Drawer;
       friend class Parser;
       friend class CIter;

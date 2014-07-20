@@ -1,12 +1,9 @@
-1405790663|SHEditPackage.cbproj
 1405794110|uBuffer.cpp
 1405759828|uBuffer.h
 1405766542|uDrawer.cpp
 1405789786|uIter.cpp
 1405768484|uParser.cpp
 1405863978|autogen
-1405866008|cSHEdit.cpp
-1405864662|cSHEdit.h
 1405864724|uCursor.cpp
 1405864176|uCursor.h
 1405862876|uIPos.cpp
@@ -15,3 +12,7 @@
 1405864661|uLanguageDefinition.h
 1405864661|uParser.h
 1405864662|uStack.h
+1405870816|SHEditPackage.cbproj
+1405870986|cSHEdit.cpp
+1405870866|cSHEdit.h
+1405870806|config.h

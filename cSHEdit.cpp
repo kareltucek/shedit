@@ -1138,7 +1138,10 @@ void TSHEdit::Insert(const wchar_t * text, Iter * itr)
   UpdateCursor(false);
 
   if(linesMoved != 0 && drawer->UpdateLinenumWidth(buffer->GetLineCount()))
+  {
+    UpdateVBar();
     RepaintWindow(true);
+  }
   else
     ProcessChange(linesMovedFrom, linesMoved, changed);
 
@@ -1457,6 +1460,14 @@ void __fastcall TSHEdit::SetLanguageDefinition(LanguageDefinition * def)
   #endif
 }
 //---------------------------------------------------------------------------
+String TSHEdit::Escape(String str)
+{
+  for(int i = 1; i <= str.Length(); i++)
+    if( str[i] < 32)
+      str[i] = '_';
+  return str;
+}
+//---------------------------------------------------------------------------
 #ifdef DEBUG
 void __fastcall TSHEdit::Log(String str)
 {
@@ -1479,14 +1490,6 @@ void TSHEdit::UndoCheck()
   delete a;
   delete b;
   Action("done", false);
-}
-//---------------------------------------------------------------------------
-String TSHEdit::Escape(String str)
-{
-  for(int i = 1; i <= str.Length(); i++)
-    if( str[i] < 32)
-      str[i] = '_';
-  return str;
 }
 //---------------------------------------------------------------------------
 String TSHEdit::PositionDescription()
