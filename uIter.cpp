@@ -401,8 +401,11 @@ void Iter::GoBy(int chars, bool multiline)
 {
   if(word->next == NULL)
     return;
-    if(chars < 0)
+  if(chars < 0)
+  {
     GoLeft(-chars, multiline);
+    return;
+  }
   while(this->word->length - this->offset <= chars && (multiline || *(word->string) != '\n'))
   {
     chars -= this->word->length - this->offset;
@@ -423,8 +426,11 @@ void Iter::GoLeft(int chars, bool multiline)
 {
   if(word->prev == NULL || (word->prev->prev == NULL && offset == 0))
     return;
-    if(chars < 0)
+  if(chars < 0)
+  {
     GoBy(-chars, multiline);
+    return;
+  }
   while(this->offset < chars && (multiline || word->prev != (Span*)line))
   {
     chars -= 1+ this->offset;
