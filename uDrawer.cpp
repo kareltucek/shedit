@@ -60,6 +60,10 @@ __fastcall Drawer::Drawer(TCanvas * canvas, TSHEdit * parent)
 
 void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontStyle format)
 {
+#ifdef DEBUG
+  TColor bg = *format.background;
+  TColor fg = *format.foreground;
+#endif
 
   y = Y_OFF+linesize*linenum;
   if(newline)

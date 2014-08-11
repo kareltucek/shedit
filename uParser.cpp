@@ -300,13 +300,22 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
   wchar_t *& pt = (itr->ptr); //debug
   this->inword = false;
   bool& inword = this->inword; //debug
+  actFormat = *(state.searchStateStack.top->data.base->format);
 
   while(true)
   {
+#ifdef DEBUG
+  TColor bg = *actFormat.background;
+  TColor fg = *actFormat.foreground;
+#endif
     CheckMarkup(itr, paint);
     bool whiteskipped = false;
     while(langdef->IsWhite(*(itr->ptr)) && *(itr->ptr) != '\n')
     {
+#ifdef DEBUG
+  bg =  *actFormat.background;
+  fg =  *actFormat.foreground;
+#endif
       whiteskipped = true;
       AddChar(itr, pos);
       itr->GoChar();
@@ -687,7 +696,7 @@ void Parser::AddChar(Iter * itr, int & pos)
     return;
   if(*(itr->ptr) != '\t')
   {
-    actText += *(itr->ptr);
+    actText += String(*(itr->ptr));
     pos++;
     return;
   }
