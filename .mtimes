@@ -5,7 +5,6 @@
 1405768484|uParser.cpp
 1405863978|autogen
 1405864724|uCursor.cpp
-1405864176|uCursor.h
 1405862876|uIPos.cpp
 1405864661|uIPos.h
 1405864661|uIter.h
@@ -16,3 +15,4 @@
 1405870986|cSHEdit.cpp
 1405870866|cSHEdit.h
 1405870806|config.h
+1407743266|uCursor.h

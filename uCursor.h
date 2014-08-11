@@ -15,7 +15,7 @@ namespace SHEdit
    * Cursor Iterator is (mostly) automatically generated wrapper of the Iter class. The only purpose of this class is to provide an abstract layer that lets user (or rather developer using this component from outside) to perform iterator-oriented edits on buffer while taking care of redrawing the component appropriately. It also server as a front-end for cursors. 
    * */
 
-  class CIter : public Iter
+  class CIter
   {
     private:
       TSHEdit * component;
