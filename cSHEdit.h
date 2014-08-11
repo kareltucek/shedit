@@ -294,6 +294,9 @@ namespace SHEdit
       void SetSelection(Iter * first, Iter *  second);
       String GetRange(Iter * begin, Iter * end);
 
+      void __fastcall SetKeepHistory(bool keep);
+      bool __fastcall GetKeepHistory();
+
      __property int SelLen = {read=GetSelLen, write=SetSelLen};
      __property String SelText = {read=GetSelText, write=SetSelText};
      __property String Text = {read=GetText, write=SetText};
@@ -310,6 +313,7 @@ __published:
       __property TMouseEvent OnMouseUp = {read=FOnMouseUp, write=FOnMouseUp, default=NULL};
       __property bool LineNums = {read=GetLinenumsEnabled,write=SetLinenumsEnabled, default=true};
       __property bool ReadOnly= {read=readonly,write=readonly, default=false};
+      __property bool KeepHistory = {read=GetKeepHistory, write=SetKeepHistory, default=true};
   };
   //---------------------------------------------------------------------------
 }

@@ -1701,3 +1701,14 @@ int TSHEdit::GetScrollStep()
   return maxScrollStep > GetVisLineCount() ? GetVisLineCount()/2 : maxScrollStep;
 }
 //---------------------------------------------------------------------------
+void _fastcall TSHEdit::SetKeepHistory(bool keep)
+{
+  buffer->keepHistory = keep;
+  buffer->HistoryOnOff();
+}
+//---------------------------------------------------------------------------
+bool _fastcall TSHEdit::GetKeepHistory()
+{
+  return buffer->keepHistory;
+}
+//---------------------------------------------------------------------------

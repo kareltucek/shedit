@@ -11,6 +11,7 @@
 namespace SHEdit
 {
   class Format;
+  class TSHEdit;
 
   /*!
    * Buffer
@@ -104,6 +105,9 @@ namespace SHEdit
       void ItersTranslateInsert(int linenum, int pos, int bylines, int topos, NSpan * toline);
       void ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, int topos, NSpan * toline);
 
+      void HistoryOnOff();        //purges stacks if the keepHistory flag is off; to be placed before returns in insert/delete
+      void PurgeStack(std::stack<UndoTask*>& stack);
+
 #ifdef DEBUG
       void Write(AnsiString message);
 #endif
@@ -114,6 +118,9 @@ namespace SHEdit
 
       friend class Iter;
       friend class IPos;
+      friend class TSHEdit;
+
+      bool keepHistory;
 
       Iter * Undo(Iter *& begin);
       Iter * Redo(Iter *& begin);

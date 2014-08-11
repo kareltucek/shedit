@@ -31,6 +31,7 @@ Buffer::Buffer()
   NSpan * tail = new NSpan();
 
   markupMask = 0;
+  keepHistory = true;
 
   head->next = tail;
   head->nextline = tail;
@@ -190,6 +191,7 @@ int Buffer::Insert(Iter * At, const wchar_t * string)
       if(r != NULL)
         UndoPush(new UndoTask(new Action(At->linenum, 0, At->pos, At->pos+wcslen(string), Action::ActionType::insertion), r));
       this->ItersTranslateInsert(At->linenum, At->pos, 0, At->pos + wcslen(string), At->line);
+      HistoryOnOff();
       return 0;
     }
     else if(At->word->length < 20 && IsPlainWord(At->word->string))
@@ -198,6 +200,7 @@ int Buffer::Insert(Iter * At, const wchar_t * string)
       if(r != NULL)
         UndoPush(new UndoTask(new Action(At->linenum, 0, At->pos, At->pos+wcslen(string), Action::ActionType::insertion), r));
       this->ItersTranslateInsert(At->linenum, At->pos, 0, At->pos + wcslen(string), At->line);
+      HistoryOnOff();
       return 0;
     }
   }
@@ -252,6 +255,8 @@ int Buffer::Insert(Iter * At, const wchar_t * string)
   r->linecount = -linesInserted;
   UndoPush(new UndoTask(new Action(At->linenum, linesInserted, At->pos, pos, Action::ActionType::insertion), r));
   this->ItersTranslateInsert(At->linenum, At->pos, linesInserted, pos, prevN);
+
+  HistoryOnOff();
   return linesInserted;
 }
 //---------------------------------------------------------------------------
@@ -273,6 +278,7 @@ int Buffer::Delete(Iter * From, Iter * To)
     if(r != NULL)
       UndoPush(new UndoTask(new Action(From->linenum, To->linenum, From->pos, To->pos, Action::ActionType::deletion), r));
     ItersTranslateDelete(From->linenum, From->pos, To->linenum, To->pos, From->line);
+    HistoryOnOff();
     return 0;
   }
   else if(*(From->word->string) == '\n' && From->word->next == To->word && To->offset == 0)
@@ -282,6 +288,7 @@ int Buffer::Delete(Iter * From, Iter * To)
     data->linecount--;
     UndoPush(new UndoTask(new Action(From->linenum, To->linenum, From->pos, To->pos, Action::ActionType::deletion), r));
     ItersTranslateDelete(From->linenum, From->pos, To->linenum, To->pos, From->line);
+    HistoryOnOff();
     return 1;
   }
   else
@@ -324,6 +331,7 @@ int Buffer::Delete(Iter * From, Iter * To)
     data->linecount -= linesDeleted;
     UndoPush(new UndoTask(new Action(From->linenum, To->linenum, From->pos, To->pos, Action::ActionType::deletion), r));
     ItersTranslateDelete(From->linenum, From->pos, To->linenum, To->pos, From->line);
+    HistoryOnOff();
     return linesDeleted;
   }
 }
@@ -529,16 +537,30 @@ Iter * Buffer::Undo(Iter *& begin)
   return UndoRedo(&stackUndo, &stackRedo, begin);
 }
 //---------------------------------------------------------------------------
-void Buffer::UndoPush(UndoTask * event)
+void Buffer::HistoryOnOff()
 {
-  stackUndo.push(event);
-  while(stackRedo.size() > 0)
+  if( !keepHistory )
   {
-    UndoTask * redoevent = stackRedo.top();
-    stackRedo.pop();
+    PurgeStack(stackRedo);
+    PurgeStack(stackUndo);
+  }
+}
+//---------------------------------------------------------------------------
+void Buffer::PurgeStack(std::stack<UndoTask*>& stack)
+{
+  while(stack.size() > 0)
+  {
+    UndoTask * redoevent = stack.top();
+    stack.pop();
     redoevent->range->Free();
     delete redoevent;
   }
+}
+//---------------------------------------------------------------------------
+void Buffer::UndoPush(UndoTask * event)
+{
+  stackUndo.push(event);
+  PurgeStack(stackRedo);
 }
 //---------------------------------------------------------------------------
 Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*> * stackRedo, Iter *& begin)
