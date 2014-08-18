@@ -458,7 +458,7 @@ wchar_t* Buffer::_ParseWord(const wchar_t *& ptr, const wchar_t * ptrend)       
      ptr ++;
      }*/
 #else
-  if(*ptr == '\r')
+  while(*ptr == '\r') //ignore them and process *ALL*!
   {
     ptrstart++;
     ptr++;
