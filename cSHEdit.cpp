@@ -494,7 +494,7 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
                 itrLine = buffer->begin();
               }
               AdjustLine(false);
-              if(itrbegin->Valid())
+              if(itrbegin != NULL && itrbegin->Valid())
               {
                 parser->ParseFromLine(itrbegin->line, itrbegin->linenum, 0);
                 delete itrbegin;
@@ -1490,6 +1490,8 @@ void TSHEdit::UndoCheck()
   delete a;
   delete b;
   Action("done", false);
+  itrCursor.GoToLine(y) ;
+  itrCursor.GoByOffset(x);
 }
 //---------------------------------------------------------------------------
 String TSHEdit::PositionDescription()
