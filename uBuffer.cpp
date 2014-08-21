@@ -18,7 +18,9 @@
 #include <ctype.h>
 
 using namespace SHEdit;
+#ifdef DEBUG
 std::ofstream myfile;
+#endif
 
 #pragma package(smart_init)
 //---------------------------------------------------------------------------

@@ -486,7 +486,7 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
               Action("Redo");
               itr = buffer->Undo(itrbegin);
             }
-            if(itr->Valid())
+            if(itr != NULL && itr->Valid())
             {
               itrCursor = *itr;
               if(buffer->GetLineCount() < GetVisLineCount())
