@@ -240,6 +240,7 @@ namespace SHEdit
       int __fastcall GetLineCount();
 
       void __fastcall SetLanguageDefinition(LanguageDefinition * def);
+      LanguageDefinition* __fastcall GetLanguageDefinition();
 
       void __fastcall SetLinenumsEnabled(bool enabled);                                              /*!< sets whether line numbers are being drawn. Needs manual triggering of repaintwindow*/
       bool __fastcall GetLinenumsEnabled();

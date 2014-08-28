@@ -1714,3 +1714,8 @@ bool _fastcall TSHEdit::GetKeepHistory()
   return buffer->keepHistory;
 }
 //---------------------------------------------------------------------------
+LanguageDefinition* __fastcall TSHEdit::GetLanguageDefinition()
+{
+  return parser->GetLangDef();
+}
+//---------------------------------------------------------------------------

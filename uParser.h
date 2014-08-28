@@ -145,6 +145,7 @@ namespace SHEdit
       virtual __fastcall ~Parser();
 
       void SetLangDef(LanguageDefinition * langdef);
+      LanguageDefinition* GetLangDef();
 
       void ParseFromLine(NSpan * line, int linenum, int prior);
       void ParseFromToLine(NSpan * line, int linenum, int count, int prior);

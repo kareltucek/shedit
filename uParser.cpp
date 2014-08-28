@@ -791,6 +791,11 @@ void Parser::SetLangDef(LanguageDefinition * langdef)
   this->langdef = langdef;
 }
 //---------------------------------------------------------------------------
+LanguageDefinition * Parser::GetLangDef()
+{
+  return this->langdef;
+}
+//---------------------------------------------------------------------------
 void Parser::Flush()
 {
   if(!actText.IsEmpty())
