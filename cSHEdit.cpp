@@ -101,11 +101,12 @@ TSHEdit * TSHEditFocused; //callback musi jit na statickou metodu...
   scrolldelta = 0;
   scrolldeltafontsize = 0;
   cursorLeftOffset = 0;
+  mouseDoubleClickFlag = false;
 
   recmsg = false;
   maxScrollStep = MAX_SCROLL_STEP;
 
-  selColor = clSilver;
+  selColor = clHighlight;
   searchColor = clYellow;
   selectionFormat = new Format(NULL, &selColor);
   searchFormat = new Format(NULL, &searchColor);
@@ -271,8 +272,17 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
     FOnKeyDown(this, Key, Shift);
   }
 #endif
-  if(itrCursor == itrCursorSecond)
+  if(itrCursor == itrCursorSecond && !Shift.Contains(ssShift))
     itrCursorSecond.Invalidate();
+
+  Iter itrBeforeMove;
+  if(Shift.Contains(ssShift))
+  {
+    if(!itrCursorSecond.Valid())
+      itrCursorSecond = itrCursor;
+    itrBeforeMove = itrCursor;
+  }
+
   switch(Key)
   {
     case VK_DELETE:
@@ -346,35 +356,65 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
         break;
 #endif
       case VK_LEFT:
-        itrCursor.RevChar();
+     if(!Shift.Contains(ssShift))
+       ProcessMouseClear(true, true, false);
+        if(Shift.Contains(ssCtrl))
+          itrCursor.RevWordLiteral();
+        else
+          itrCursor.RevChar();
         AdjustLine(true);
         UpdateCursor(true);
         cursorLeftOffset = itrCursor.GetLeftOffset();
         Key = 0;
         break;
       case VK_RIGHT:
-        itrCursor.GoChar();
+     if(!Shift.Contains(ssShift))
+       ProcessMouseClear(true, true, false);
+        if(Shift.Contains(ssCtrl))
+          itrCursor.GoWordLiteral();
+        else
+          itrCursor.GoChar();
         AdjustLine(true);
         UpdateCursor(true);
         cursorLeftOffset = itrCursor.GetLeftOffset();
         Key = 0;
         break;
       case VK_UP:
-        itrCursor.RevLine();
-        itrCursor.GoByOffset(cursorLeftOffset);
-        AdjustLine(true);
-        UpdateCursor(true);
-        Key = 0;
+     if(!Shift.Contains(ssShift))
+       ProcessMouseClear(true, true, false);
+        if(Shift.Contains(ssCtrl))
+        {
+          Scroll(1);
+        }
+        else
+        {
+          if(itrCursor.RevLine())
+            itrCursor.GoByOffset(cursorLeftOffset);
+          AdjustLine(true);
+          UpdateCursor(true);
+          Key = 0;
+        }
         break;
       case VK_DOWN:
-        itrCursor.GoLine();
-        itrCursor.GoByOffset(cursorLeftOffset);
-        AdjustLine(true);
-        UpdateCursor(true);
-        Key = 0;
+     if(!Shift.Contains(ssShift))
+        ProcessMouseClear(true, true, false);
+        if(Shift.Contains(ssCtrl))
+        {
+          Scroll(-1);
+        }
+        else
+        {
+          if(itrCursor.GoLine())
+            itrCursor.GoByOffset(cursorLeftOffset);
+          AdjustLine(true);
+          UpdateCursor(true);
+          Key = 0;
+        }
         break;
    case VK_PRIOR:
    case VK_NEXT:
+     if(!Shift.Contains(ssShift))
+       ProcessMouseClear(true, true, false);
      cy += drawer->GetLinesize() * GetVisLineCount();
      my += drawer->GetLinesize() * GetVisLineCount();
      dy += drawer->GetLinesize() * GetVisLineCount();
@@ -390,12 +430,22 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
      RepaintWindow(true);
      break;
    case VK_HOME:
-     itrCursor.GoLineStart();
+     if(!Shift.Contains(ssShift))
+       ProcessMouseClear(true, true, false);
+     if(Shift.Contains(ssCtrl))
+       itrCursor = buffer->begin();
+     else
+       itrCursor.GoLineStart();
      UpdateCursor(true);
      AdjustLine(true);
      break;
    case VK_END:
-     itrCursor.GoLineEnd();
+     if(!Shift.Contains(ssShift))
+       ProcessMouseClear(true, true, false);
+     if(Shift.Contains(ssCtrl))
+       itrCursor = buffer->end();
+     else
+       itrCursor.GoLineEnd();
      UpdateCursor(true);
      AdjustLine(true);
      break;
@@ -409,6 +459,12 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
     default:
       return;
  }
+
+  if(Shift.Contains(ssShift))
+  {
+    ParseScreenBetween(&itrCursor, &itrBeforeMove);
+    ProcessNewSelection(true, false);
+  }
  Key = 0;
 }
 //---------------------------------------------------------------------------
@@ -725,6 +781,8 @@ void TSHEdit::AdjustLine(bool paint)
       parser->Execute();
     }
   }
+  else if (paint)
+    parser->Execute();
 }
 //---------------------------------------------------------------------------
 #ifdef DEBUG
@@ -824,6 +882,10 @@ void __fastcall TSHEdit::MouseDown(TMouseButton Button, Classes::TShiftState Shi
 //---------------------------------------------------------------------------
 void __fastcall TSHEdit::MouseMove(Classes::TShiftState Shift, int X, int Y)
 {
+  if(!mouseDown && !mouseDoubleClickFlag)
+    return;
+  if(mouseDoubleClickFlag && (abs(X-dx) > 2 || abs(Y-dy) > 2))
+    mouseDoubleClickFlag = false;
   if(!mouseDown)
     return;
   if(!mouseSelect && (abs(X-dx) > 2 || abs(Y-dy) > 2))
@@ -841,7 +903,16 @@ void __fastcall TSHEdit::MouseUp(TMouseButton Button, Classes::TShiftState Shift
   if(FOnMouseUp != NULL)
     FOnMouseUp(this, Button, Shift, X, Y);
 
-  if(mouseSelect)
+  if(mouseDoubleClickFlag)
+  {
+    ProcessMouseClear(true, false);
+    itrCursor = XYtoItr(X, Y);
+    itrCursorSecond = itrCursor;
+    itrCursor.GoWordEndLiteral();
+    itrCursorSecond.RevWordLiteral();
+    ProcessNewSelection();
+  }
+  else if(mouseSelect)
   {
     Action("    Selecting ...", false);
     ProcessMouseMove(X, Y);
@@ -850,25 +921,27 @@ void __fastcall TSHEdit::MouseUp(TMouseButton Button, Classes::TShiftState Shift
 
   mouseDown = false;
   mouseSelect = false;
-
+  mouseDoubleClickFlag = !mouseDoubleClickFlag;
 }
 //---------------------------------------------------------------------------
 void TSHEdit::ProcessMouseMove(int &x, int &y)
 {
-  Iter oldIter = itrCursorSecond;
+  if(!itrCursorSecond.Valid())
+    itrCursorSecond = itrCursor;
 
+  Iter oldIter = itrCursor;
   Iter tmp  = XYtoItr(x, y);
-  if(itrCursorSecond.Valid() && tmp == itrCursorSecond)
+  if(tmp == itrCursor)
   {
     return;
   }
   ProcessMouseClear(false, false);
-  itrCursorSecond = tmp;
+  itrCursor = tmp;
 
   if(oldIter.Valid())
-    ParseScreenBetween(&oldIter, &itrCursorSecond);
+    ParseScreenBetween(&oldIter, &itrCursor);
 
-  ProcessNewSelection();
+  ProcessNewSelection(false, false);
 
   mx = x;
   my = y;
@@ -883,13 +956,15 @@ void TSHEdit::ProcessMouseMove(int &x, int &y)
      }               */
 }
 //---------------------------------------------------------------------------
-void TSHEdit::ProcessNewSelection()
+void TSHEdit::ProcessNewSelection(bool execredraw, bool draw)
 {
+  //ProcessMouseClear(false, false, false);
+  selectionFormat->RemoveAllMarks();
   if(itrCursor == itrCursorSecond)
     itrCursorSecond.Invalidate();
   if(!itrCursorSecond.Valid())
   {
-    UpdateCursor(true);
+    UpdateCursor(execredraw);
     return;
   }
   UpdateCursor(false);
@@ -899,9 +974,11 @@ void TSHEdit::ProcessNewSelection()
     GetCursorIterEnd()->IMarkupEnd(selectionFormat);
   }
 
-  ParseScreenBetween(&itrCursor, &itrCursorSecond);
+  if(draw)
+    ParseScreenBetween(&itrCursor, &itrCursorSecond);
 
-  parser->Execute();
+  if(execredraw)
+    parser->Execute();
 }
 //---------------------------------------------------------------------------
 void TSHEdit::SetSelection(Iter * first, Iter * second)
@@ -918,7 +995,7 @@ void TSHEdit::SetSelection(Iter * first, Iter * second)
   ProcessNewSelection();
 }
 //---------------------------------------------------------------------------
-void TSHEdit::ProcessMouseClear(bool redraw, bool deleteiter)
+void TSHEdit::ProcessMouseClear(bool redraw, bool deleteiter, bool execredraw)
 {
   selectionFormat->RemoveAllMarks();
 
@@ -927,9 +1004,11 @@ void TSHEdit::ProcessMouseClear(bool redraw, bool deleteiter)
     if(itrCursor != itrCursorSecond && redraw)
     {
       ParseScreenBetween(GetCursorIter(), GetCursorIterEnd());
-      parser->Execute();
+      if(execredraw)
+        parser->Execute();
     }
-    itrCursorSecond.Invalidate();
+    if(deleteiter)
+      itrCursorSecond.Invalidate();
   }
 }
 //---------------------------------------------------------------------------

@@ -29,6 +29,8 @@ namespace SHEdit
    * If you wish to use Iter with full positioning, you need to pass correct line, linenum and buffer to constructor. But Iterator will work as well positionlessly.
    *
    * All IPos descendants that are given proper Buffer pointer are registered and taken care of by their Buffer. That means you should always take care of destroying any Iterators you create (or whose duplicate are returned to you), when you dont need them any longer. Not doing so will slow down editing of buffer if you let unused iterators to cumulate.
+   *
+   * The /*AUTOGEN  tags serve for automatical generation of the Cursor wrapper. In case you edit this file, you probably need to rerun the generator. See uCursor.h documentation for details.
    * */
 
   //---------------------------------------------------------------------------
@@ -81,6 +83,10 @@ namespace SHEdit
       wchar_t GetChar()/*AUTOGEN_PASS*/;
 
       int GetLineNum()/*AUTOGEN_PASS*/;
+
+      void GoWordLiteral()/*AUTOGEN_UPDATE*/;                                                        /*!< goes to next start of a word (alnum + underscore) */
+      void RevWordLiteral()/*AUTOGEN_UPDATE*/;                                                       /*!< goes to previous start of a word (alnum + underscore) */
+      void GoWordEndLiteral();                                                                       /*!< goes to next end of a word (alnum + underscore)*/
 
       int GetLeftOffset()/*AUTOGEN_PASS*/;                                                           /*!< Returns left offset counting tabs as multiple characters according to the tabstop */
       void GoByOffset(int chars)/*AUTOGEN_UPDATE*/;                                                  /*!< Goes forward countint tabs as multiple characters according to the tabstop. Always stays on the same line. */

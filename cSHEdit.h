@@ -153,11 +153,12 @@ namespace SHEdit
       Iter XYtoItr(int& x, int& y);                                                                  /*!< Converts coordinates to coresponding iterator. */
       void UpdateCursor(bool paint);                                                                 /*!< Recalculates position of itrCursor, and posts results to the drawer. If paint is set to true, it also asks drawer to redraw window.*/
       void ProcessMouseMove(int& x, int& y);                                                         /*!< processes mouse drag info (called from mouse move and mouse up handlers). */
-      void ProcessMouseClear(bool redraw, bool deletecursord);                                       /*!< clears selection */
+      void ProcessMouseClear(bool redraw, bool deletecursord, bool execredraw = true);               /*!< clears selection */
       Format * selectionFormat;
       Format * searchFormat;
       bool mouseDown;
       bool mouseSelect;                                                                              /*!< Whether component is in text-selection (=mouse drag) mode.*/
+      bool mouseDoubleClickFlag;
       int dx, dy;                                                                                    /*!< Position of mouse down.*/
       int cx, cy;                                                                                    /*!< Cursor position*/
       int mx, my;                                                                                    /*!< Position of itrCursorSecond*/
@@ -218,7 +219,7 @@ namespace SHEdit
      String __fastcall GetText();
      bool Visible(Iter * itr);
 
-     void ProcessNewSelection();
+     void ProcessNewSelection(bool execdraw = true, bool draw = true);
 
     public:
 #ifdef DEBUG

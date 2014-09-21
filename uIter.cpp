@@ -173,7 +173,10 @@ bool Iter::RevLine()
     return true;
   }
   else
+  {
+    GoLineStart(); //not sure whether I can break anything; The problem is on first line - one expects this to return handle to the beginning of line
     return false;
+  }
 }
 //---------------------------------------------------------------------------
 bool Iter::GoWord()
@@ -603,3 +606,25 @@ int Iter::GetLineNum()
 {
   return linenum;
 }
+//---------------------------------------------------------------------------
+void Iter::GoWordLiteral()
+{
+  while ((iswalnum(*ptr) || *ptr == '_') && GoChar());
+  while ((!(iswalnum(*ptr) || *ptr == '_')) && GoChar());
+}
+//---------------------------------------------------------------------------
+void Iter::GoWordEndLiteral()
+{
+  while ((!(iswalnum(*ptr) || *ptr == '_')) && GoChar());
+  while ((iswalnum(*ptr) || *ptr == '_') && GoChar());
+}
+//---------------------------------------------------------------------------
+void Iter::RevWordLiteral()
+{
+  RevChar();
+  while ((!(iswalnum(*ptr) || *ptr == '_')) && RevChar());
+  while ((iswalnum(*ptr) || *ptr == '_') && RevChar());            //this moves one char before the word
+  if( word->prev->prev != NULL || offset != 0)                     //this corrects the one char
+    GoChar();
+}
+//---------------------------------------------------------------------------
