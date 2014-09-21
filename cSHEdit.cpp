@@ -1624,7 +1624,7 @@ CIter TSHEdit::GetCursorEnd()
          RepaintWindow(true);
       }
 //---------------------------------------------------------------------------
-      void TSHEdit::AddLine(const String& string)
+      void TSHEdit::AddLine(const String& string, SHEdit::Format * format)
       {
 
   Action("Adding line");
@@ -1635,12 +1635,19 @@ CIter TSHEdit::GetCursorEnd()
         buffer->Insert(&end, L"\n");
         if(begin)
           itrLine = buffer->begin();
+        if(format != NULL)
+        {
+          end.RevChar();
+          end.MarkupEnd(format);
+          end.GoLineStart();
+          end.MarkupBegin(format);
+        }
 
         UpdateCursor(false); //mohl byt posunut insertem
         parser->Execute();
       }
 //---------------------------------------------------------------------------
-      void TSHEdit::AddLines(const String& string)
+      void TSHEdit::AddLines(const String& string, SHEdit::Format * format)
       {
         AddLine(string);
       }

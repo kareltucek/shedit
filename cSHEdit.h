@@ -20,6 +20,7 @@
 #include "uLanguageDefinitionSQL.h"
 #include "uSpan.h"
 #include "uMark.h"
+#include "uFormat.h"
 #include "uBuffer.h"
 #include "uDrawer.h"
 #include "uParser.h"
@@ -276,8 +277,8 @@ namespace SHEdit
       virtual void __fastcall RepaintWindow(bool force = true);
 
       void Clear();
-      void AddLine(const String& string);
-      void AddLines(const String& string);
+      void AddLine(const String& string, Format * format = NULL);
+      void AddLines(const String& string, Format * format = NULL);
       String GetLine(Iter* itr);
       String GetLine(int index);
 
