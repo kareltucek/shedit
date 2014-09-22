@@ -18,7 +18,7 @@
 #include <ctype.h>
 
 using namespace SHEdit;
-#ifdef _DEBUG
+#ifdef _DEBUG_LOGGING
 std::ofstream myfile;
 #endif
 
@@ -26,7 +26,7 @@ std::ofstream myfile;
 //---------------------------------------------------------------------------
 Buffer::Buffer()
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_LOGGING
   myfile.open("buffer.txt", ios::out);
 #endif
   NSpan * head = new NSpan();

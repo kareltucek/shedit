@@ -35,7 +35,7 @@ namespace Cshedit
 
 using namespace SHEdit;
 
-#ifdef _DEBUG
+#ifdef _DEBUG_LOGGING
 #include <fstream>
 std::wofstream myfile;
 #endif
@@ -48,7 +48,7 @@ TSHEdit * TSHEditFocused; //callback musi jit na statickou metodu...
   __fastcall TSHEdit::TSHEdit(TComponent* Owner)
 : TCustomControl(Owner)
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_LOGGING
   if(!myfile.is_open())
     myfile.open("main.txt", ios::out );
 #endif
@@ -287,9 +287,11 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
   {
     case VK_DELETE:
     case VK_BACK:
-      if(readonly)
-        break;
-      if(!itrCursorSecond.Valid())
+      if (Shift.Contains(ssAlt))
+      {
+        UndoRedo(Shift.Contains(ssShift));
+      }
+      else if(!itrCursorSecond.Valid())
       {
         if(Key == VK_BACK && !(itrCursor.word->prev->prev || (itrCursor.word->prev && itrCursor.offset > 0)))  //have to stop after the head, not on it
         {
@@ -525,57 +527,25 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
     case 0x01:
       SelectAll();
       break;
-    case 0x1A:
+      /*
+    case 0x08: // Process a backspace.
       {
         if(readonly)
           break;
-        int virtkey = GetKeyState(VK_SHIFT);
-        Iter * itr;
-        Iter * itrbegin;
-        if (virtkey & 0x8000)
+        bool alt = (0x8000 & GetKeyState(VK_MENU)); //MENU == ALT at microsoft
+        if(alt)
         {
-          Action("Undo");
-          itr = buffer->Redo(itrbegin);
+          bool shift = (0x8000 & GetKeyState(VK_SHIFT));
+          UndoRedo(shift);
         }
-        else
-        {
-          Action("Redo");
-          itr = buffer->Undo(itrbegin);
-        }
-        if(itr != NULL && itr->Valid())
-        {
-          itrCursor = *itr;
-          if(buffer->GetLineCount() < GetVisLineCount())
-          {
-            itrLine = buffer->begin();
-          }
-          AdjustLine(false);
-          if(itrbegin != NULL && itrbegin->Valid())
-          {
-            parser->ParseFromLine(itrbegin->line, itrbegin->linenum, 0);
-            delete itrbegin;
-          }
-          delete itr;
-        }
-        UpdateVBar();
-        UpdateCursor(false);
-        RepaintWindow(true);
-
-        Action("  done");
-
-#ifdef _DEBUG
-        /*
-           Write("Undone");
-           int empty = 0;
-           int eno = buffer->CheckIntegrity(empty);
-           if(empty)
-           Log(String("IntegrityCheck found ")+String(empty)+String(" null strings"));
-           if(errno)
-           Log(String("IntegrityCheck: ")+String(eno));
-           RepaintWindow(true);
-           */
-#endif
-
+      }
+      break;     */
+    case 0x1A: //
+      {
+        if(readonly)
+          break;
+        bool shift = (0x8000 & GetKeyState(VK_SHIFT));
+        UndoRedo(shift);
       }
       break;
     case 0x16:
@@ -610,6 +580,55 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
       break;
   }
   Key = 0;
+}
+//---------------------------------------------------------------------------
+void TSHEdit::UndoRedo(bool redo)
+{
+  Iter * itr;
+  Iter * itrbegin;
+  if (redo)
+  {
+    Action("Redo");
+    itr = buffer->Redo(itrbegin);
+  }
+  else
+  {
+    Action("Undo");
+    itr = buffer->Undo(itrbegin);
+  }
+  if(itr != NULL && itr->Valid())
+  {
+    itrCursor = *itr;
+    if(buffer->GetLineCount() < GetVisLineCount())
+    {
+      itrLine = buffer->begin();
+    }
+    AdjustLine(false);
+    if(itrbegin != NULL && itrbegin->Valid())
+    {
+      parser->ParseFromLine(itrbegin->line, itrbegin->linenum, 0);
+      delete itrbegin;
+    }
+    delete itr;
+  }
+  UpdateVBar();
+  UpdateCursor(false);
+  RepaintWindow(true);
+
+  Action("  done");
+
+#ifdef _DEBUG
+        /*
+           Write("Undone");
+           int empty = 0;
+           int eno = buffer->CheckIntegrity(empty);
+           if(empty)
+           Log(String("IntegrityCheck found ")+String(empty)+String(" null strings"));
+           if(errno)
+           Log(String("IntegrityCheck: ")+String(eno));
+           RepaintWindow(true);
+           */
+#endif
 }
 //---------------------------------------------------------------------------
 void __fastcall TSHEdit::KeyUpHandler(System::TObject * Sender,System::Word &Key, Classes::TShiftState Shift)
@@ -1531,7 +1550,7 @@ void __fastcall TSHEdit::SetLanguageDefinition(LanguageDefinition * def)
 //---------------------------------------------------------------------------
 void TSHEdit::Action(String msg, bool end)
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_LOGGING
   Write(msg + PositionDescription(), end);
   CheckIntegrity();
   CheckIterIntegrity(&itrLine);

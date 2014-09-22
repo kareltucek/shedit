@@ -13,7 +13,7 @@
 
 using namespace SHEdit;
 
-#ifdef _DEBUG
+#ifdef _DEBUG_LOGGING
 #include <fstream>
 std::ofstream myfile;
 #endif
@@ -51,7 +51,7 @@ __fastcall Drawer::Drawer(TCanvas * canvas, TSHEdit * parent)
   y = Y_OFF;
   cx = -2;
   cy = 2;
-#ifdef _DEBUG
+#ifdef _DEBUG_LOGGING
   myfile.open("drawer.txt", ios::out );
 #endif
 }

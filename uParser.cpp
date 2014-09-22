@@ -20,7 +20,7 @@
 
 using namespace SHEdit;
 
-#ifdef _DEBUG
+#ifdef _DEBUG_LOGGING
 #include <fstream>
 std::ofstream myfile;
 #endif
@@ -97,7 +97,7 @@ bool Parser::ParseTask::operator<(const Parser::ParseTask & pt)  const
 //---------------------------------------------------------------------------
 __fastcall Parser::Parser(TSHEdit * parent, Drawer * drawer)
 {
-#ifdef _DEBUG
+#ifdef _DEBUG_LOGGING
   myfile.open("parser.txt", ios::out);
   dbgLogging = false;
 #endif

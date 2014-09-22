@@ -175,6 +175,8 @@ namespace SHEdit
 
       void __fastcall OnEnterHandler(TObject * Sender);
 
+      void UndoRedo(bool redo); /*!< Internal implementation moved from the keydown handlers. Not sure atm whether usable from outside of the handler.     */
+
       void Action(String name, bool end = true);
     protected:
       virtual void __fastcall Paint();
