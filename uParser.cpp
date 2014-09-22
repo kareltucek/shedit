@@ -20,7 +20,7 @@
 
 using namespace SHEdit;
 
-#ifdef DEBUG
+#ifdef _DEBUG
 #include <fstream>
 std::ofstream myfile;
 #endif
@@ -61,15 +61,15 @@ SHEdit::Parser::ParserState& Parser::ParserState::operator=(const SHEdit::Parser
 //---------------------------------------------------------------------------
 bool Parser::ParserState::operator==(const ParserState& state)
 {
-    if(!(searchStateStack == state.searchStateStack))
-      return false;
+  if(!(searchStateStack == state.searchStateStack))
+    return false;
   return (this->parseid == state.parseid && globalMask == state.globalMask && markupStack == state.markupStack);
 }
 //---------------------------------------------------------------------------
 bool Parser::ParserState::operator!=(const ParserState& state)
 {
-    if(!(searchStateStack == state.searchStateStack))
-      return true;
+  if(!(searchStateStack == state.searchStateStack))
+    return true;
   return !(this->parseid == state.parseid && globalMask == state.globalMask && markupStack == state.markupStack);
 }
 //---------------------------------------------------------------------------
@@ -97,7 +97,7 @@ bool Parser::ParseTask::operator<(const Parser::ParseTask & pt)  const
 //---------------------------------------------------------------------------
 __fastcall Parser::Parser(TSHEdit * parent, Drawer * drawer)
 {
-#ifdef DEBUG
+#ifdef _DEBUG
   myfile.open("parser.txt", ios::out);
   dbgLogging = false;
 #endif
@@ -288,7 +288,7 @@ void __fastcall Parser::Draw()
 //---------------------------------------------------------------------------
 void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, bool paint)
 {
-#ifdef DEBUG
+#ifdef _DEBUG
   //Write(" entering parseline");
 #endif
   wchar_t * ptr;
@@ -304,17 +304,17 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
 
   while(true)
   {
-#ifdef DEBUG
-  TColor bg = *actFormat.background;
-  TColor fg = *actFormat.foreground;
+#ifdef _DEBUG
+    TColor bg = *actFormat.background;
+    TColor fg = *actFormat.foreground;
 #endif
     CheckMarkup(itr, paint);
     bool whiteskipped = false;
     while(langdef->IsWhite(*(itr->ptr)) && *(itr->ptr) != '\n')
     {
-#ifdef DEBUG
-  bg =  *actFormat.background;
-  fg =  *actFormat.foreground;
+#ifdef _DEBUG
+      bg =  *actFormat.background;
+      fg =  *actFormat.foreground;
 #endif
       whiteskipped = true;
       AddChar(itr, pos);
@@ -402,7 +402,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
       searchiter->current = searchiter->base;
     }
 
-#ifdef DEBUG
+#ifdef _DEBUG
     /* int dbgtype = type; if( dbgLogging )  parent->Log( String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String((int)lookahead));        //Write(String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String(searchiter->type));  */
 #endif
     if(lookahead || (lasttype == LangDefSpecType::Empty && type != LangDefSpecType::Empty))
@@ -431,54 +431,54 @@ proc:
           Flush();
         }
         break;                          /*
-      case LangDefSpecType::PushPop:
-        if((searchiter->mask | state.globalMask) & searchiter->current->popmask)
-        {
-          PerformPop(searchiter);
-          if(paint)
-          {
-             actFormat = *searchiter->current->format ;
-            AddChar(itr, pos);
-            actFormat += *(searchiter->current->format);
-            Flush();
-          }
-          searchiter->current = searchiter->base;
-        }
-        else
-        {
-          if(paint)
-          {
-            AddChar(itr, pos);
-            actFormat += *(searchiter->current->format);
-            Flush();
-            actFormat = *searchiter->current->format ;
-          }
-          PerformJumpPush(searchiter, true);
-          actFormat = *searchiter->current->format ;
-        }
-        break;    */
+                                           case LangDefSpecType::PushPop:
+                                           if((searchiter->mask | state.globalMask) & searchiter->current->popmask)
+                                           {
+                                           PerformPop(searchiter);
+                                           if(paint)
+                                           {
+                                           actFormat = *searchiter->current->format ;
+                                           AddChar(itr, pos);
+                                           actFormat += *(searchiter->current->format);
+                                           Flush();
+                                           }
+                                           searchiter->current = searchiter->base;
+                                           }
+                                           else
+                                           {
+                                           if(paint)
+                                           {
+                                           AddChar(itr, pos);
+                                           actFormat += *(searchiter->current->format);
+                                           Flush();
+                                           actFormat = *searchiter->current->format ;
+                                           }
+                                           PerformJumpPush(searchiter, true);
+                                           actFormat = *searchiter->current->format ;
+                                           }
+                                           break;    */
       case LangDefSpecType::Jump:
-      /*
-        if(PerformPop(searchiter))
-        {
-          if(paint)
-          {
-            AddChar(itr, pos);
-            actFormat += *(searchiter->current->format);
-            Flush();
-          }
-        }
-        else
-        {
-          if(paint)
-          {
-            AddChar(itr, pos);
-            actFormat += *(searchiter->current->format);
-            Flush();
-          }
-          PerformJumpPush(searchiter);
-          actFormat = *searchiter->current->format ;
-        }                           */
+        /*
+           if(PerformPop(searchiter))
+           {
+           if(paint)
+           {
+           AddChar(itr, pos);
+           actFormat += *(searchiter->current->format);
+           Flush();
+           }
+           }
+           else
+           {
+           if(paint)
+           {
+           AddChar(itr, pos);
+           actFormat += *(searchiter->current->format);
+           Flush();
+           }
+           PerformJumpPush(searchiter);
+           actFormat = *searchiter->current->format ;
+           }                           */
         if(paint)
         {
           AddChar(itr, pos);
@@ -558,7 +558,7 @@ bool Parser::PerformPop(LanguageDefinition::SearchIter *& sit)
 
   //Write(String("going to perform POP with popmask ")+String(popmask)+String(" on ")+actText+String(sit->current->thisItem));
   //DumpStackState();
-   for(int i = 0; i < sit->current->recpopcount; i++)
+  for(int i = 0; i < sit->current->recpopcount; i++)
   {
     if(sit->current->pops[i].popmask & (sit->mask | state.globalMask) || sit->current->pops[i].popmask == 0)
     {
@@ -591,7 +591,7 @@ bool Parser::PerformPop(LanguageDefinition::SearchIter *& sit)
     }
   }
   return false;
-  //DumpStackState();
+    //DumpStackState();
 }
 //---------------------------------------------------------------------------
 void Parser::PerformJumpPush(LanguageDefinition::SearchIter *& sit)
@@ -628,7 +628,7 @@ void Parser::PerformJumpPush(LanguageDefinition::SearchIter *& sit)
           state.searchStateStack.Push(*sit);
           sit = &(state.searchStateStack.top->data);
         }
-         sit->base = newtree;
+        sit->base = newtree;
       }
 
       state.globalMask = state.globalMask  ^ newgmask;
@@ -714,7 +714,7 @@ void Parser::AddChar(Iter * itr, int & pos)
 
 void Parser::CheckMarkup(Iter * itr, bool paint)
 {
-#ifdef DEBUG
+#ifdef _DEBUG
   //Write(" markup check");
 #endif
   if(itr->word->marks.top != NULL)
@@ -830,24 +830,24 @@ __fastcall Parser::~Parser()
 {
 }
 //---------------------------------------------------------------------------
-#ifdef DEBUG
+#ifdef _DEBUG
 void Parser::DumpStackState()
 {
-#ifdef DEBUG_LOGGING
-/*
-  Write(String("  current bank is ")+String(state.actBank));
-  for(int i = 0; i < langdef->GetBankIdCount(); i++)
-  {
-    Write(String("  stack of bank ")+String(i)+String(" is "));
-    for(Stack<LanguageDefinition::SearchIter>::Node * n = state.searchStateBank[i].top; n != NULL; n = n->next)
-      Write(String("    ")+String(n->data.base->Name)+String(" - ")+String(n->data.mask));
-  }     */
+#ifdef _DEBUG_LOGGING
+  /*
+     Write(String("  current bank is ")+String(state.actBank));
+     for(int i = 0; i < langdef->GetBankIdCount(); i++)
+     {
+     Write(String("  stack of bank ")+String(i)+String(" is "));
+     for(Stack<LanguageDefinition::SearchIter>::Node * n = state.searchStateBank[i].top; n != NULL; n = n->next)
+     Write(String("    ")+String(n->data.base->Name)+String(" - ")+String(n->data.mask));
+     }     */
 #endif
 }
 //---------------------------------------------------------------------------
 void Parser::Write(AnsiString message)
 {
-#ifdef DEBUG_LOGGING
+#ifdef _DEBUG_LOGGING
   if(dbgLogging)
     myfile << message.c_str() << std::endl;
 #endif

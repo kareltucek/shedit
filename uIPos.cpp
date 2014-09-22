@@ -111,10 +111,10 @@ bool IPos::compare::operator()(const IPos* a, const IPos* b) const
   return IPos::Compare(a, b);
 }
 //---------------------------------------------------------------------------
- bool IPos::operator==(const IPos& p)
- {
-   return (p.pos == this->pos && p.linenum == this->linenum);
- }
+bool IPos::operator==(const IPos& p)
+{
+  return (p.pos == this->pos && p.linenum == this->linenum);
+}
 //---------------------------------------------------------------------------
 IPos& IPos::operator=(const IPos& p)
 {
@@ -123,8 +123,8 @@ IPos& IPos::operator=(const IPos& p)
 
   if(Valid())
     Invalidate();
-  Copy(p);
-  return *this;
+      Copy(p);
+      return *this;
 }
 //---------------------------------------------------------------------------
 bool IPos::Compare(const IPos*& a, const IPos*& b)

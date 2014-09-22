@@ -108,7 +108,7 @@ namespace SHEdit
       void HistoryOnOff();        //purges stacks if the keepHistory flag is off; to be placed before returns in insert/delete
       void PurgeStack(std::stack<UndoTask*>& stack);
 
-#ifdef DEBUG
+#ifdef _DEBUG
       void Write(AnsiString message);
 #endif
 
@@ -135,10 +135,10 @@ namespace SHEdit
       void SimpleLoadFile(const wchar_t * filename);
       void SimpleSaveFile(const wchar_t * filename);
       /*                                    //multithreaded
-         void LoadFile(wchar_t * filename);
-         void LoadFileAsync(wchar_t * filename);
-         bool Preload(int lines);
-         void FlushPreload();    */
+                                            void LoadFile(wchar_t * filename);
+                                            void LoadFileAsync(wchar_t * filename);
+                                            bool Preload(int lines);
+                                            void FlushPreload();    */
 
       void RegisterIP(IPos * itr);
       void UnregisterIP(IPos * itr);

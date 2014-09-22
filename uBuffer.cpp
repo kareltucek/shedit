@@ -18,7 +18,7 @@
 #include <ctype.h>
 
 using namespace SHEdit;
-#ifdef DEBUG
+#ifdef _DEBUG
 std::ofstream myfile;
 #endif
 
@@ -26,7 +26,7 @@ std::ofstream myfile;
 //---------------------------------------------------------------------------
 Buffer::Buffer()
 {
-#ifdef DEBUG
+#ifdef _DEBUG
   myfile.open("buffer.txt", ios::out);
 #endif
   NSpan * head = new NSpan();
@@ -112,12 +112,12 @@ void Buffer::_Insert(Span * word)
 void Buffer::_Delete(Span * word)
 {
 
-#ifdef DEBUG
+#ifdef _DEBUG
   //Write("delete words "+String((int)word->prev)+String(" ")+String((int)word->next));
 #endif
   word->next->prev = word->prev;
   word->prev->next = word->next;
-#ifdef DEBUG
+#ifdef _DEBUG
   //Write("delete words returning");
 #endif
 }
@@ -296,7 +296,7 @@ int Buffer::Delete(Iter * From, Iter * To)
   else
   {
 
-#ifdef DEBUG
+#ifdef _DEBUG
     //Write("Delete cycle");
 #endif
     Span * begin, * end;
@@ -544,7 +544,7 @@ void Buffer::HistoryOnOff()
   if( !keepHistory )
   {
     PurgeStack(stackRedo);
-    PurgeStack(stackUndo);
+      PurgeStack(stackUndo);
   }
 }
 //---------------------------------------------------------------------------
@@ -555,7 +555,7 @@ void Buffer::PurgeStack(std::stack<UndoTask*>& stack)
     UndoTask * redoevent = stack.top();
     stack.pop();
     redoevent->range->Free();
-    delete redoevent;
+      delete redoevent;
   }
 }
 //---------------------------------------------------------------------------
@@ -567,7 +567,7 @@ void Buffer::UndoPush(UndoTask * event)
 //---------------------------------------------------------------------------
 Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*> * stackRedo, Iter *& begin)
 {
-#ifdef DEBUG
+#ifdef _DEBUG
   //Write(String("undo called"));
 #endif
   if((*stackUndo).size() == 0)
@@ -703,7 +703,7 @@ Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*>
 
   delete event;
   return itr;
-#ifdef DEBUG
+#ifdef _DEBUG
   //Write(String("undone"));
 #endif
 }
@@ -758,12 +758,12 @@ void Buffer::SimpleSaveFile(const wchar_t * filename)
     while(itr->line->nextline != NULL)
     {
       int size_needed = WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, NULL, 0, NULL, NULL);
-      std::string strTo( size_needed, 0 );
-      char * utf8 = new char[size_needed+1];
-      utf8[size_needed] = '\0';
-      WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, utf8, size_needed, NULL, NULL);
-      *file << utf8;
-      delete utf8;
+        std::string strTo( size_needed, 0 );
+        char * utf8 = new char[size_needed+1];
+        utf8[size_needed] = '\0';
+        WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, utf8, size_needed, NULL, NULL);
+        *file << utf8;
+        delete utf8;
     }
     delete itr;
   }
@@ -1007,7 +1007,7 @@ void Buffer::ItersTranslateInsert(int linenum, int pos, int bylines, int topos, 
 {
   for (std::list<IPos*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
   {
-#ifdef DEBUG
+#ifdef _DEBUG
     int size = ItrList.size();
     IPos *debug = *itr;
 #endif
@@ -1032,7 +1032,7 @@ void Buffer::ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, i
 {
   for (std::list<IPos*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
   {
-#ifdef DEBUG
+#ifdef _DEBUG
     int size = ItrList.size();
     IPos *debug = *itr;
 #endif
@@ -1065,7 +1065,7 @@ void Buffer::ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, i
 //---------------------------------------------------------------------------
 int Buffer::CheckIntegrity(int& emptyCount)
 {
-#ifdef DEBUG
+#ifdef _DEBUG
   //Write(String("checking integrity"));
 #endif
   emptyCount = 0;
@@ -1103,16 +1103,16 @@ int Buffer::CheckIntegrity(int& emptyCount)
     lastword = word;
     word = word->next;
   }
-#ifdef DEBUG
+#ifdef _DEBUG
   //Write(String("integrity check done"));
 #endif
   return 0;
 }
 //---------------------------------------------------------------------------
-#ifdef DEBUG
+#ifdef _DEBUG
 void Buffer::Write(AnsiString message)
 {
-#ifdef DEBUG_LOGGING
+#ifdef _DEBUG_LOGGING
   myfile << message.c_str() << std::endl;
 #endif
 }

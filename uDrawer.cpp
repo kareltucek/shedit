@@ -13,7 +13,7 @@
 
 using namespace SHEdit;
 
-#ifdef DEBUG
+#ifdef _DEBUG
 #include <fstream>
 std::ofstream myfile;
 #endif
@@ -51,7 +51,7 @@ __fastcall Drawer::Drawer(TCanvas * canvas, TSHEdit * parent)
   y = Y_OFF;
   cx = -2;
   cy = 2;
-#ifdef DEBUG
+#ifdef _DEBUG
   myfile.open("drawer.txt", ios::out );
 #endif
 }
@@ -60,7 +60,7 @@ __fastcall Drawer::Drawer(TCanvas * canvas, TSHEdit * parent)
 
 void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontStyle format)
 {
-#ifdef DEBUG
+#ifdef _DEBUG
   TColor bg = *format.background;
   TColor fg = *format.foreground;
 #endif
@@ -328,8 +328,8 @@ bool __fastcall Drawer::UpdateLinenumWidth(int count)
   bitmap->Canvas->Font->Name = "Courier New";
   w = bitmap->Canvas->TextWidth(count)+5; //2*2 margins + 1 line width
   delete bitmap;
-
-  bool ret = linenumwidth != w;
+    
+    bool ret = linenumwidth != w;
   linenumwidth = w;
   return ret;
 }
@@ -353,10 +353,10 @@ __fastcall Drawer::~Drawer()
 {
 }
 //---------------------------------------------------------------------------
-#ifdef DEBUG
+#ifdef _DEBUG
 void Drawer::Write(AnsiString message)
 {
-#ifdef DEBUG_LOGGING
+#ifdef _DEBUG_LOGGING
   myfile << message.c_str();
 #endif
 }

@@ -165,7 +165,7 @@ namespace SHEdit
       int cursorLeftOffset;                                                                          /*!< Column of the cursor, taking into account tabulators. This does NOT equal iterator position.*/
       int scrolldelta;                                                                               /*!< used by ms to treat smooth-scroll wheels...*/
       int scrolldeltafontsize;                                                                       /*!< used by ms to treat smooth-scroll wheels...*/
-                                                                                                     /*!< On edit and movement edjusts screen so that cursor is visible*/
+      /*!< On edit and movement edjusts screen so that cursor is visible*/
       void Scroll(int by);
       void __fastcall OnVScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);
       void __fastcall OnHScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);
@@ -211,18 +211,18 @@ namespace SHEdit
       TMessage FOnExit;
       TMouseEvent FOnMouseUp;
 
-     void __fastcall SetSelLen(int SelLen);
-     int __fastcall GetSelLen();
-     void __fastcall SetSelText(String SelText);
-     String __fastcall GetSelText();
-     void __fastcall SetText(String);
-     String __fastcall GetText();
-     bool Visible(Iter * itr);
+      void __fastcall SetSelLen(int SelLen);
+      int __fastcall GetSelLen();
+      void __fastcall SetSelText(String SelText);
+      String __fastcall GetSelText();
+      void __fastcall SetText(String);
+      String __fastcall GetText();
+      bool Visible(Iter * itr);
 
-     void ProcessNewSelection(bool execdraw = true, bool draw = true);
+      void ProcessNewSelection(bool execdraw = true, bool draw = true);
 
     public:
-#ifdef DEBUG
+#ifdef _DEBUG
       void __fastcall dbgIter();
       void __fastcall Log(String str);
       void CheckIntegrity();
@@ -300,9 +300,9 @@ namespace SHEdit
       void __fastcall SetKeepHistory(bool keep);
       bool __fastcall GetKeepHistory();
 
-     __property int SelLen = {read=GetSelLen, write=SetSelLen};
-     __property String SelText = {read=GetSelText, write=SetSelText};
-     __property String Text = {read=GetText, write=SetText};
+      __property int SelLen = {read=GetSelLen, write=SetSelLen};
+      __property String SelText = {read=GetSelText, write=SetSelText};
+      __property String Text = {read=GetText, write=SetText};
 __published:
       __property TAlign Align = {read=FAlign, write=SetAlign, default=0};
       __property int FontSize = {read=GetFontsize, write=SetFontsize, default=DEFONTSIZE};

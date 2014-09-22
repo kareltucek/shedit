@@ -80,8 +80,8 @@ void Iter::Invalidate()
 {
   this->IPos::Invalidate();
   word = NULL;
-  offset = 0;
-  ptr = NULL;
+    offset = 0;
+    ptr = NULL;
 }
 //---------------------------------------------------------------------------
 bool Iter::GoLine(bool allowEnd)
@@ -334,10 +334,10 @@ Iter& Iter::operator=(const Iter& itr)
     return *this;
 
   ((IPos*)this)->operator=((const IPos&)itr);
-  word = itr.word;
-  offset = itr.offset;
-  ptr = itr.ptr;
-  return *this;
+    word = itr.word;
+    offset = itr.offset;
+    ptr = itr.ptr;
+    return *this;
 }
 //---------------------------------------------------------------------------
 void Iter::MarkupBegin( SHEdit::Format * format)
@@ -420,7 +420,7 @@ void Iter::GoBy(int chars, bool multiline)
   if(this->offset > word->length)
   {
     this->offset = word->length-1;
-    this->pos = -chars+word->length-1;
+      this->pos = -chars+word->length-1;
   }
   Update();
 }
@@ -505,21 +505,21 @@ int Iter::GetDistance(Iter* second)
   if(buffer == NULL || second->buffer == NULL)
   {
     throw std::invalid_argument( "cant get distance of a positionless iterator" );
-    return -1;
+      return -1;
   }
-
-  if(*second < *this)
-    return second->GetDistance(this);
-
-  Iter* itr = this->Duplicate();
-  int len=0;
-  while(itr->word != second->word)
-  {
-    len += itr->word->length - itr->offset;
-  }
+  
+    if(*second < *this)
+      return second->GetDistance(this);
+        
+        Iter* itr = this->Duplicate();
+        int len=0;
+        while(itr->word != second->word)
+        {
+          len += itr->word->length - itr->offset;
+        }
   len += second->offset;
-  delete itr;
-  return len;
+    delete itr;
+    return len;
 }
 //---------------------------------------------------------------------------
 String Iter::GetLine()
@@ -527,11 +527,11 @@ String Iter::GetLine()
   if(buffer == NULL)
   {
     throw std::invalid_argument( "Cant return line from positionless iterator; use Buffer::GetLine(Iter*) instead" );
-    return "";
+      return "";
   }
   else
     return buffer->GetLine(this, false);
-
+      
 }
 //---------------------------------------------------------------------------
 bool Iter::FindNext(wchar_t * string, bool skip, bool caseSensitive, bool wholeword)
@@ -570,36 +570,36 @@ bool Iter::IsUnderCursor(const wchar_t *& string, bool caseSensitive, bool whole
     return false;
 
   Iter * itr = this->Duplicate();
-  itr->GoChar();
-
-  const wchar_t * xptr = string+1;
-
-  while(*xptr != '\0')
-  {
-    if(*xptr == *(itr->ptr) || (!caseSensitive && towupper(*(itr->ptr) == towupper(*xptr))))
-      xptr++;
-    else
+    itr->GoChar();
+    
+    const wchar_t * xptr = string+1;
+    
+    while(*xptr != '\0')
     {
-      delete itr;
-      return false;
+      if(*xptr == *(itr->ptr) || (!caseSensitive && towupper(*(itr->ptr) == towupper(*xptr))))
+        xptr++;
+      else
+      {
+        delete itr;
+          return false;
+      }
+      
+        if(!itr->GoChar())
+        {
+          delete itr;
+            return false;
+        }
     }
-
-    if(!itr->GoChar())
-    {
-      delete itr;
-      return false;
-    }
-  }
   bool result = !wholeword || !iswalpha(itr->GetNextChar());
-  delete itr;
-  return result;
+    delete itr;
+    return result;
 }
 //---------------------------------------------------------------------------
 bool Iter::LineIsEmpty()
 {
   if(line->next != NULL && line->next == (Span*)line->nextline)
     return true;
-    return false;
+  return false;
 }
 //---------------------------------------------------------------------------
 int Iter::GetLineNum()

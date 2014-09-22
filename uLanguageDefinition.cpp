@@ -104,11 +104,11 @@ void LanguageDefinition::TreeNode::AddPop(short popmask, short newgmask, short p
       ptr = pops;
     else
       ptr = &pops[recpopcount-1];
-    if(ptr->newgmask == newgmask && popcount == ptr->popcount)
-    {
-      ptr->popmask = ptr->popmask | popmask;
-      return;
-    }
+        if(ptr->newgmask == newgmask && popcount == ptr->popcount)
+        {
+          ptr->popmask = ptr->popmask | popmask;
+            return;
+        }
   }
   Pop * newarray = new Pop[recpopcount+1];
   for(int i = 0; i < recpopcount; i++)
@@ -520,10 +520,10 @@ beginning:
 //---------------------------------------------------------------------------
 LanguageDefinition::SearchIter LanguageDefinition::GetDefSC(short id)
 {
-/*
-  SearchIter st;
-  st.current = bankBases[id];
-  st.base = bankBases[id];  */
+  /*
+     SearchIter st;
+     st.current = bankBases[id];
+     st.base = bankBases[id];  */
   SearchIter st;
   st.current = GetTree();
   st.base = GetTree();
