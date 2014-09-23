@@ -107,7 +107,7 @@ TSHEdit * TSHEditFocused; //callback musi jit na statickou metodu...
   maxScrollStep = MAX_SCROLL_STEP;
 
   selColor = clHighlight;
-  selFColor = clHighlightText;
+  selFColor = clWhite;
   searchColor = clYellow;
   selectionFormat = new Format(&selFColor, &selColor);
   searchFormat = new Format(NULL, &searchColor);
