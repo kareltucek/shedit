@@ -755,16 +755,18 @@ void Buffer::SimpleSaveFile(const wchar_t * filename)
   if (file && file->is_open())
   {
     Iter * itr = Begin();
-    while(itr->line->nextline != NULL)
+    while(itr->word->next != NULL)
     {
       int size_needed = WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, NULL, 0, NULL, NULL);
-        std::string strTo( size_needed, 0 );
-        char * utf8 = new char[size_needed+1];
-        utf8[size_needed] = '\0';
-        WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, utf8, size_needed, NULL, NULL);
-        *file << utf8;
-        delete utf8;
+      std::string strTo( size_needed, 0 );
+      char * utf8 = new char[size_needed+1];
+      utf8[size_needed] = '\0';
+      WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, utf8, size_needed, NULL, NULL);
+      *file << utf8;
+      delete utf8;
+      itr->GoWord();
     }
+    file->close();
     delete itr;
   }
   delete file;
