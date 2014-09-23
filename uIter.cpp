@@ -265,6 +265,7 @@ bool Iter::RevChar()
     if(!RevWord())
     {
       offset = 0;
+      Update();
       return false;
     }
   }

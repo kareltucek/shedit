@@ -9,7 +9,6 @@
 1411395149|uCursor.h
 1411395149|uDrawer.h
 1411395147|uIPos.cpp
-1411395147|uIter.cpp
 1411395147|uLanguageDefinition.cpp
 1411395149|uLanguageDefinition.h
 1411395148|uLanguageDefinitionSQL.cpp
@@ -22,3 +21,4 @@
 1411398015|uParser.cpp
 1411473736|cSHEdit.cpp
 1411473737|cSHEdit.h
+1411473736|uIter.cpp
