@@ -107,8 +107,9 @@ TSHEdit * TSHEditFocused; //callback musi jit na statickou metodu...
   maxScrollStep = MAX_SCROLL_STEP;
 
   selColor = clHighlight;
+  selFColor = clHighlightText;
   searchColor = clYellow;
-  selectionFormat = new Format(NULL, &selColor);
+  selectionFormat = new Format(&selFColor, &selColor);
   searchFormat = new Format(NULL, &searchColor);
 
   clipboard = Clipboard();
@@ -840,6 +841,7 @@ void TSHEdit::CheckIterIntegrity(Iter * itr)
   //if(j != itr->linenum)
   //  int dbg=666;
   //("IterIntegrityCheck - wrong linenum");
+  assert(itr->word->string <= itr->ptr && itr->ptr < itr->word->string + itr->word->length);
   delete tmp;
 }
 #endif _DEBUG
@@ -1552,6 +1554,8 @@ void TSHEdit::Action(String msg, bool end)
 {
 #ifdef _DEBUG_LOGGING
   Write(msg + PositionDescription(), end);
+#endif
+#ifdef _DEBUG
   CheckIntegrity();
   CheckIterIntegrity(&itrLine);
   CheckIterIntegrity(&itrCursor);

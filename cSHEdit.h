@@ -143,6 +143,7 @@ namespace SHEdit
       TTimer * timer;
 
       TColor selColor;
+      TColor selFColor;
       TColor searchColor;
 
       bool readonly;
