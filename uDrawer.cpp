@@ -15,7 +15,7 @@ using namespace SHEdit;
 
 #ifdef _DEBUG_LOGGING
 #include <fstream>
-std::ofstream myfile;
+std::wofstream myfile;
 #endif
 
 #pragma package(smart_init)
@@ -49,10 +49,11 @@ __fastcall Drawer::Drawer(TCanvas * canvas, TSHEdit * parent)
   HPos = 0;
   x = X_OFF;
   y = Y_OFF;
-  cx = -2;
-  cy = 2;
+  cx = X_OFF;
+  cy = 0;
 #ifdef _DEBUG_LOGGING
-  myfile.open("drawer.txt", ios::out );
+  if(!myfile.is_open())
+    myfile.open("drawer.txt", ios::out );
 #endif
 }
 
@@ -237,13 +238,17 @@ void __fastcall Drawer::UpdateHBar()
 void Drawer::DrawCursor()
 {
   if(con)
+  {
     canvas->Pen->Color = clBlack;
+  }
   else
+  {
 #ifdef DOUBLE_BUFFERED
     return;
 #else
   canvas->Pen->Color = clWhite;
 #endif
+  }
   canvas->MoveTo(cx-HPos, cy);
   canvas->LineTo(cx-HPos, cy+linesize-1);
   canvas->Pen->Color = clBlack;
@@ -354,10 +359,12 @@ __fastcall Drawer::~Drawer()
 }
 //---------------------------------------------------------------------------
 #ifdef _DEBUG
-void Drawer::Write(AnsiString message)
+void Drawer::Write(String message)
 {
 #ifdef _DEBUG_LOGGING
-  myfile << message.c_str();
+  assert(myfile.is_open());
+  myfile << UTF8String(message.c_str()).c_str();
+  myfile << std::endl;
 #endif
 }
 #endif

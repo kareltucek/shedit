@@ -59,7 +59,7 @@ namespace SHEdit
       void __fastcall UpdateHBar();
 
 #ifdef _DEBUG
-      void Write(AnsiString message);
+      void Write(String message);
       void QueueDump();
 #endif
 

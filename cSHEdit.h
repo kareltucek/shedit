@@ -307,6 +307,7 @@ namespace SHEdit
       __property String SelText = {read=GetSelText, write=SetSelText};
       __property String Text = {read=GetText, write=SetText};
 __published:
+      __property TTabOrder TabOrder = {read=GetTabOrder, write=SetTabOrder, default=-1};
       __property TAlign Align = {read=FAlign, write=SetAlign, default=0};
       __property int FontSize = {read=GetFontsize, write=SetFontsize, default=DEFONTSIZE};
       __property TKeyPressEvent OnKeyPress = {read=FOnKeyPress, write=FOnKeyPress, default=NULL};
