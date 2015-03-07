@@ -137,7 +137,7 @@ namespace SHEdit
 
       void __fastcall OnIdle(TObject * Sender, bool& Done);
 
-      bool __fastcall Execute(void);
+      bool __fastcall Execute(bool paint = true);
 
       void InvalidateAll();
 

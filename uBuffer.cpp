@@ -112,12 +112,12 @@ void Buffer::_Insert(Span * word)
 void Buffer::_Delete(Span * word)
 {
 
-#ifdef _DEBUG
+#ifdef DEBUG
   //Write("delete words "+String((int)word->prev)+String(" ")+String((int)word->next));
 #endif
   word->next->prev = word->prev;
   word->prev->next = word->next;
-#ifdef _DEBUG
+#ifdef DEBUG
   //Write("delete words returning");
 #endif
 }
@@ -296,7 +296,7 @@ int Buffer::Delete(Iter * From, Iter * To)
   else
   {
 
-#ifdef _DEBUG
+#ifdef DEBUG
     //Write("Delete cycle");
 #endif
     Span * begin, * end;
@@ -567,7 +567,7 @@ void Buffer::UndoPush(UndoTask * event)
 //---------------------------------------------------------------------------
 Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*> * stackRedo, Iter *& begin)
 {
-#ifdef _DEBUG
+#ifdef DEBUG
   //Write(String("undo called"));
 #endif
   if((*stackUndo).size() == 0)
@@ -703,7 +703,7 @@ Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*>
 
   delete event;
   return itr;
-#ifdef _DEBUG
+#ifdef DEBUG
   //Write(String("undone"));
 #endif
 }
@@ -877,7 +877,7 @@ preload->last = preload->last->next;
 preload->lastLine = preload->lastLine->nextline;
 }               */
 //---------------------------------------------------------------------------
-wchar_t * Buffer::GetText(Iter * From, Iter* To)
+wchar_t * Buffer::GetText(Iter * From, Iter* To, bool addCR)
 {
   Iter * itr = From->Duplicate();
   std::wstring str;
@@ -887,6 +887,8 @@ wchar_t * Buffer::GetText(Iter * From, Iter* To)
     itr->GoWord();
     while(itr->word != To->word)
     {
+      if(addCR && *itr->word->string=='\n')
+        str += '\r';
       str += itr->word->string;
       itr->GoWord();
     }
@@ -894,7 +896,7 @@ wchar_t * Buffer::GetText(Iter * From, Iter* To)
   }
   else
   {
-    str = std::wstring(itr->word->string).substr(From->offset, To->offset);
+    str = std::wstring(itr->word->string).substr(From->offset, To->offset - From->offset);
   }
   delete itr;
   wchar_t * cstr = new wchar_t[str.length()+1];
@@ -1009,7 +1011,7 @@ void Buffer::ItersTranslateInsert(int linenum, int pos, int bylines, int topos, 
 {
   for (std::list<IPos*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
   {
-#ifdef _DEBUG
+#ifdef DEBUG
     int size = ItrList.size();
     IPos *debug = *itr;
 #endif
@@ -1034,7 +1036,7 @@ void Buffer::ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, i
 {
   for (std::list<IPos*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
   {
-#ifdef _DEBUG
+#ifdef DEBUG
     int size = ItrList.size();
     IPos *debug = *itr;
 #endif
@@ -1067,7 +1069,7 @@ void Buffer::ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, i
 //---------------------------------------------------------------------------
 int Buffer::CheckIntegrity(int& emptyCount)
 {
-#ifdef _DEBUG
+#ifdef DEBUG
   //Write(String("checking integrity"));
 #endif
   emptyCount = 0;
@@ -1105,13 +1107,13 @@ int Buffer::CheckIntegrity(int& emptyCount)
     lastword = word;
     word = word->next;
   }
-#ifdef _DEBUG
+#ifdef DEBUG
   //Write(String("integrity check done"));
 #endif
   return 0;
 }
 //---------------------------------------------------------------------------
-#ifdef _DEBUG
+#ifdef DEBUG
 void Buffer::Write(AnsiString message)
 {
 #ifdef _DEBUG_LOGGING

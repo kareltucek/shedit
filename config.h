@@ -1,4 +1,6 @@
 #ifdef _DEBUG
+#define DEBUG
+//define _DEBUG_COPY_DRAW
 //define _DEBUG_LOGGING              //enables logging to files
 //define _DEBUG_UNDO                 //test undo each time a change is made to buffer
 //define _DEBUG_FORCE_SHORTCUTTS      //disables onkey_whatever events that may override the debug keys

@@ -136,12 +136,14 @@ LanguageDefinition::LanguageDefinition()
 //---------------------------------------------------------------------------
 bool LanguageDefinition::IsAl(wchar_t c)
 {
-  return iswalpha(c) || c == '_';
+  WORD wCharType;
+  return iswalpha(c) || c == '_' || (GetStringTypeExW (LOCALE_USER_DEFAULT, CT_CTYPE1, &c, 1, &wCharType) && (wCharType & C1_ALPHA) == C1_ALPHA);
 }
 //---------------------------------------------------------------------------
 bool LanguageDefinition::IsAlNum(wchar_t c)
 {
-  return iswalnum(c) || c == '_';
+  WORD wCharType;
+  return iswalnum(c) || c == '_' || (GetStringTypeExW (LOCALE_USER_DEFAULT, CT_CTYPE1, &c, 1, &wCharType) && (wCharType & C1_ALPHA) == C1_ALPHA);
 }
 //---------------------------------------------------------------------------
 bool LanguageDefinition::IsNum(wchar_t c)

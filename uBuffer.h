@@ -108,7 +108,7 @@ namespace SHEdit
       void HistoryOnOff();        //purges stacks if the keepHistory flag is off; to be placed before returns in insert/delete
       void PurgeStack(std::stack<UndoTask*>& stack);
 
-#ifdef _DEBUG
+#ifdef DEBUG
       void Write(AnsiString message);
 #endif
 
@@ -128,7 +128,7 @@ namespace SHEdit
       int Insert(Iter * At, const wchar_t * string);
       int Delete(Iter * From, Iter * To);
 
-      wchar_t* GetText(Iter * From, Iter * To);
+      wchar_t* GetText(Iter * From, Iter * To, bool addCariageReturns = false);
       String GetLine(Iter * line, bool replaceTabs);
       String GetLineTo(Iter * To, bool replaceTabs);
 

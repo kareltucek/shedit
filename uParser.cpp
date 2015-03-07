@@ -111,7 +111,7 @@ __fastcall Parser::Parser(TSHEdit * parent, Drawer * drawer)
   //DuplicateHandle(GetCurrentProcess(), bufferChanged, this->Handle, &(this->bufferChanged),  0, false, DUPLICATE_SAME_ACCESS);
 }
 //---------------------------------------------------------------------------
-bool __fastcall Parser::Execute()
+bool __fastcall Parser::Execute(bool paint)
 {
   //parse lists
   tasklist.sort();
@@ -226,7 +226,7 @@ bool __fastcall Parser::Execute()
 
     if((painted || parsed > PARSEINONEGO) && tasklistprior.size() == 0)
     {
-      if(painted)
+      if(painted && paint)
       {
         drawer->Paint();
       }
@@ -288,7 +288,7 @@ void __fastcall Parser::Draw()
 //---------------------------------------------------------------------------
 void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, bool paint)
 {
-#ifdef _DEBUG
+#ifdef DEBUG
   //Write(" entering parseline");
 #endif
   wchar_t * ptr;
@@ -304,7 +304,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
 
   while(true)
   {
-#ifdef _DEBUG
+#ifdef DEBUG
     TColor bg = *actFormat.background;
     TColor fg = *actFormat.foreground;
 #endif
@@ -312,7 +312,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
     bool whiteskipped = false;
     while(langdef->IsWhite(*(itr->ptr)) && *(itr->ptr) != '\n')
     {
-#ifdef _DEBUG
+#ifdef DEBUG
       bg =  *actFormat.background;
       fg =  *actFormat.foreground;
 #endif
@@ -402,7 +402,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
       searchiter->current = searchiter->base;
     }
 
-#ifdef _DEBUG
+#ifdef DEBUG
     /* int dbgtype = type; if( dbgLogging )  parent->Log( String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String((int)lookahead));        //Write(String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String(searchiter->type));  */
 #endif
     if(lookahead || (lasttype == LangDefSpecType::Empty && type != LangDefSpecType::Empty))
@@ -714,7 +714,7 @@ void Parser::AddChar(Iter * itr, int & pos)
 
 void Parser::CheckMarkup(Iter * itr, bool paint)
 {
-#ifdef _DEBUG
+#ifdef DEBUG
   //Write(" markup check");
 #endif
   if(itr->word->marks.top != NULL)
@@ -830,7 +830,7 @@ __fastcall Parser::~Parser()
 {
 }
 //---------------------------------------------------------------------------
-#ifdef _DEBUG
+#ifdef DEBUG
 void Parser::DumpStackState()
 {
 #ifdef _DEBUG_LOGGING

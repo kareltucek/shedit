@@ -36,6 +36,8 @@ namespace SHEdit
   //---------------------------------------------------------------------------
   class Iter : protected IPos, public std::iterator<std::bidirectional_iterator_tag, const wchar_t>
   {
+    private:
+      inline bool IsWordChar(wchar_t c);
     protected:
       friend class TSHEdit;
       friend class Buffer;
@@ -80,6 +82,7 @@ namespace SHEdit
       bool RevChar()/*AUTOGEN_UPDATE*/;
 
       wchar_t GetNextChar()/*AUTOGEN_PASS*/;
+      wchar_t GetPrevChar()/*AUTOGEN_PASS*/;
       wchar_t GetChar()/*AUTOGEN_PASS*/;
 
       int GetLineNum()/*AUTOGEN_PASS*/;
@@ -102,7 +105,7 @@ namespace SHEdit
       bool FindNext(wchar_t * string, bool skip = true, bool caseSensitive = true, bool wholeword = false)/*AUTOGEN_UPDATE*/; /*!< skip defines whether to match word directly at cursor or not */
       bool FindPrev(wchar_t * string, bool skip = true, bool caseSensitive = true, bool wholeword= false)/*AUTOGEN_UPDATE*/; /*!< same as findnext */
       bool IsUnderCursor(const wchar_t *& string, bool caseSensitive, bool wholeword)/*AUTOGEN_PASS*/; /*!< Tests if the string is at the position of cursor. Serves for FindNext/FindNext. */
-      bool LineIsEmpty()/*AUTOGEN_PASS*/;
+      bool LineIsEmpty( bool allowWhite = false)/*AUTOGEN_PASS*/;
 
       void GoToLine(int line)/*AUTOGEN_UPDATE*/;
       String GetLine()/*AUTOGEN_PASS*/;

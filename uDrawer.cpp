@@ -15,7 +15,7 @@ using namespace SHEdit;
 
 #ifdef _DEBUG_LOGGING
 #include <fstream>
-std::wofstream myfile;
+std::wofstream myfiledraw;
 #endif
 
 #pragma package(smart_init)
@@ -24,6 +24,11 @@ std::wofstream myfile;
 //---------------------------------------------------------------------------
 __fastcall Drawer::Drawer(TCanvas * canvas, TSHEdit * parent)
 {
+#ifdef _DEBUG_LOGGING
+  if(!myfiledraw.is_open())
+    myfiledraw.open("drawer.txt", ios::out );
+#endif
+
 #ifdef DOUBLE_BUFFERED
   bitmap = new Graphics::TBitmap();
   bitmap->SetSize(parent->Width, parent->Height);
@@ -49,22 +54,23 @@ __fastcall Drawer::Drawer(TCanvas * canvas, TSHEdit * parent)
   HPos = 0;
   x = X_OFF;
   y = Y_OFF;
-  cx = X_OFF;
+  cx = X_OFF  + (linenumsenabled ? linenumwidth : 0);
   cy = 0;
-#ifdef _DEBUG_LOGGING
-  if(!myfile.is_open())
-    myfile.open("drawer.txt", ios::out );
-#endif
+
 }
 
 //---------------------------------------------------------------------------
 
 void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontStyle format)
 {
-#ifdef _DEBUG
+#ifdef DEBUG
   TColor bg = *format.background;
   TColor fg = *format.foreground;
+  assert(linenum < parent->Height/GetLinesize() + 5);
 #endif
+
+  if (bitmap->Width == 0)      //the initial resize signal gets lost sometimes :/
+    bitmap->SetSize(RightBorder(), BottomBorder());
 
   y = Y_OFF+linesize*linenum;
   if(newline)
@@ -110,6 +116,9 @@ void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontS
 #ifndef QUICKDRAW
   drawcanvas->Brush->Style = bsSolid;
 #endif
+#ifdef _DEBUG_COPY_DRAW
+  StressTest();
+#endif
 
 }
 //---------------------------------------------------------------------------
@@ -119,8 +128,7 @@ void __fastcall Drawer::DrawMove(int from, int to, int by)
 #define FROM from
 #define TO to
 #define BY by
-  {
-    int adjustment = linesize*(TO+1) > BottomBorder() ? BottomBorder() - linesize*(TO+1)-X_OFF: -X_OFF;
+    int adjustment = linesize*(TO+1) > BottomBorder() ? BottomBorder() - linesize*(TO+1)-X_OFF : -X_OFF;
     TRect source2(from == 0 ? 0 : GetLinenumWidth(), 0, 0, 1);
     TRect source(from == 0 ? 0 : GetLinenumWidth(), linesize*FROM, RightBorder(), linesize*(TO+1)-adjustment);
     TRect dest(from == 0 ? 0 : GetLinenumWidth(), linesize*(FROM+BY), RightBorder(), linesize*(TO+BY+1)-adjustment);
@@ -131,7 +139,13 @@ void __fastcall Drawer::DrawMove(int from, int to, int by)
       drawcanvas->Brush->Color = (TColor)0xFFFFFF;
       drawcanvas->Rectangle(0, linesize*(TO+BY),RightBorder(), BottomBorder());
     }
-  }
+#ifdef _DEBUG_COPY_DRAW
+  drawcanvas->Pen->Color = clBlack;
+  drawcanvas->Pen->Width = 2;
+  drawcanvas->Brush->Style = bsClear;
+  drawcanvas->Rectangle(dest.TopLeft().X +1,dest.TopLeft().Y+1, dest.BottomRight().X-1, dest.BottomRight().Y-1);
+  StressTest();
+#endif
 }
 //---------------------------------------------------------------------------
 
@@ -143,6 +157,9 @@ void __fastcall Drawer::DrawEof(short linenum)
   drawcanvas->Rectangle(0, y,RightBorder(), BottomBorder());
   if(linenumsenabled)
     DrawLinenum(linenum);
+#ifdef _DEBUG_COPY_DRAW
+  StressTest();
+#endif
 }
 //---------------------------------------------------------------------------
 
@@ -152,6 +169,9 @@ void __fastcall Drawer::UpdateCursor(int x, int y)
   DrawCursor(); //this one here deletes the last one
   cx = x;
   cy = y;
+#ifdef _DEBUG_COPY_DRAW
+  StressTest();
+#endif
   //cursorBGcolor = canvas->Pixels[cx][cy];
 }
 
@@ -202,6 +222,9 @@ void __fastcall Drawer::DrawEndl(short linenum, FontStyle format)
     drawcanvas->Pen->Color = (TColor)0x444444;
     drawcanvas->LineTo(GetLinenumWidth(), y+linesize);
   }
+#ifdef _DEBUG_COPY_DRAW
+  StressTest();
+#endif
 }
 //---------------------------------------------------------------------------
 
@@ -276,7 +299,9 @@ void __fastcall Drawer::DrawLinenum(int from)
   drawcanvas->Pen->Color = (TColor)0x444444;
   drawcanvas->MoveTo(GetLinenumWidth(), 0);
   drawcanvas->LineTo(GetLinenumWidth(), parent->Height);
-
+#ifdef _DEBUG_COPY_DRAW
+  StressTest();
+#endif
 }
 //---------------------------------------------------------------------------
 void __fastcall Drawer::SetFontsize(int size)
@@ -289,16 +314,19 @@ void __fastcall Drawer::SetFontsize(int size)
   //find out real height
   Graphics::TBitmap * bitmap = new Graphics::TBitmap();
   bitmap->SetSize(1, 1000);
+  bitmap->Canvas->Brush->Style = bsSolid;
   bitmap->Canvas->Brush->Color = clGreen;
   bitmap->Canvas->Font->Color = clGreen;
   bitmap->Canvas->Font->Size = size;
   bitmap->Canvas->Font->Name = "Courier New";
   bitmap->Canvas->TextOut(0, 0, " ");
   int i = 0;
-  TColor g = clGreen;
-  while( bitmap->Canvas->Pixels[0][i+1] == clGreen)
+  TColor green = bitmap->Canvas->Pixels[0][0];
+  while( bitmap->Canvas->Pixels[0][i+1] == green && i < 999)
     i++;
+
   linesize = i+1;
+
 #ifndef QUICKDRAW
   linesize++;
 #endif
@@ -306,6 +334,9 @@ void __fastcall Drawer::SetFontsize(int size)
 
   drawcanvas->Font->Name = "Courier New";
   canvas->Font->Name = "Courier New";
+
+  if(linesize < size)
+    linesize = 3*size/2+1;
 
   UpdateLinenumWidth(lastlinenumcount);
 }
@@ -358,14 +389,22 @@ __fastcall Drawer::~Drawer()
 {
 }
 //---------------------------------------------------------------------------
-#ifdef _DEBUG
+#ifdef DEBUG
 void Drawer::Write(String message)
 {
 #ifdef _DEBUG_LOGGING
-  assert(myfile.is_open());
-  myfile << UTF8String(message.c_str()).c_str();
-  myfile << std::endl;
+  assert(myfiledraw.is_open());
+  myfiledraw << UTF8String(message.c_str()).c_str();
+  myfiledraw << std::endl;
 #endif
+}
+#endif
+//---------------------------------------------------------------------------
+#ifdef DEBUG
+void Drawer::StressTest()
+{
+  Sleep(20);
+  Paint();
 }
 #endif
 //---------------------------------------------------------------------------

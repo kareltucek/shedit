@@ -8,13 +8,13 @@
 #include <ComCtrls.hpp>
 #include <Controls.hpp>
 #include <StdCtrls.hpp>
-#include "config.h"
 #include <SysUtils.hpp>
 #include <Classes.hpp>
 #include <Controls.hpp>
 #include <Clipbrd.hpp>
 #include <time.h>
 #include "uIter.h"
+#include "config.h"
 #include "uIPos.h"
 #include "uLanguageDefinition.h"
 #include "uLanguageDefinitionSQL.h"
@@ -146,6 +146,8 @@ namespace SHEdit
       TColor selFColor;
       TColor searchColor;
 
+      LanguageDefinition * fallbackLangDef;
+
       bool readonly;
 
       int GetScrollStep();
@@ -225,7 +227,7 @@ namespace SHEdit
       void ProcessNewSelection(bool execdraw = true, bool draw = true);
 
     public:
-#ifdef _DEBUG
+#ifdef DEBUG
       void __fastcall dbgIter();
       void __fastcall Log(String str);
       void CheckIntegrity();
@@ -256,10 +258,11 @@ namespace SHEdit
 
       int __fastcall GetActLine();                                                                   /*!< returns line number of cursor (absolute position in buffer)*/
 
-      void AdjustLine(bool paint);
+      void AdjustLine(bool paint, bool fromtop = true);
 
-      CIter GetCursor();                                                                             /*!< CIter returns a copy of the cursor (or selection start) Iter wrapped in a CIter instance. The CIter always behaves as a valid Iterator, and takes care of rmaking changes to the canvas.*/
-      CIter GetCursorEnd();                                                                          /*!< CIter returns a copy of the cursor (or selection end) Iter wrapped in a CIter instance. The CIter always behaves as a valid Iterator, and takes care of rmaking changes to the canvas.*/
+      CIter GetCursor();                                                                             /*!< CIter returns a copy of the cursor (or selection start) Iter wrapped in a CIter instance. The CIter always behaves as a valid Iterator, and takes care of making changes to the canvas.*/
+      CIter GetCursorBegin();                                                                        /*!< CIter returns a copy of the cursor (or selection start) Iter wrapped in a CIter instance. The CIter always behaves as a valid Iterator, and takes care of making changes to the canvas.*/
+      CIter GetCursorEnd();                                                                          /*!< CIter returns a copy of the cursor (or selection end) Iter wrapped in a CIter instance. The CIter always behaves as a valid Iterator, and takes care of making changes to the canvas.*/
 
       Iter * GetCursorIter();                                                                        /*!< If part of text is selected, returns pointer to the beginning of selection (or cursor, if nothing is selected). Pointer points to the component's private iterator - do not modify it unless you know what you are doing. */
       Iter * GetCursorIterEnd();                                                                     /*!< If part of text is selected, returns pointer to the end of selection (or NULL, if nothing is selected). Pointer points to the component's private iterator - do not modify it unless you know what you are doing. */

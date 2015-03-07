@@ -4,12 +4,14 @@
 #pragma hdrstop
 
 
+#include <assert.h>
 #include "uIter.h"
 #include "uSpan.h"
 //#include "uMark.h"
 #include "uFormat.h"
 #include "uBuffer.h"
-#include <assert.h>
+#include <locale>
+#include <wchar.h>
 
 #include <vcl.h>
 
@@ -210,6 +212,14 @@ wchar_t Iter::GetNextChar()
   GoChar();
   wchar_t c = *ptr;
   RevChar();
+  return c;
+}
+//---------------------------------------------------------------------------
+wchar_t Iter::GetPrevChar()
+{
+  RevChar();
+  wchar_t c = *ptr;
+  GoChar();
   return c;
 }
 //---------------------------------------------------------------------------
@@ -517,6 +527,8 @@ int Iter::GetDistance(Iter* second)
         while(itr->word != second->word)
         {
           len += itr->word->length - itr->offset;
+          if(!itr->GoWord())
+            break;
         }
   len += second->offset;
     delete itr;
@@ -591,41 +603,68 @@ bool Iter::IsUnderCursor(const wchar_t *& string, bool caseSensitive, bool whole
             return false;
         }
     }
-  bool result = !wholeword || !iswalpha(itr->GetNextChar());
+  bool result = !wholeword || (!iswalpha(itr->GetChar()) && !iswalpha(this->GetPrevChar()));
     delete itr;
     return result;
 }
 //---------------------------------------------------------------------------
-bool Iter::LineIsEmpty()
+bool Iter::LineIsEmpty(bool allowWhite)
 {
   if(line->next != NULL && line->next == (Span*)line->nextline)
     return true;
+  if(allowWhite)
+  {
+    Iter itr(*this);
+    itr.GoLineStart();
+    do
+      if((int)itr.GetChar() > 32)
+        return false;
+    while ( itr.GoChar() && itr.line == this->line );
+    return true;
+  }
   return false;
 }
 //---------------------------------------------------------------------------
 int Iter::GetLineNum()
 {
-  return linenum;
+  if(buffer == NULL)
+  {
+    NSpan * line = this->line;
+    int count = 0; //suppose we count lines from one (loop wil be fired at least once everytime)
+    while( line != NULL)
+    {
+      line = line->prevline;
+      count++;
+    }
+    return count;
+  }
+  else
+    return linenum;
 }
 //---------------------------------------------------------------------------
 void Iter::GoWordLiteral()
 {
-  while ((iswalnum(*ptr) || *ptr == '_') && GoChar());
-  while ((!(iswalnum(*ptr) || *ptr == '_')) && GoChar());
+  while ( IsWordChar(*ptr) && GoChar());
+  while (!IsWordChar(*ptr) && GoChar());
 }
 //---------------------------------------------------------------------------
 void Iter::GoWordEndLiteral()
 {
-  while ((!(iswalnum(*ptr) || *ptr == '_')) && GoChar());
-  while ((iswalnum(*ptr) || *ptr == '_') && GoChar());
+  while (!IsWordChar(*ptr) && GoChar());
+  while (IsWordChar(*ptr) && GoChar());
 }
 //---------------------------------------------------------------------------
 void Iter::RevWordLiteral()
 {
   RevChar();
-  while ((!(iswalnum(*ptr) || *ptr == '_')) && RevChar());
-  while ((iswalnum(*ptr) || *ptr == '_') && RevChar());            //this moves one char before the word
+  while (!IsWordChar(*ptr) && RevChar());
+  while (IsWordChar(*ptr) && RevChar());            //this moves one char before the word
   if( word->prev->prev != NULL || offset != 0)                     //this corrects the one char
     GoChar();
 }
 //---------------------------------------------------------------------------
+bool Iter::IsWordChar(wchar_t c)
+{
+  WORD wCharType;
+  return (iswalnum(c) || c == '_' || (GetStringTypeExW (LOCALE_USER_DEFAULT, CT_CTYPE1, &c, 1, &wCharType) && (wCharType & C1_ALPHA) == C1_ALPHA));
+}
