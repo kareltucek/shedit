@@ -104,11 +104,11 @@ void LanguageDefinition::TreeNode::AddPop(short popmask, short newgmask, short p
       ptr = pops;
     else
       ptr = &pops[recpopcount-1];
-    if(ptr->newgmask == newgmask && popcount == ptr->popcount)
-    {
-      ptr->popmask = ptr->popmask | popmask;
-      return;
-    }
+        if(ptr->newgmask == newgmask && popcount == ptr->popcount)
+        {
+          ptr->popmask = ptr->popmask | popmask;
+            return;
+        }
   }
   Pop * newarray = new Pop[recpopcount+1];
   for(int i = 0; i < recpopcount; i++)
@@ -136,12 +136,14 @@ LanguageDefinition::LanguageDefinition()
 //---------------------------------------------------------------------------
 bool LanguageDefinition::IsAl(wchar_t c)
 {
-  return iswalpha(c) || c == '_';
+  WORD wCharType;
+  return iswalpha(c) || c == '_' || (GetStringTypeExW (LOCALE_USER_DEFAULT, CT_CTYPE1, &c, 1, &wCharType) && (wCharType & C1_ALPHA) == C1_ALPHA);
 }
 //---------------------------------------------------------------------------
 bool LanguageDefinition::IsAlNum(wchar_t c)
 {
-  return iswalnum(c) || c == '_';
+  WORD wCharType;
+  return iswalnum(c) || c == '_' || (GetStringTypeExW (LOCALE_USER_DEFAULT, CT_CTYPE1, &c, 1, &wCharType) && (wCharType & C1_ALPHA) == C1_ALPHA);
 }
 //---------------------------------------------------------------------------
 bool LanguageDefinition::IsNum(wchar_t c)
@@ -520,10 +522,10 @@ beginning:
 //---------------------------------------------------------------------------
 LanguageDefinition::SearchIter LanguageDefinition::GetDefSC(short id)
 {
-/*
-  SearchIter st;
-  st.current = bankBases[id];
-  st.base = bankBases[id];  */
+  /*
+     SearchIter st;
+     st.current = bankBases[id];
+     st.base = bankBases[id];  */
   SearchIter st;
   st.current = GetTree();
   st.base = GetTree();

@@ -128,17 +128,17 @@ namespace SHEdit
       int Insert(Iter * At, const wchar_t * string);
       int Delete(Iter * From, Iter * To);
 
-      wchar_t* GetText(Iter * From, Iter * To);
+      wchar_t* GetText(Iter * From, Iter * To, bool addCariageReturns = false);
       String GetLine(Iter * line, bool replaceTabs);
       String GetLineTo(Iter * To, bool replaceTabs);
 
       void SimpleLoadFile(const wchar_t * filename);
       void SimpleSaveFile(const wchar_t * filename);
       /*                                    //multithreaded
-         void LoadFile(wchar_t * filename);
-         void LoadFileAsync(wchar_t * filename);
-         bool Preload(int lines);
-         void FlushPreload();    */
+                                            void LoadFile(wchar_t * filename);
+                                            void LoadFileAsync(wchar_t * filename);
+                                            bool Preload(int lines);
+                                            void FlushPreload();    */
 
       void RegisterIP(IPos * itr);
       void UnregisterIP(IPos * itr);

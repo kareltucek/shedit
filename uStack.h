@@ -20,6 +20,8 @@
  *    if(n->data % 2 == 0)
  *      ...do something with even numbers contained in stack...
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ * or using standard iterator
  *    
  * */
 
@@ -37,6 +39,21 @@ template <class T_data> class Stack
       Node* Remove();                                                                                /*!< Returns pointer to the next node, for easier removal of elements while iterating through. Any item of Stack can be removed directly from outside of stack by this. Removed node is directly deleted. */
     };
 
+    struct iterator
+    {
+      Node * ptr;
+
+      iterator(Node * p) : ptr(p) {};
+
+      iterator& operator++(){if(ptr != NULL) ptr = ptr->next; return *this}
+
+      bool& operator==(const iterator& i){return i.ptr == ptr;}
+      bool& operator!=(const iterator& i){return !(*this == i);}
+
+      T_data& operator*() {return *ptr};
+      T_data* operator->() {return ptr};
+    }
+
     Node * top;
 
     Stack();
@@ -48,6 +65,9 @@ template <class T_data> class Stack
     bool Contains(T_data d);
     Stack<T_data>& operator=(const Stack<T_data>& stack);
     bool operator==(const Stack<T_data>& stack);
+    
+    iterator begin(){return iterator(top);}
+    iterator end(){return iterator(NULL);}
 };
 
 

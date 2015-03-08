@@ -19,8 +19,8 @@ __published:	// IDE-managed Components
   void __fastcall Button2Click(TObject *Sender);
   void __fastcall Button1Click(TObject *Sender);
   void __fastcall Edit1KeyPress(TObject *Sender, wchar_t &Key);
-private:	// User declarations
-public:		// User declarations
+  private:	// User declarations
+  public:		// User declarations
   bool success;
   bool forward;
   bool cases;

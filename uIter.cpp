@@ -4,12 +4,14 @@
 #pragma hdrstop
 
 
+#include <assert.h>
 #include "uIter.h"
 #include "uSpan.h"
 //#include "uMark.h"
 #include "uFormat.h"
 #include "uBuffer.h"
-#include <assert.h>
+#include <locale>
+#include <wchar.h>
 
 #include <vcl.h>
 
@@ -80,8 +82,8 @@ void Iter::Invalidate()
 {
   this->IPos::Invalidate();
   word = NULL;
-  offset = 0;
-  ptr = NULL;
+    offset = 0;
+    ptr = NULL;
 }
 //---------------------------------------------------------------------------
 bool Iter::GoLine(bool allowEnd)
@@ -173,7 +175,10 @@ bool Iter::RevLine()
     return true;
   }
   else
+  {
+    GoLineStart(); //not sure whether I can break anything; The problem is on first line - one expects this to return handle to the beginning of line
     return false;
+  }
 }
 //---------------------------------------------------------------------------
 bool Iter::GoWord()
@@ -207,6 +212,14 @@ wchar_t Iter::GetNextChar()
   GoChar();
   wchar_t c = *ptr;
   RevChar();
+  return c;
+}
+//---------------------------------------------------------------------------
+wchar_t Iter::GetPrevChar()
+{
+  RevChar();
+  wchar_t c = *ptr;
+  GoChar();
   return c;
 }
 //---------------------------------------------------------------------------
@@ -262,6 +275,7 @@ bool Iter::RevChar()
     if(!RevWord())
     {
       offset = 0;
+      Update();
       return false;
     }
   }
@@ -331,10 +345,10 @@ Iter& Iter::operator=(const Iter& itr)
     return *this;
 
   ((IPos*)this)->operator=((const IPos&)itr);
-  word = itr.word;
-  offset = itr.offset;
-  ptr = itr.ptr;
-  return *this;
+    word = itr.word;
+    offset = itr.offset;
+    ptr = itr.ptr;
+    return *this;
 }
 //---------------------------------------------------------------------------
 void Iter::MarkupBegin( SHEdit::Format * format)
@@ -417,7 +431,7 @@ void Iter::GoBy(int chars, bool multiline)
   if(this->offset > word->length)
   {
     this->offset = word->length-1;
-    this->pos = -chars+word->length-1;
+      this->pos = -chars+word->length-1;
   }
   Update();
 }
@@ -502,21 +516,23 @@ int Iter::GetDistance(Iter* second)
   if(buffer == NULL || second->buffer == NULL)
   {
     throw std::invalid_argument( "cant get distance of a positionless iterator" );
-    return -1;
+      return -1;
   }
-
-  if(*second < *this)
-    return second->GetDistance(this);
-
-  Iter* itr = this->Duplicate();
-  int len=0;
-  while(itr->word != second->word)
-  {
-    len += itr->word->length - itr->offset;
-  }
+  
+    if(*second < *this)
+      return second->GetDistance(this);
+        
+        Iter* itr = this->Duplicate();
+        int len=0;
+        while(itr->word != second->word)
+        {
+          len += itr->word->length - itr->offset;
+          if(!itr->GoWord())
+            break;
+        }
   len += second->offset;
-  delete itr;
-  return len;
+    delete itr;
+    return len;
 }
 //---------------------------------------------------------------------------
 String Iter::GetLine()
@@ -524,11 +540,11 @@ String Iter::GetLine()
   if(buffer == NULL)
   {
     throw std::invalid_argument( "Cant return line from positionless iterator; use Buffer::GetLine(Iter*) instead" );
-    return "";
+      return "";
   }
   else
     return buffer->GetLine(this, false);
-
+      
 }
 //---------------------------------------------------------------------------
 bool Iter::FindNext(wchar_t * string, bool skip, bool caseSensitive, bool wholeword)
@@ -567,39 +583,88 @@ bool Iter::IsUnderCursor(const wchar_t *& string, bool caseSensitive, bool whole
     return false;
 
   Iter * itr = this->Duplicate();
-  itr->GoChar();
-
-  const wchar_t * xptr = string+1;
-
-  while(*xptr != '\0')
-  {
-    if(*xptr == *(itr->ptr) || (!caseSensitive && towupper(*(itr->ptr) == towupper(*xptr))))
-      xptr++;
-    else
+    itr->GoChar();
+    
+    const wchar_t * xptr = string+1;
+    
+    while(*xptr != '\0')
     {
-      delete itr;
-      return false;
+      if(*xptr == *(itr->ptr) || (!caseSensitive && towupper(*(itr->ptr) == towupper(*xptr))))
+        xptr++;
+      else
+      {
+        delete itr;
+          return false;
+      }
+      
+        if(!itr->GoChar())
+        {
+          delete itr;
+            return false;
+        }
     }
-
-    if(!itr->GoChar())
-    {
-      delete itr;
-      return false;
-    }
-  }
-  bool result = !wholeword || !iswalpha(itr->GetNextChar());
-  delete itr;
-  return result;
+  bool result = !wholeword || (!iswalpha(itr->GetChar()) && !iswalpha(this->GetPrevChar()));
+    delete itr;
+    return result;
 }
 //---------------------------------------------------------------------------
-bool Iter::LineIsEmpty()
+bool Iter::LineIsEmpty(bool allowWhite)
 {
   if(line->next != NULL && line->next == (Span*)line->nextline)
     return true;
-    return false;
+  if(allowWhite)
+  {
+    Iter itr(*this);
+    itr.GoLineStart();
+    do
+      if((int)itr.GetChar() > 32)
+        return false;
+    while ( itr.GoChar() && itr.line == this->line );
+    return true;
+  }
+  return false;
 }
 //---------------------------------------------------------------------------
 int Iter::GetLineNum()
 {
-  return linenum;
+  if(buffer == NULL)
+  {
+    NSpan * line = this->line;
+    int count = 0; //suppose we count lines from one (loop wil be fired at least once everytime)
+    while( line != NULL)
+    {
+      line = line->prevline;
+      count++;
+    }
+    return count;
+  }
+  else
+    return linenum;
+}
+//---------------------------------------------------------------------------
+void Iter::GoWordLiteral()
+{
+  while ( IsWordChar(*ptr) && GoChar());
+  while (!IsWordChar(*ptr) && GoChar());
+}
+//---------------------------------------------------------------------------
+void Iter::GoWordEndLiteral()
+{
+  while (!IsWordChar(*ptr) && GoChar());
+  while (IsWordChar(*ptr) && GoChar());
+}
+//---------------------------------------------------------------------------
+void Iter::RevWordLiteral()
+{
+  RevChar();
+  while (!IsWordChar(*ptr) && RevChar());
+  while (IsWordChar(*ptr) && RevChar());            //this moves one char before the word
+  if( word->prev->prev != NULL || offset != 0)                     //this corrects the one char
+    GoChar();
+}
+//---------------------------------------------------------------------------
+bool Iter::IsWordChar(wchar_t c)
+{
+  WORD wCharType;
+  return (iswalnum(c) || c == '_' || (GetStringTypeExW (LOCALE_USER_DEFAULT, CT_CTYPE1, &c, 1, &wCharType) && (wCharType & C1_ALPHA) == C1_ALPHA));
 }

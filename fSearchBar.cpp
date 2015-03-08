@@ -9,8 +9,8 @@
 #pragma resource "*.dfm"
 TSearchBar *SearchBar;
 //---------------------------------------------------------------------------
-__fastcall TSearchBar::TSearchBar(TComponent* Owner)
-  : TForm(Owner)
+  __fastcall TSearchBar::TSearchBar(TComponent* Owner)
+: TForm(Owner)
 {
   success = false;
 }

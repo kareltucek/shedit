@@ -7,7 +7,7 @@
 #include "uFormat.h"
 #include <vcl.h>
 #include <list>
-#include <uLanguageDefinition.h>
+#include "uLanguageDefinition.h"
 #include <windows.h>
 #include <queue>
 #include "config.h"
@@ -125,19 +125,19 @@ namespace SHEdit
 
       void ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, bool paint);
       void __fastcall Draw();
-#ifdef DEBUG
+#ifdef _DEBUG
       void Write(AnsiString message);
       void DumpStackState();
 #endif
     public:
-#ifdef DEBUG
+#ifdef _DEBUG
       bool dbgLogging;
 #endif
       friend class TSHEdit;
 
       void __fastcall OnIdle(TObject * Sender, bool& Done);
 
-      bool __fastcall Execute(void);
+      bool __fastcall Execute(bool paint = true);
 
       void InvalidateAll();
 
@@ -145,6 +145,7 @@ namespace SHEdit
       virtual __fastcall ~Parser();
 
       void SetLangDef(LanguageDefinition * langdef);
+      LanguageDefinition* GetLangDef();
 
       void ParseFromLine(NSpan * line, int linenum, int prior);
       void ParseFromToLine(NSpan * line, int linenum, int count, int prior);

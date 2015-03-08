@@ -1,16 +1,17 @@
 #ifdef _DEBUG
-#define DEBUG                       //includes debug bindings
-#define DEBUG_LOGGING              //enables logging to files
-//define DEBUG_UNDO                 //test undo each time a change is made to buffer
-//define DEBUG_FORCE_SHORTCUTTS      //disables onkey_whatever events that may override the debug keys
-//define DEBUG_PARSELINELOOP
-//define DEBUG_CURSOR               //For debug of mouse-selection; disables movement updates
+#define DEBUG
+//define _DEBUG_COPY_DRAW
+//define _DEBUG_LOGGING              //enables logging to files
+//define _DEBUG_UNDO                 //test undo each time a change is made to buffer
+//define _DEBUG_FORCE_SHORTCUTTS      //disables onkey_whatever events that may override the debug keys
+//define _DEBUG_PARSELINELOOP
+//define _DEBUG_CURSOR               //For debug of mouse-selection; disables movement updates
 #endif
 
-#define DEBUG_REPAINT false
+#define _DEBUG_REPAINT false
 
-#ifndef DEBUG
-  #define NDEBUG       //disables asserts (iff this header is included before the assert header)
+#ifndef _DEBUG
+#define NDEBUG       //disables asserts (iff this header is included before the assert header)
 #endif
 
 #define DOUBLE_BUFFERED

@@ -8,18 +8,19 @@
 #include <ComCtrls.hpp>
 #include <Controls.hpp>
 #include <StdCtrls.hpp>
-#include "config.h"
 #include <SysUtils.hpp>
 #include <Classes.hpp>
 #include <Controls.hpp>
 #include <Clipbrd.hpp>
 #include <time.h>
 #include "uIter.h"
+#include "config.h"
 #include "uIPos.h"
 #include "uLanguageDefinition.h"
 #include "uLanguageDefinitionSQL.h"
 #include "uSpan.h"
 #include "uMark.h"
+#include "uFormat.h"
 #include "uBuffer.h"
 #include "uDrawer.h"
 #include "uParser.h"
@@ -142,7 +143,10 @@ namespace SHEdit
       TTimer * timer;
 
       TColor selColor;
+      TColor selFColor;
       TColor searchColor;
+
+      LanguageDefinition * fallbackLangDef;
 
       bool readonly;
 
@@ -152,18 +156,19 @@ namespace SHEdit
       Iter XYtoItr(int& x, int& y);                                                                  /*!< Converts coordinates to coresponding iterator. */
       void UpdateCursor(bool paint);                                                                 /*!< Recalculates position of itrCursor, and posts results to the drawer. If paint is set to true, it also asks drawer to redraw window.*/
       void ProcessMouseMove(int& x, int& y);                                                         /*!< processes mouse drag info (called from mouse move and mouse up handlers). */
-      void ProcessMouseClear(bool redraw, bool deletecursord);                                       /*!< clears selection */
+      void ProcessMouseClear(bool redraw, bool deletecursord, bool execredraw = true);               /*!< clears selection */
       Format * selectionFormat;
       Format * searchFormat;
       bool mouseDown;
       bool mouseSelect;                                                                              /*!< Whether component is in text-selection (=mouse drag) mode.*/
+      bool mouseDoubleClickFlag;
       int dx, dy;                                                                                    /*!< Position of mouse down.*/
       int cx, cy;                                                                                    /*!< Cursor position*/
       int mx, my;                                                                                    /*!< Position of itrCursorSecond*/
       int cursorLeftOffset;                                                                          /*!< Column of the cursor, taking into account tabulators. This does NOT equal iterator position.*/
       int scrolldelta;                                                                               /*!< used by ms to treat smooth-scroll wheels...*/
       int scrolldeltafontsize;                                                                       /*!< used by ms to treat smooth-scroll wheels...*/
-                                                                                                     /*!< On edit and movement edjusts screen so that cursor is visible*/
+      /*!< On edit and movement edjusts screen so that cursor is visible*/
       void Scroll(int by);
       void __fastcall OnVScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);
       void __fastcall OnHScroll(TObject *Sender, TScrollCode ScrollCode, int &ScrollPos);
@@ -172,6 +177,8 @@ namespace SHEdit
       void __fastcall OnTimer(TObject * Sender);                                                     /*!< ensures cursor blinking :) */
 
       void __fastcall OnEnterHandler(TObject * Sender);
+
+      void UndoRedo(bool redo); /*!< Internal implementation moved from the keydown handlers. Not sure atm whether usable from outside of the handler.     */
 
       void Action(String name, bool end = true);
     protected:
@@ -209,15 +216,15 @@ namespace SHEdit
       TMessage FOnExit;
       TMouseEvent FOnMouseUp;
 
-     void __fastcall SetSelLen(int SelLen);
-     int __fastcall GetSelLen();
-     void __fastcall SetSelText(String SelText);
-     String __fastcall GetSelText();
-     void __fastcall SetText(String);
-     String __fastcall GetText();
-     bool Visible(Iter * itr);
+      void __fastcall SetSelLen(int SelLen);
+      int __fastcall GetSelLen();
+      void __fastcall SetSelText(String SelText);
+      String __fastcall GetSelText();
+      void __fastcall SetText(String);
+      String __fastcall GetText();
+      bool Visible(Iter * itr);
 
-     void ProcessNewSelection();
+      void ProcessNewSelection(bool execdraw = true, bool draw = true);
 
     public:
 #ifdef DEBUG
@@ -240,6 +247,7 @@ namespace SHEdit
       int __fastcall GetLineCount();
 
       void __fastcall SetLanguageDefinition(LanguageDefinition * def);
+      LanguageDefinition* __fastcall GetLanguageDefinition();
 
       void __fastcall SetLinenumsEnabled(bool enabled);                                              /*!< sets whether line numbers are being drawn. Needs manual triggering of repaintwindow*/
       bool __fastcall GetLinenumsEnabled();
@@ -250,10 +258,11 @@ namespace SHEdit
 
       int __fastcall GetActLine();                                                                   /*!< returns line number of cursor (absolute position in buffer)*/
 
-      void AdjustLine(bool paint);
+      void AdjustLine(bool paint, bool fromtop = true);
 
-      CIter GetCursor();                                                                             /*!< CIter returns a copy of the cursor (or selection start) Iter wrapped in a CIter instance. The CIter always behaves as a valid Iterator, and takes care of rmaking changes to the canvas.*/
-      CIter GetCursorEnd();                                                                          /*!< CIter returns a copy of the cursor (or selection end) Iter wrapped in a CIter instance. The CIter always behaves as a valid Iterator, and takes care of rmaking changes to the canvas.*/
+      CIter GetCursor();                                                                             /*!< CIter returns a copy of the cursor (or selection start) Iter wrapped in a CIter instance. The CIter always behaves as a valid Iterator, and takes care of making changes to the canvas.*/
+      CIter GetCursorBegin();                                                                        /*!< CIter returns a copy of the cursor (or selection start) Iter wrapped in a CIter instance. The CIter always behaves as a valid Iterator, and takes care of making changes to the canvas.*/
+      CIter GetCursorEnd();                                                                          /*!< CIter returns a copy of the cursor (or selection end) Iter wrapped in a CIter instance. The CIter always behaves as a valid Iterator, and takes care of making changes to the canvas.*/
 
       Iter * GetCursorIter();                                                                        /*!< If part of text is selected, returns pointer to the beginning of selection (or cursor, if nothing is selected). Pointer points to the component's private iterator - do not modify it unless you know what you are doing. */
       Iter * GetCursorIterEnd();                                                                     /*!< If part of text is selected, returns pointer to the end of selection (or NULL, if nothing is selected). Pointer points to the component's private iterator - do not modify it unless you know what you are doing. */
@@ -275,8 +284,8 @@ namespace SHEdit
       virtual void __fastcall RepaintWindow(bool force = true);
 
       void Clear();
-      void AddLine(const String& string);
-      void AddLines(const String& string);
+      void AddLine(const String& string, Format * format = NULL);
+      void AddLines(const String& string, Format * format = NULL);
       String GetLine(Iter* itr);
       String GetLine(int index);
 
@@ -297,10 +306,11 @@ namespace SHEdit
       void __fastcall SetKeepHistory(bool keep);
       bool __fastcall GetKeepHistory();
 
-     __property int SelLen = {read=GetSelLen, write=SetSelLen};
-     __property String SelText = {read=GetSelText, write=SetSelText};
-     __property String Text = {read=GetText, write=SetText};
+      __property int SelLen = {read=GetSelLen, write=SetSelLen};
+      __property String SelText = {read=GetSelText, write=SetSelText};
+      __property String Text = {read=GetText, write=SetText};
 __published:
+      __property TTabOrder TabOrder = {read=GetTabOrder, write=SetTabOrder, default=-1};
       __property TAlign Align = {read=FAlign, write=SetAlign, default=0};
       __property int FontSize = {read=GetFontsize, write=SetFontsize, default=DEFONTSIZE};
       __property TKeyPressEvent OnKeyPress = {read=FOnKeyPress, write=FOnKeyPress, default=NULL};

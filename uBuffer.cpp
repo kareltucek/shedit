@@ -18,13 +18,15 @@
 #include <ctype.h>
 
 using namespace SHEdit;
+#ifdef _DEBUG_LOGGING
 std::ofstream myfile;
+#endif
 
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
 Buffer::Buffer()
 {
-#ifdef DEBUG
+#ifdef _DEBUG_LOGGING
   myfile.open("buffer.txt", ios::out);
 #endif
   NSpan * head = new NSpan();
@@ -458,7 +460,7 @@ wchar_t* Buffer::_ParseWord(const wchar_t *& ptr, const wchar_t * ptrend)       
      ptr ++;
      }*/
 #else
-  if(*ptr == '\r')
+  while(*ptr == '\r') //ignore them and process *ALL*!
   {
     ptrstart++;
     ptr++;
@@ -542,7 +544,7 @@ void Buffer::HistoryOnOff()
   if( !keepHistory )
   {
     PurgeStack(stackRedo);
-    PurgeStack(stackUndo);
+      PurgeStack(stackUndo);
   }
 }
 //---------------------------------------------------------------------------
@@ -553,7 +555,7 @@ void Buffer::PurgeStack(std::stack<UndoTask*>& stack)
     UndoTask * redoevent = stack.top();
     stack.pop();
     redoevent->range->Free();
-    delete redoevent;
+      delete redoevent;
   }
 }
 //---------------------------------------------------------------------------
@@ -753,7 +755,7 @@ void Buffer::SimpleSaveFile(const wchar_t * filename)
   if (file && file->is_open())
   {
     Iter * itr = Begin();
-    while(itr->line->nextline != NULL)
+    while(itr->word->next != NULL)
     {
       int size_needed = WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, NULL, 0, NULL, NULL);
       std::string strTo( size_needed, 0 );
@@ -762,7 +764,9 @@ void Buffer::SimpleSaveFile(const wchar_t * filename)
       WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, utf8, size_needed, NULL, NULL);
       *file << utf8;
       delete utf8;
+      itr->GoWord();
     }
+    file->close();
     delete itr;
   }
   delete file;
@@ -873,7 +877,7 @@ preload->last = preload->last->next;
 preload->lastLine = preload->lastLine->nextline;
 }               */
 //---------------------------------------------------------------------------
-wchar_t * Buffer::GetText(Iter * From, Iter* To)
+wchar_t * Buffer::GetText(Iter * From, Iter* To, bool addCR)
 {
   Iter * itr = From->Duplicate();
   std::wstring str;
@@ -883,6 +887,8 @@ wchar_t * Buffer::GetText(Iter * From, Iter* To)
     itr->GoWord();
     while(itr->word != To->word)
     {
+      if(addCR && *itr->word->string=='\n')
+        str += '\r';
       str += itr->word->string;
       itr->GoWord();
     }
@@ -890,7 +896,7 @@ wchar_t * Buffer::GetText(Iter * From, Iter* To)
   }
   else
   {
-    str = std::wstring(itr->word->string).substr(From->offset, To->offset);
+    str = std::wstring(itr->word->string).substr(From->offset, To->offset - From->offset);
   }
   delete itr;
   wchar_t * cstr = new wchar_t[str.length()+1];
@@ -1110,7 +1116,7 @@ int Buffer::CheckIntegrity(int& emptyCount)
 #ifdef DEBUG
 void Buffer::Write(AnsiString message)
 {
-#ifdef DEBUG_LOGGING
+#ifdef _DEBUG_LOGGING
   myfile << message.c_str() << std::endl;
 #endif
 }

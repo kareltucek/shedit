@@ -59,8 +59,9 @@ namespace SHEdit
       void __fastcall UpdateHBar();
 
 #ifdef DEBUG
-      void Write(AnsiString message);
+      void Write(String message);
       void QueueDump();
+      void StressTest();
 #endif
 
       void DrawCursor();

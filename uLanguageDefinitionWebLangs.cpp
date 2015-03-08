@@ -67,16 +67,16 @@ using namespace SHEdit;
 
   //echo html parsing
   /*
-  phpHtmlEnterTree = AddDupTree(phpTree, NULL);
-  phpHtmlEnterTree->map[(int)'"'] = NULL;
-  phpHtmlEnterTree->map[(int)'\''] = NULL;
-  AddPush(L"echo", NULL, phpTree, phpHtmlEnterTree, PUSH_ALWAYS, MASK_ECHO_MODE);
-  AddPush(L"[", NULL, phpHtmlEnterTree, phpTree, MASK_ECHO_MODE, MASK_ECHO_IGNORE | MASK_ECHO_MODE);
-  AddPop(L"]", NULL, phpTree, MASK_ECHO_IGNORE, POP_AUTO);
-  AddPushFront(L"'", new FontStyle(&phpQuotes, &phpBG), phpHtmlEnterTree, htmlTree, MASK_ECHO_MODE, MASK_PHP_APOSTROPHE | MASK_PREDICTION);
-  AddPushFront(L"\"", new FontStyle(&phpQuotes, &phpBG), phpHtmlEnterTree, htmlTree, MASK_ECHO_MODE, MASK_PHP_QUOTE | MASK_PREDICTION);
-  AddPop(L";", new FontStyle(), phpHtmlEnterTree, MASK_ECHO_MODE, POP_AUTO);
-  AddJumpFront(L"?>", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, phpTree, htmlTree, 0, MASK_PREDICTION);    */
+     phpHtmlEnterTree = AddDupTree(phpTree, NULL);
+     phpHtmlEnterTree->map[(int)'"'] = NULL;
+     phpHtmlEnterTree->map[(int)'\''] = NULL;
+     AddPush(L"echo", NULL, phpTree, phpHtmlEnterTree, PUSH_ALWAYS, MASK_ECHO_MODE);
+     AddPush(L"[", NULL, phpHtmlEnterTree, phpTree, MASK_ECHO_MODE, MASK_ECHO_IGNORE | MASK_ECHO_MODE);
+     AddPop(L"]", NULL, phpTree, MASK_ECHO_IGNORE, POP_AUTO);
+     AddPushFront(L"'", new FontStyle(&phpQuotes, &phpBG), phpHtmlEnterTree, htmlTree, MASK_ECHO_MODE, MASK_PHP_APOSTROPHE | MASK_PREDICTION);
+     AddPushFront(L"\"", new FontStyle(&phpQuotes, &phpBG), phpHtmlEnterTree, htmlTree, MASK_ECHO_MODE, MASK_PHP_QUOTE | MASK_PREDICTION);
+     AddPop(L";", new FontStyle(), phpHtmlEnterTree, MASK_ECHO_MODE, POP_AUTO);
+     AddJumpFront(L"?>", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, phpTree, htmlTree, 0, MASK_PREDICTION);    */
 
   AddJump(L"echo", NULL, LangDefJumpType::tMask, phpTree, phpTree, PUSH_ALWAYS, MASK_ECHO_MODE);
   AddPush(L"[", NULL, phpTree, phpTree, MASK_ECHO_IGNORE, 0);
@@ -110,10 +110,10 @@ using namespace SHEdit;
   AddJump(L"</style", new FontStyle(&htmlTags, &cssBG), LangDefJumpType::tJump, cssTree, htmlTagTree);
   AddJump(L"</style>", new FontStyle(&htmlTags, &cssBG), LangDefJumpType::tJump, cssTree, htmlTree);
   /*
-  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssTree, phpTree);
-  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssEnterTree, phpTree);
-  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssValueTree, phpTree);
-  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssPropertyTree, phpTree);  */
+     AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssTree, phpTree);
+     AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssEnterTree, phpTree);
+     AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssValueTree, phpTree);
+     AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, cssPropertyTree, phpTree);  */
   AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), cssTree, phpTree, PUSH_ALWAYS);
   AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), cssEnterTree, phpTree, PUSH_ALWAYS);
   AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), cssValueTree, phpTree, PUSH_ALWAYS);
@@ -129,9 +129,9 @@ using namespace SHEdit;
   AddJump(L">", new FontStyle(&htmlTags, &htmlBG), LangDefJumpType::tJump, jvEnterTree, jvTree);
   AddJump(L"</script>", new FontStyle(&htmlTags, &htmlBG), LangDefJumpType::tJump, jvTree, htmlTree);
   /*
-  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, jvTree, phpTree);
-  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, jvEnterTree, phpTree);
-  AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, jvCommentTree, phpTree);    */
+     AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, jvTree, phpTree);
+     AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, jvEnterTree, phpTree);
+     AddJump(L"<?", new FontStyle(&phpFG,&phpBG), LangDefSpecType::Jump, jvCommentTree, phpTree);    */
   AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), jvTree, phpTree, PUSH_ALWAYS);
   AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), jvEnterTree, phpTree, PUSH_ALWAYS);
   AddPush(L"<?",  new FontStyle(&phpFG,&phpBG), jvCommentTree, phpTree, PUSH_ALWAYS);
@@ -168,34 +168,34 @@ using namespace SHEdit;
   //phpHtmlEnterTree->Name = L"php html enter tree";
 #endif
 
-/*
-  GetNewBankID();
-  SetBankBase(0, htmlTree);
-  SetBankMask(0, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE | MASK_PREDICTION);
-  htmlTree->bankID = 0;
-  htmlCommentTree->bankID = 0;
-  htmlTagTree->bankID = 0;
-  htmlQuoteTree->bankID = 0;
+  /*
+     GetNewBankID();
+     SetBankBase(0, htmlTree);
+     SetBankMask(0, MASK_APOSTROPHE | MASK_QUOTE | MASK_DOUBLE_QUOTE | MASK_PREDICTION);
+     htmlTree->bankID = 0;
+     htmlCommentTree->bankID = 0;
+     htmlTagTree->bankID = 0;
+     htmlQuoteTree->bankID = 0;
 
-  cssPropertyTree->bankID = 0;
-  cssValueTree->bankID = 0;
-  cssEnterTree->bankID = 0;
-  cssTree->bankID = 0;
-  cssQuoteTree->bankID = 0;
+     cssPropertyTree->bankID = 0;
+     cssValueTree->bankID = 0;
+     cssEnterTree->bankID = 0;
+     cssTree->bankID = 0;
+     cssQuoteTree->bankID = 0;
 
-  jvTree->bankID = 0;
-  jvEnterTree->bankID = 0;
-  jvCommentTree->bankID = 0;
-  jvLineCommentTree->bankID = 0;
-  jvQuoteTree->bankID = 0;
+     jvTree->bankID = 0;
+     jvEnterTree->bankID = 0;
+     jvCommentTree->bankID = 0;
+     jvLineCommentTree->bankID = 0;
+     jvQuoteTree->bankID = 0;
 
-  SetBankBase(1, phpTree);
-  SetBankMask(1, MASK_PHP | MASK_ECHO_MODE | MASK_ECHO_IGNORE | MASK_PHP_APOSTROPHE | MASK_PHP_QUOTE);
-  phpTree->bankID = 1;
-  phpCommentTree->bankID = 1;
-  phpLineCommentTree->bankID = 1;
-  phpHtmlEnterTree->bankID = 1;
-  phpQuoteTree->bankID = 1;    */
+     SetBankBase(1, phpTree);
+     SetBankMask(1, MASK_PHP | MASK_ECHO_MODE | MASK_ECHO_IGNORE | MASK_PHP_APOSTROPHE | MASK_PHP_QUOTE);
+     phpTree->bankID = 1;
+     phpCommentTree->bankID = 1;
+     phpLineCommentTree->bankID = 1;
+     phpHtmlEnterTree->bankID = 1;
+     phpQuoteTree->bankID = 1;    */
 }
 //---------------------------------------------------------------------------
 void LanguageDefinitionWebLangs::ConstructHtml(LanguageDefinition::TreeNode * at, TColor * bg, TColor * fg)
