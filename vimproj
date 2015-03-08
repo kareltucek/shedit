@@ -1,19 +1,21 @@
-se path=""
-"se tags=~/.vim/ctags/SQL
-o vimproj
-vsplit config.h
-vsplit DOCUMENTATION
-call OpenObject("cSHEdit")
-call OpenObject("uBuffer")
-call OpenObject("uDrawer")
-call OpenObject("uFormat")
-call OpenObject("uIPos")
-call OpenObject("uIter")
-call OpenObject("uParser")
-call OpenObject("uLanguageDefinition")
-call OpenObject("uLanguageDefinitionSQL")
-call OpenObject("uLanguageDefinitionWebLangs")
-call OpenObject("uMark")
-call OpenObject("uSpan")
-call OpenObject("uStack")
-tabdo windo se scroll=8
+o 
+vsplit Makefile
+split vimproj
+
+tabfind uIter.h
+vsplit uIter.cpp
+
+tabfind uLanguageDefinition.h
+vsplit uLanguageDefinition.cpp
+
+tabfind uLanguageDefinition2.h
+vsplit uLanguageDefinition2.cpp
+
+tabfind uLanguageDefinitionSQL.h
+vsplit uLanguageDefinitionSQL.cpp
+
+tabfind uLanguageDefinitionWebLangs.h
+vsplit uLanguageDefinitionWebLangs.cpp
+
+tabfind uStack.h
+vsplit uStack.cpp
