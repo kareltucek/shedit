@@ -33,18 +33,18 @@ namespace SHEdit
    * Describes a sort of  a deterministic PEG/LL(1) grammar. That is - everything is greedy and without any backtracking. Left recursion is not accepted. Duplicit prefixes are accepted and automatically merged, but there's no guarantee that one version wont shadow another. 
    *
    *
-   * Node ----------- Node --- ... Every node is either of type nonterminal, lambda, end, tail or terminal.
+   * Node ----------- Node --- ... Every node is either of type nonterminal, lambda, tail or terminal.
    * nonterm          term         On a terminal node we just look at the leave index, and jump to the next node...         
    *   |                           On a nonterminal node we do the same, but on the recursive index and also we push the current
    * Node   -------- Node  --- ...    Node onto stack. Every nonterminal node owns a lambda node, which starts the rule.
    * lambda \       nonterm        Lambda node is just an auxiliary node - practically it is never encountered during parsing. 
-   *         \        |            End node signalizes, that we should return to the node on stack and continue from there 
-   *          \      Node  --- ...    according to the leave index.
+   *         \        |            x End - after all we dont need this type...
+   *          \      Node  --- ... x 
    *           \    lambda         Tail recursion works as the nonterm type, but does not preserve the current position.
    *            \           ...                                 Indexes are constructed to contain the lambda closures.
    *             \         /                                    That means, that it maps tokens to jump locations (Nodes).
-   *              Node ------- Node --- Node --- Node --- Node  
-   *              term        nonterm   term    nonterm   end   Every nonterminal node represents a rule of a grammar, and
+   *              Node ------- Node --- Node --- Node           
+   *              term        nonterm   term    nonterm         Every nonterminal node represents a rule of a grammar, and
    *             SELECT    what_clause  FROM  from_clause         thus may be referred to by other rules.
    *                            |                  |            Nonterminal node can be imagined as a graph of references to 
    *                          Node --- ...        ...             other Nonterminals and simple terminal Nodes (which represent
