@@ -125,8 +125,8 @@ namespace SHEdit
 
         Node(NType t) : type(t), r(), nextnodes(), index();
         void Add(const Node& n);
-        bool Eq(const Node& n);
-        bool Cq(const Node& n); //more power needed - we should check te nextnodes too
+        bool Eq(const Node& n); //equal (indistinguishable by perser)
+        bool Cq(const Node& n); //congruent; more power needed here  - we should check the rest of the tree too
         bool operator==(const Node& n);
         void Finalize(); 
         void ExpandLambda(std::map<int, Node*>& index, Node* next);
