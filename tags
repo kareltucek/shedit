@@ -16,6 +16,7 @@ ActionType	uSpan.h	/^    enum ActionType{deletion, insertion};$/;"	g	struct:SHEd
 Add	uFormat.cpp	/^void Format::Add(Stack<SHEdit::Mark>::Node* mark)$/;"	f	class:Format	signature:(Stack<SHEdit::Mark>::Node* mark)
 Add	uFormat.h	/^      void Add(Stack<Mark>::Node * mark);$/;"	p	class:SHEdit::Format	access:public	signature:(Stack<Mark>::Node * mark)
 Add	uLanguageDefinition2.cpp	/^LanguageDefinition::Node* LanguageDefinition::Node::Add(const Node& n)$/;"	f	class:LanguageDefinition::Node	signature:(const Node& n)
+Add	uLanguageDefinition2.h	/^        Node* Add(const Node& n); \/\/returns a pointer to a used node (either a new node, or an already existing done)$/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(const Node& n)
 AddChar	uParser.cpp	/^void Parser::AddChar(Iter * itr, int & pos)$/;"	f	class:Parser	signature:(Iter * itr, int & pos)
 AddChar	uParser.h	/^      void AddChar(Iter * itr, int & pos);$/;"	p	class:SHEdit::Parser	access:private	signature:(Iter * itr, int & pos)
 AddDupTree	DOCUMENTATION	/^      TreeNode * AddDupTree(TreeNode * tree, FontStyle * format); $/;"	p	file:	signature:(TreeNode * tree, FontStyle * format)
@@ -51,7 +52,8 @@ AddNewTree	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNode * LanguageDefi
 AddNewTree	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNode * LanguageDefinition::AddNewTree(FontStyle * format, bool caseSensit)$/;"	f	class:LanguageDefinition	signature:(FontStyle * format, bool caseSensit)
 AddNewTree	uLanguageDefinition.h	/^      TreeNode * AddNewTree(FontStyle * format);                                                     \/*!< Just creates and returns an empty new tree with format as the default format *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(FontStyle * format)
 AddNewTree	uLanguageDefinition.h	/^      TreeNode * AddNewTree(FontStyle * format, bool caseSensitive);                                 \/*!< Just creates and returns an empty new tree with format as the default format *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(FontStyle * format, bool caseSensitive)
-AddNonTerm	uLanguageDefinition2.cpp	/^void LanguageDefinition::AddNonTerm(const std::wstring& name, FontStyle* fs, int id, bool gather, bool call)$/;"	f	class:LanguageDefinition	signature:(const std::wstring& name, FontStyle* fs, int id, bool gather, bool call)
+AddNonTerm	uLanguageDefinition2.cpp	/^void LanguageDefinition::AddNonTerm(const std::wstring& name, FontStyle* fs, int id, int flags)$/;"	f	class:LanguageDefinition	signature:(const std::wstring& name, FontStyle* fs, int id, int flags)
+AddNonTerm	uLanguageDefinition2.h	/^      void AddNonTerm(const std::wstring& name, FontStyle* fs, int id, int flags);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(const std::wstring& name, FontStyle* fs, int id, int flags)
 AddPair	DOCUMENTATION	/^      TreeNode * AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); $/;"	p	file:	signature:(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL)
 AddPair	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNode* LanguageDefinition::AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at, TreeNode * to)$/;"	f	class:LanguageDefinition	signature:(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at, TreeNode * to)
 AddPair	uLanguageDefinition.h	/^      TreeNode * AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); \/*!< Is just an abreviation for two jumps. Adds jump from "opening" tag at "at" tree to newly created tree and then corresponding jump back *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL)
@@ -77,15 +79,18 @@ AddPushes	uLanguageDefinition.h	/^      void AddPushes(wchar_t * string, FontSty
 AddPushesFront	uLanguageDefinition.cpp	/^void LanguageDefinition::AddPushesFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short gmask)$/;"	f	class:LanguageDefinition	signature:(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short gmask)
 AddPushesFront	uLanguageDefinition.h	/^      void AddPushesFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0); \/*!< Just an abreviation. *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0)
 AddRule	uLanguageDefinition2.cpp	/^void LanguageDefinition::AddRule(const std::wstring& name, std::wstring rule)$/;"	f	class:LanguageDefinition	signature:(const std::wstring& name, std::wstring rule)
+AddRule	uLanguageDefinition2.h	/^      void AddRule(const std::wstring& name, std::wstring rule);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(const std::wstring& name, std::wstring rule)
 AddSafetyJumps	uLanguageDefinitionWebLangs.cpp	/^void LanguageDefinitionWebLangs::AddSafetyJumps()$/;"	f	class:LanguageDefinitionWebLangs	signature:()
 AddSafetyJumps	uLanguageDefinitionWebLangs.h	/^      void AddSafetyJumps();$/;"	p	class:SHEdit::LanguageDefinitionWebLangs	access:private	signature:()
-AddTerm	uLanguageDefinition2.cpp	/^void LanguageDefinition::AddTerm(const std::wstring& name,FontStyle* fs,const std::wstring& rgx, int id, bool caseSens, bool getst, bool confirm)$/;"	f	class:LanguageDefinition	signature:(const std::wstring& name,FontStyle* fs,const std::wstring& rgx, int id, bool caseSens, bool getst, bool confirm)
+AddTerm	uLanguageDefinition2.cpp	/^void LanguageDefinition::AddTerm(const std::wstring& name,FontStyle* fs,const std::wstring& rgx, int id, int flags)$/;"	f	class:LanguageDefinition	signature:(const std::wstring& name,FontStyle* fs,const std::wstring& rgx, int id, int flags)
+AddTerm	uLanguageDefinition2.h	/^      void AddTerm(const std::wstring& name,FontStyle*,const std::wstring& rgx, int id, int flags);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(const std::wstring& name,FontStyle*,const std::wstring& rgx, int id, int flags)
 AddWord	DOCUMENTATION	/^      void AddWord(wchar_t * string, FontStyle * format, TreeNode * at = NULL); $/;"	p	file:	signature:(wchar_t * string, FontStyle * format, TreeNode * at = NULL)
 AddWord	uLanguageDefinition.cpp	/^void LanguageDefinition::AddWord(wchar_t * string, FontStyle * format, TreeNode * at)$/;"	f	class:LanguageDefinition	signature:(wchar_t * string, FontStyle * format, TreeNode * at)
 AddWord	uLanguageDefinition.h	/^      void AddWord(wchar_t * string, FontStyle * format, TreeNode * at = NULL);                      \/*!< Adds a wordtag item (i.e. for highlighting php variables as $test just by $) *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t * string, FontStyle * format, TreeNode * at = NULL)
 AdjustLine	cSHEdit.cpp	/^void TSHEdit::AdjustLine(bool paint, bool fromtop)$/;"	f	class:TSHEdit	signature:(bool paint, bool fromtop)
 AdjustLine	cSHEdit.h	/^      void AdjustLine(bool paint, bool fromtop = true);$/;"	p	class:SHEdit::TSHEdit	access:public	signature:(bool paint, bool fromtop = true)
 Align	cSHEdit.h	/^      __property TAlign Align = {read=FAlign, write=SetAlign, default=0};$/;"	m	class:SHEdit::TSHEdit	access:public
+Auto	uLanguageDefinition2.h	/^      const static int Auto = -1;$/;"	m	class:SHEdit::LanguageDefinition	access:public
 BY	uDrawer.cpp	130;"	d	file:
 Begin	uBuffer.cpp	/^Iter * Buffer::Begin()$/;"	f	class:Buffer	signature:()
 Begin	uBuffer.h	/^      Iter * Begin();$/;"	p	class:SHEdit::Buffer	access:public	signature:()
@@ -206,6 +211,7 @@ Clear	cSHEdit.h	/^      void Clear();$/;"	p	class:SHEdit::TSHEdit	access:public	
 Compare	uIPos.cpp	/^bool IPos::Compare(const IPos*& a, const IPos*& b)$/;"	f	class:IPos	signature:(const IPos*& a, const IPos*& b)
 Compare	uIPos.h	/^      static bool Compare(const IPos*& a, const IPos*& b);                                           \/*!< Returns true if "a" is to be considered to go befor "b" in buffer. For descendants should be also able to take into acount their positioning needs (i.e. when the position itself is the same, but some markup should be processed before other; its implemented this way to work with template asociative containers that do not allow comparing against other then template type) *\/$/;"	p	class:SHEdit::IPos	access:public	signature:(const IPos*& a, const IPos*& b)
 Construct	uLanguageDefinition2.cpp	/^void LanguageDefinition::Construct(std::wstring& rule, std::vector<Node*>& endnodes)$/;"	f	class:LanguageDefinition	signature:(std::wstring& rule, std::vector<Node*>& endnodes)
+Construct	uLanguageDefinition2.h	/^      void Construct(std::wstring& rule, std::vector<Node*>& endnodes);$/;"	p	class:SHEdit::LanguageDefinition	access:private	signature:(std::wstring& rule, std::vector<Node*>& endnodes)
 ConstructCss	uLanguageDefinitionWebLangs.cpp	/^void LanguageDefinitionWebLangs::ConstructCss(LanguageDefinition::TreeNode * at, TColor * bg, TColor * fg)$/;"	f	class:LanguageDefinitionWebLangs	signature:(LanguageDefinition::TreeNode * at, TColor * bg, TColor * fg)
 ConstructCss	uLanguageDefinitionWebLangs.h	/^      void ConstructCss(TreeNode * at,  TColor * bg, TColor * fg);$/;"	p	class:SHEdit::LanguageDefinitionWebLangs	access:private	signature:(TreeNode * at, TColor * bg, TColor * fg)
 ConstructHtml	uLanguageDefinitionWebLangs.cpp	/^void LanguageDefinitionWebLangs::ConstructHtml(LanguageDefinition::TreeNode * at, TColor * bg, TColor * fg)$/;"	f	class:LanguageDefinitionWebLangs	signature:(LanguageDefinition::TreeNode * at, TColor * bg, TColor * fg)
@@ -221,6 +227,9 @@ Copy	cSHEdit.h	/^      void Copy();$/;"	p	class:SHEdit::TSHEdit	access:public	si
 Copy	uIPos.cpp	/^void IPos::Copy(const IPos& ip)$/;"	f	class:IPos	signature:(const IPos& ip)
 Copy	uIPos.h	/^      void Copy(const IPos& ip);$/;"	p	class:SHEdit::IPos	access:private	signature:(const IPos& ip)
 Cq	uLanguageDefinition2.cpp	/^bool LanguageDefinition::Node::Cq(const Node& n)$/;"	f	class:LanguageDefinition::Node	signature:(const Node& n)
+Cq	uLanguageDefinition2.h	/^        bool Cq(const NTerm& n){return ruleid == n.ruleid && gather == n.gather && call == n.call && fs == n.fs;};$/;"	f	struct:SHEdit::LanguageDefinition::NTerm	access:public	signature:(const NTerm& n)
+Cq	uLanguageDefinition2.h	/^        bool Cq(const Node& n); \/\/congruent; more power needed here  - we should check the rest of the tree too$/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(const Node& n)
+Cq	uLanguageDefinition2.h	/^        bool Cq(const Term& n){return tokid == n.tokid && remember == n.remember && getstyle == n.getstyle && call == n.call && fs == n.fs;};$/;"	f	struct:SHEdit::LanguageDefinition::Term	access:public	signature:(const Term& n)
 Cshedit	cSHEdit.cpp	/^namespace Cshedit$/;"	n	file:
 Cshedit::Register	cSHEdit.cpp	/^  void __fastcall PACKAGE Register()$/;"	f	namespace:Cshedit	signature:()
 DEBUG	config.h	2;"	d
@@ -286,7 +295,9 @@ Empty	uLanguageDefinition.h	/^  enum LangDefSpecType{Empty = 0x1, Nomatch = 0x2,
 End	uBuffer.cpp	/^Iter * Buffer::End()$/;"	f	class:Buffer	signature:()
 End	uBuffer.h	/^      Iter * End();$/;"	p	class:SHEdit::Buffer	access:public	signature:()
 Eq	uLanguageDefinition2.cpp	/^bool LanguageDefinition::Node::Eq(const Node& n)$/;"	f	class:LanguageDefinition::Node	signature:(const Node& n)
-Eq	uLanguageDefinition2.h	/^        bool Eq(const Term& n){return tokid == n.tokid);$/;"	f	struct:SHEdit::LanguageDefinition::Term	access:public	signature:(const Term& n)
+Eq	uLanguageDefinition2.h	/^        bool Eq(const NTerm& n){return ruleid == n.ruleid;};$/;"	f	struct:SHEdit::LanguageDefinition::NTerm	access:public	signature:(const NTerm& n)
+Eq	uLanguageDefinition2.h	/^        bool Eq(const Node& n); \/\/equal (indistinguishable by perser)$/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(const Node& n)
+Eq	uLanguageDefinition2.h	/^        bool Eq(const Term& n){return tokid == n.tokid;};$/;"	f	struct:SHEdit::LanguageDefinition::Term	access:public	signature:(const Term& n)
 Erase	uStack.h	/^    void Erase();$/;"	p	class:Stack	access:public	signature:()
 Erase	uStack.h	/^    void Erase(iterator itr);$/;"	p	class:Stack	access:public	signature:(iterator itr)
 Erase	uStack.h	/^void Stack<T_data>::Erase()$/;"	f	class:Stack	signature:()
@@ -295,6 +306,8 @@ Escape	cSHEdit.cpp	/^String TSHEdit::Escape(String str)$/;"	f	class:TSHEdit	sign
 Escape	cSHEdit.h	/^      String Escape(String str);    \/\/debug as well$/;"	p	class:SHEdit::TSHEdit	access:public	signature:(String str)
 Execute	uParser.cpp	/^bool __fastcall Parser::Execute(bool paint)$/;"	f	class:Parser	signature:(bool paint)
 Execute	uParser.h	/^      bool __fastcall Execute(bool paint = true);$/;"	p	class:SHEdit::Parser	access:public	signature:(bool paint = true)
+ExpandLambda	uLanguageDefinition2.cpp	/^void LanguageDefinition::Node::ExpandLambda(std::map<int, Node*>& index, Node* next)$/;"	f	class:LanguageDefinition::Node	signature:(std::map<int, Node*>& index, Node* next)
+ExpandLambda	uLanguageDefinition2.h	/^        void ExpandLambda(std::map<int, Node*>& index, Node* next);$/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(std::map<int, Node*>& index, Node* next)
 FIXSCREENTOP	config.h	41;"	d
 FORCELOOKAHEAD	config.h	35;"	d
 FOnChange	cSHEdit.h	/^      TMessage FOnChange;$/;"	m	class:SHEdit::TSHEdit	access:protected
@@ -310,6 +323,8 @@ FROM	uDrawer.cpp	128;"	d	file:
 FULL_WIDTH_PAINT	config.h	18;"	d
 Finalize	uLanguageDefinition2.cpp	/^void LanguageDefinition::Finalize()$/;"	f	class:LanguageDefinition	signature:()
 Finalize	uLanguageDefinition2.cpp	/^void LanguageDefinition::Node::Finalize()$/;"	f	class:LanguageDefinition::Node	signature:()
+Finalize	uLanguageDefinition2.h	/^        void Finalize(); $/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:()
+Finalize	uLanguageDefinition2.h	/^      void Finalize(); $/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:()
 FindNext	uCursor.cpp	/^      \/*AUTOGENERATED*\/ bool  CIter::FindNext (wchar_t * string, bool skip , bool caseSensitive , bool wholeword )  { Init(); bool  tmp =  this->itr.FindNext (string,skip,caseSensitive,wholeword); Update();  return  tmp;} \/*!< skip defines whether to match word directly at cursor or not *\/$/;"	f	class:CIter	signature:(wchar_t * string, bool skip , bool caseSensitive , bool wholeword )
 FindNext	uCursor.h	/^      \/*AUTOGENERATED*\/ bool  CIter::FindNext (wchar_t * string, bool skip = true, bool caseSensitive = true, bool wholeword = false)  ; \/*!< skip defines whether to match word directly at cursor or not *\/$/;"	p	class:SHEdit::CIter::CIter	access:public	signature:(wchar_t * string, bool skip = true, bool caseSensitive = true, bool wholeword = false)
 FindNext	uIter.cpp	/^bool Iter::FindNext(wchar_t * string, bool skip, bool caseSensitive, bool wholeword)$/;"	f	class:Iter	signature:(wchar_t * string, bool skip, bool caseSensitive, bool wholeword)
@@ -329,7 +344,6 @@ Flush	uParser.h	/^      void Flush();$/;"	p	class:SHEdit::Parser	access:private	
 FlushAll	uParser.cpp	/^void Parser::FlushAll()$/;"	f	class:Parser	signature:()
 FlushAll	uParser.h	/^      void FlushAll();$/;"	p	class:SHEdit::Parser	access:private	signature:()
 FontSize	cSHEdit.h	/^      __property int FontSize = {read=GetFontsize, write=SetFontsize, default=DEFONTSIZE};$/;"	m	class:SHEdit::TSHEdit	access:public
-FontStyle	.uLanguageDefinitionWebLangs.cpp.swp	/^/;"	v
 FontStyle	uFormat.cpp	/^  FontStyle::FontStyle()$/;"	f	class:FontStyle	signature:()
 FontStyle	uFormat.cpp	/^  FontStyle::FontStyle(TColor * foreground)$/;"	f	class:FontStyle	signature:(TColor * foreground)
 FontStyle	uFormat.cpp	/^  FontStyle::FontStyle(TColor * foreground, TColor * background)$/;"	f	class:FontStyle	signature:(TColor * foreground, TColor * background)
@@ -459,6 +473,7 @@ GetLinesize	uDrawer.cpp	/^int __fastcall Drawer::GetLinesize()$/;"	f	class:Drawe
 GetLinesize	uDrawer.h	/^      int __fastcall GetLinesize();$/;"	p	class:SHEdit::Drawer	access:public	signature:()
 GetMarkBefore	uFormat.cpp	/^IMark * Format::GetMarkBefore(IPos* ipos)$/;"	f	class:Format	signature:(IPos* ipos)
 GetMarkBefore	uFormat.h	/^      IMark * GetMarkBefore(IPos * ipos);$/;"	p	class:SHEdit::Format	access:public	signature:(IPos * ipos)
+GetName	uLanguageDefinition2.h	/^        const std::wstring& GetName()const{return term? t->name : nt->name;};$/;"	f	struct:SHEdit::LanguageDefinition::Rec	access:public	signature:() const
 GetNextChar	uCursor.cpp	/^      \/*AUTOGENERATED*\/ wchar_t  CIter::GetNextChar ()  { Init();  return  this->itr.GetNextChar ();} $/;"	f	class:CIter	signature:()
 GetNextChar	uCursor.h	/^      \/*AUTOGENERATED*\/ wchar_t  CIter::GetNextChar ()  ; $/;"	p	class:SHEdit::CIter::CIter	access:public	signature:()
 GetNextChar	uIter.cpp	/^wchar_t Iter::GetNextChar()$/;"	f	class:Iter	signature:()
@@ -478,6 +493,8 @@ GetText	cSHEdit.h	/^      String __fastcall GetText();$/;"	p	class:SHEdit::TSHEd
 GetText	uBuffer.cpp	/^wchar_t * Buffer::GetText(Iter * From, Iter* To, bool addCR)$/;"	f	class:Buffer	signature:(Iter * From, Iter* To, bool addCR)
 GetText	uBuffer.h	/^      wchar_t* GetText(Iter * From, Iter * To, bool addCariageReturns = false);$/;"	p	class:SHEdit::Buffer	access:public	signature:(Iter * From, Iter * To, bool addCariageReturns = false)
 GetToken	uLanguageDefinition2.cpp	/^LanguageDefinition::TokType LanguageDefinition::GetToken(std::wstring& str, std::wstring& val, bool eat)$/;"	f	class:LanguageDefinition	signature:(std::wstring& str, std::wstring& val, bool eat)
+GetToken	uLanguageDefinition2.h	/^      TokType GetToken(std::wstring& str, std::wstring& val);$/;"	p	class:SHEdit::LanguageDefinition	access:private	signature:(std::wstring& str, std::wstring& val)
+GetToken	uLanguageDefinition2.h	/^      TokType GetToken(std::wstring& str, std::wstring& val, bool eat);$/;"	p	class:SHEdit::LanguageDefinition	access:private	signature:(std::wstring& str, std::wstring& val, bool eat)
 GetTree	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNode* LanguageDefinition::GetTree()$/;"	f	class:LanguageDefinition	signature:()
 GetTree	uLanguageDefinition.h	/^      TreeNode* GetTree();$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:()
 GetVisLineCount	cSHEdit.cpp	/^int __fastcall TSHEdit::GetVisLineCount()$/;"	f	class:TSHEdit	signature:()
@@ -524,6 +541,7 @@ GoWordLiteral	uCursor.cpp	/^      \/*AUTOGENERATED*\/ void  CIter::GoWordLiteral
 GoWordLiteral	uCursor.h	/^      \/*AUTOGENERATED*\/ void  CIter::GoWordLiteral ()  ;                                             \/*!< goes to next start of a word (alnum + underscore) *\/$/;"	p	class:SHEdit::CIter::CIter	access:public	signature:()
 GoWordLiteral	uIter.cpp	/^void Iter::GoWordLiteral()$/;"	f	class:Iter	signature:()
 GoWordLiteral	uIter.h	/^      void GoWordLiteral()\/*AUTOGEN_UPDATE*\/;                                                        \/*!< goes to next start of a word (alnum + underscore) *\/$/;"	p	class:SHEdit::Iter	access:public	signature:()
+H	langdef.o	/^/;"	v
 HBar	cSHEdit.h	/^      TScrollBar * HBar;$/;"	m	class:SHEdit::TSHEdit	access:private
 HMax	uDrawer.h	/^      int HPos, HMax;$/;"	m	class:SHEdit::Drawer	access:private
 HPos	uDrawer.h	/^      int HPos, HMax;$/;"	m	class:SHEdit::Drawer	access:private
@@ -685,15 +703,16 @@ KeyPressHandler	cSHEdit.cpp	/^void __fastcall TSHEdit::KeyPressHandler(System::T
 KeyPressHandler	cSHEdit.h	/^      void __fastcall KeyPressHandler(System::TObject * Sender,System::WideChar &Key)     ;$/;"	p	class:SHEdit::TSHEdit	access:protected	signature:(System::TObject * Sender,System::WideChar &Key)
 KeyUpHandler	cSHEdit.cpp	/^void __fastcall TSHEdit::KeyUpHandler(System::TObject * Sender,System::Word &Key, Classes::TShiftState Shift)$/;"	f	class:TSHEdit	signature:(System::TObject * Sender,System::Word &Key, Classes::TShiftState Shift)
 KeyUpHandler	cSHEdit.h	/^      void __fastcall KeyUpHandler(System::TObject * Sender,System::Word &Key, Classes::TShiftState Shift)         ;$/;"	p	class:SHEdit::TSHEdit	access:protected	signature:(System::TObject * Sender,System::Word &Key, Classes::TShiftState Shift)
-L	.uLanguageDefinitionSQL.cpp.swp	/^/;"	v
 LIABILITY	LICENSE	/^LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING$/;"	v
 Label1	fSearchBar.h	/^  TLabel *Label1;$/;"	m	class:TSearchBar	access:private
 LangDefJumpType	uLanguageDefinition.h	/^  enum LangDefJumpType{tJump, tPush, tMask};$/;"	g	namespace:SHEdit
 LangDefSpecType	uLanguageDefinition.h	/^  enum LangDefSpecType{Empty = 0x1, Nomatch = 0x2, Normal=0x4, Jump=0x8, WordTag=0x20, LineTag=0x40, Lookahead = 0x80};$/;"	g	namespace:SHEdit
+LanguageDefinition	uLangDef2Test.h	/^LanguageDefinition::LanguageDefinition()$/;"	f	class:LanguageDefinition	signature:()
 LanguageDefinition	uLanguageDefinition.cpp	/^LanguageDefinition::LanguageDefinition()$/;"	f	class:LanguageDefinition	signature:()
 LanguageDefinition	uLanguageDefinition.h	/^      LanguageDefinition();$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:()
 LanguageDefinition	uLanguageDefinition.h	/^  class LanguageDefinition$/;"	c	namespace:SHEdit
-LanguageDefinition	uLanguageDefinition2.cpp	/^LanguageDefinition::LanguageDefinition(const std::locale& l = std::locale()) : loc(l), tokenizer(), caseSensitive(true), ids(1)$/;"	f	class:LanguageDefinition	signature:(const std::locale& l = std::locale())
+LanguageDefinition	uLanguageDefinition2.cpp	/^LanguageDefinition::LanguageDefinition(const std::locale& l) : loc(l), tokenizer(), ids(1)$/;"	f	class:LanguageDefinition	signature:(const std::locale& l)
+LanguageDefinition	uLanguageDefinition2.h	/^      LanguageDefinition(const std::locale& loc = std::locale());$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(const std::locale& loc = std::locale())
 LanguageDefinition	uLanguageDefinition2.h	/^  class LanguageDefinition$/;"	c	namespace:SHEdit
 LanguageDefinition::AddDupTree	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNode * LanguageDefinition::AddDupTree(LanguageDefinition::TreeNode * tree, FontStyle * format)$/;"	f	class:LanguageDefinition	signature:(LanguageDefinition::TreeNode * tree, FontStyle * format)
 LanguageDefinition::AddJump	uLanguageDefinition.cpp	/^void LanguageDefinition::AddJump(wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short gmask)$/;"	f	class:LanguageDefinition	signature:(wchar_t * string, FontStyle * format, LangDefJumpType type, TreeNode * at, TreeNode * to, short jumpmask, short newmask, short gmask)
@@ -705,7 +724,7 @@ LanguageDefinition::AddLine	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNo
 LanguageDefinition::AddLineStrong	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNode* LanguageDefinition::AddLineStrong(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to)$/;"	f	class:LanguageDefinition	signature:(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to)
 LanguageDefinition::AddNewTree	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNode * LanguageDefinition::AddNewTree(FontStyle * format)$/;"	f	class:LanguageDefinition	signature:(FontStyle * format)
 LanguageDefinition::AddNewTree	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNode * LanguageDefinition::AddNewTree(FontStyle * format, bool caseSensit)$/;"	f	class:LanguageDefinition	signature:(FontStyle * format, bool caseSensit)
-LanguageDefinition::AddNonTerm	uLanguageDefinition2.cpp	/^void LanguageDefinition::AddNonTerm(const std::wstring& name, FontStyle* fs, int id, bool gather, bool call)$/;"	f	class:LanguageDefinition	signature:(const std::wstring& name, FontStyle* fs, int id, bool gather, bool call)
+LanguageDefinition::AddNonTerm	uLanguageDefinition2.cpp	/^void LanguageDefinition::AddNonTerm(const std::wstring& name, FontStyle* fs, int id, int flags)$/;"	f	class:LanguageDefinition	signature:(const std::wstring& name, FontStyle* fs, int id, int flags)
 LanguageDefinition::AddPair	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNode* LanguageDefinition::AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at, TreeNode * to)$/;"	f	class:LanguageDefinition	signature:(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at, TreeNode * to)
 LanguageDefinition::AddPop	uLanguageDefinition.cpp	/^void LanguageDefinition::AddPop(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount, short newgmask)$/;"	f	class:LanguageDefinition	signature:(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount, short newgmask)
 LanguageDefinition::AddPops	uLanguageDefinition.cpp	/^void LanguageDefinition::AddPops(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount, short gmask)$/;"	f	class:LanguageDefinition	signature:(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount, short gmask)
@@ -715,7 +734,7 @@ LanguageDefinition::AddPushPopPair	uLanguageDefinition.cpp	/^LanguageDefinition:
 LanguageDefinition::AddPushes	uLanguageDefinition.cpp	/^void LanguageDefinition::AddPushes(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short gmask)$/;"	f	class:LanguageDefinition	signature:(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short gmask)
 LanguageDefinition::AddPushesFront	uLanguageDefinition.cpp	/^void LanguageDefinition::AddPushesFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short gmask)$/;"	f	class:LanguageDefinition	signature:(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask, short gmask)
 LanguageDefinition::AddRule	uLanguageDefinition2.cpp	/^void LanguageDefinition::AddRule(const std::wstring& name, std::wstring rule)$/;"	f	class:LanguageDefinition	signature:(const std::wstring& name, std::wstring rule)
-LanguageDefinition::AddTerm	uLanguageDefinition2.cpp	/^void LanguageDefinition::AddTerm(const std::wstring& name,FontStyle* fs,const std::wstring& rgx, int id, bool caseSens, bool getst, bool confirm)$/;"	f	class:LanguageDefinition	signature:(const std::wstring& name,FontStyle* fs,const std::wstring& rgx, int id, bool caseSens, bool getst, bool confirm)
+LanguageDefinition::AddTerm	uLanguageDefinition2.cpp	/^void LanguageDefinition::AddTerm(const std::wstring& name,FontStyle* fs,const std::wstring& rgx, int id, int flags)$/;"	f	class:LanguageDefinition	signature:(const std::wstring& name,FontStyle* fs,const std::wstring& rgx, int id, int flags)
 LanguageDefinition::AddWord	uLanguageDefinition.cpp	/^void LanguageDefinition::AddWord(wchar_t * string, FontStyle * format, TreeNode * at)$/;"	f	class:LanguageDefinition	signature:(wchar_t * string, FontStyle * format, TreeNode * at)
 LanguageDefinition::Construct	uLanguageDefinition2.cpp	/^void LanguageDefinition::Construct(std::wstring& rule, std::vector<Node*>& endnodes)$/;"	f	class:LanguageDefinition	signature:(std::wstring& rule, std::vector<Node*>& endnodes)
 LanguageDefinition::Finalize	uLanguageDefinition2.cpp	/^void LanguageDefinition::Finalize()$/;"	f	class:LanguageDefinition	signature:()
@@ -730,14 +749,16 @@ LanguageDefinition::IsNum	uLanguageDefinition.cpp	/^bool LanguageDefinition::IsN
 LanguageDefinition::IsWhite	uLanguageDefinition.cpp	/^bool LanguageDefinition::IsWhite(wchar_t c)$/;"	f	class:LanguageDefinition	signature:(wchar_t c)
 LanguageDefinition::Jump::Jump	uLanguageDefinition.cpp	/^  LanguageDefinition::Jump::Jump()$/;"	f	class:LanguageDefinition::Jump	signature:()
 LanguageDefinition::Jump::Jump	uLanguageDefinition.cpp	/^  LanguageDefinition::Jump::Jump(short _pushmask, short _newmask, short _newgmask, LangDefJumpType _type, TreeNode * _next, FontStyle * _format)$/;"	f	class:LanguageDefinition::Jump	signature:(short _pushmask, short _newmask, short _newgmask, LangDefJumpType _type, TreeNode * _next, FontStyle * _format)
+LanguageDefinition::LanguageDefinition	uLangDef2Test.h	/^LanguageDefinition::LanguageDefinition()$/;"	f	class:LanguageDefinition	signature:()
 LanguageDefinition::LanguageDefinition	uLanguageDefinition.cpp	/^LanguageDefinition::LanguageDefinition()$/;"	f	class:LanguageDefinition	signature:()
-LanguageDefinition::LanguageDefinition	uLanguageDefinition2.cpp	/^LanguageDefinition::LanguageDefinition(const std::locale& l = std::locale()) : loc(l), tokenizer(), caseSensitive(true), ids(1)$/;"	f	class:LanguageDefinition	signature:(const std::locale& l = std::locale())
-LanguageDefinition::NTerm::NTerm	uLanguageDefinition2.cpp	/^LanguageDefinition::NTerm::NTerm(const std::wstring& n, FontStyle* f, int i, bool g, bool c) : ruleid(i), name(n), fs(f), gather(g), call(c), node(new Node(ntLambda)) $/;"	f	class:LanguageDefinition::NTerm	signature:(const std::wstring& n, FontStyle* f, int i, bool g, bool c)
+LanguageDefinition::LanguageDefinition	uLanguageDefinition2.cpp	/^LanguageDefinition::LanguageDefinition(const std::locale& l) : loc(l), tokenizer(), ids(1)$/;"	f	class:LanguageDefinition	signature:(const std::locale& l)
 LanguageDefinition::Node::Add	uLanguageDefinition2.cpp	/^LanguageDefinition::Node* LanguageDefinition::Node::Add(const Node& n)$/;"	f	class:LanguageDefinition::Node	signature:(const Node& n)
 LanguageDefinition::Node::Cq	uLanguageDefinition2.cpp	/^bool LanguageDefinition::Node::Cq(const Node& n)$/;"	f	class:LanguageDefinition::Node	signature:(const Node& n)
 LanguageDefinition::Node::Eq	uLanguageDefinition2.cpp	/^bool LanguageDefinition::Node::Eq(const Node& n)$/;"	f	class:LanguageDefinition::Node	signature:(const Node& n)
+LanguageDefinition::Node::ExpandLambda	uLanguageDefinition2.cpp	/^void LanguageDefinition::Node::ExpandLambda(std::map<int, Node*>& index, Node* next)$/;"	f	class:LanguageDefinition::Node	signature:(std::map<int, Node*>& index, Node* next)
 LanguageDefinition::Node::Finalize	uLanguageDefinition2.cpp	/^void LanguageDefinition::Node::Finalize()$/;"	f	class:LanguageDefinition::Node	signature:()
 LanguageDefinition::Node::operator ==	uLanguageDefinition2.cpp	/^bool LanguageDefinition::Node::operator==(const Node& n)$/;"	f	class:LanguageDefinition::Node	signature:(const Node& n)
+LanguageDefinition::Parse	uLanguageDefinition2.cpp	/^void LanguageDefinition::Parse(IT& from, const IT& to, PState& s, bool& stylechanged, FontStyle*&fs)$/;"	f	class:LanguageDefinition	signature:(IT& from, const IT& to, PState& s, bool& stylechanged, FontStyle*&fs)
 LanguageDefinition::ParseString	uLanguageDefinition2.cpp	/^void LanguageDefinition::ParseString(std::wstring& rule, std::vector<Node*>& endnodes)$/;"	f	class:LanguageDefinition	signature:(std::wstring& rule, std::vector<Node*>& endnodes)
 LanguageDefinition::Pop::Pop	uLanguageDefinition.cpp	/^  LanguageDefinition::Pop::Pop()$/;"	f	class:LanguageDefinition::Pop	signature:()
 LanguageDefinition::Pop::Pop	uLanguageDefinition.cpp	/^  LanguageDefinition::Pop::Pop(short _popmask, short _newgmask, short _popcount, FontStyle * _format)$/;"	f	class:LanguageDefinition::Pop	signature:(short _popmask, short _newgmask, short _popcount, FontStyle * _format)
@@ -748,7 +769,6 @@ LanguageDefinition::SetAllowWhiteSkipping	uLanguageDefinition.cpp	/^void Languag
 LanguageDefinition::SetCaseSensitive	uLanguageDefinition.cpp	/^void LanguageDefinition::SetCaseSensitive(bool casesensitive)$/;"	f	class:LanguageDefinition	signature:(bool casesensitive)
 LanguageDefinition::SetDefaultColor	uLanguageDefinition.cpp	/^void LanguageDefinition::SetDefaultColor(TColor * defColor)$/;"	f	class:LanguageDefinition	signature:(TColor * defColor)
 LanguageDefinition::SetTreeCaseSensitive	uLanguageDefinition.cpp	/^void LanguageDefinition::SetTreeCaseSensitive(TreeNode * item, bool casesensitive)$/;"	f	class:LanguageDefinition	signature:(TreeNode * item, bool casesensitive)
-LanguageDefinition::Term::Term	uLanguageDefinition2.cpp	/^LanguageDefinition::Term::Term(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c) : name(n), fs(fs_), id(i), getstyle(g), call(c) {} ;$/;"	f	class:LanguageDefinition::Term	signature:(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c)
 LanguageDefinition::TreeNode::AddJump	uLanguageDefinition.cpp	/^void LanguageDefinition::TreeNode::AddJump(short pushmask, short newmask, short gmask, LangDefJumpType _type, TreeNode * to, bool begin, FontStyle * format)$/;"	f	class:LanguageDefinition::TreeNode	signature:(short pushmask, short newmask, short gmask, LangDefJumpType _type, TreeNode * to, bool begin, FontStyle * format)
 LanguageDefinition::TreeNode::AddPop	uLanguageDefinition.cpp	/^void LanguageDefinition::TreeNode::AddPop(short popmask, short newgmask, short popcount, bool begin, FontStyle * format)$/;"	f	class:LanguageDefinition::TreeNode	signature:(short popmask, short newgmask, short popcount, bool begin, FontStyle * format)
 LanguageDefinition::TreeNode::TreeNode	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNode::TreeNode(TreeNode * tree, SHEdit::FontStyle * format)$/;"	f	class:LanguageDefinition::TreeNode	signature:(TreeNode * tree, SHEdit::FontStyle * format)
@@ -786,12 +806,10 @@ MARGINS	config.h	26;"	d
 MASK_APOSTROPHE	uLanguageDefinitionWebLangs.h	10;"	d
 MASK_DOUBLE_QUOTE	uLanguageDefinitionWebLangs.h	12;"	d
 MASK_ECHO_IGNORE	uLanguageDefinitionWebLangs.h	15;"	d
-MASK_ECHO_MODE	.uLanguageDefinitionWebLangs.cpp.swp	/^/;"	v
 MASK_ECHO_MODE	uLanguageDefinitionWebLangs.h	13;"	d
 MASK_PHP	uLanguageDefinitionWebLangs.h	14;"	d
 MASK_PHP_APOSTROPHE	uLanguageDefinitionWebLangs.h	16;"	d
 MASK_PHP_QUOTE	uLanguageDefinitionWebLangs.h	17;"	d
-MASK_PREDICTION	.uLanguageDefinitionWebLangs.cpp.swp	/^/;"	v
 MASK_PREDICTION	uLanguageDefinitionWebLangs.h	18;"	d
 MASK_QUOTE	uLanguageDefinitionWebLangs.h	11;"	d
 MAX_SCROLL_STEP	config.h	37;"	d
@@ -833,9 +851,15 @@ NSpan::NSpan	uSpan.cpp	/^  NSpan::NSpan()$/;"	f	class:NSpan	signature:()
 NSpan::NSpan	uSpan.cpp	/^  NSpan::NSpan(Iter * After)$/;"	f	class:NSpan	signature:(Iter * After)
 NSpan::NSpan	uSpan.cpp	/^  NSpan::NSpan(Span* afterword, NSpan* afterline)$/;"	f	class:NSpan	signature:(Span* afterword, NSpan* afterline)
 NSpan::~NSpan	uSpan.cpp	/^NSpan::~NSpan()$/;"	f	class:NSpan	signature:()
-NTerm	uLanguageDefinition2.cpp	/^LanguageDefinition::NTerm::NTerm(const std::wstring& n, FontStyle* f, int i, bool g, bool c) : ruleid(i), name(n), fs(f), gather(g), call(c), node(new Node(ntLambda)) $/;"	f	class:LanguageDefinition::NTerm	signature:(const std::wstring& n, FontStyle* f, int i, bool g, bool c)
-NType	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	g	class:SHEdit::LanguageDefinition	access:private
+NTerm	uLanguageDefinition2.h	/^        NTerm(const std::wstring& n, FontStyle* f, int i, bool g, bool c);$/;"	p	struct:SHEdit::LanguageDefinition::NTerm	access:public	signature:(const std::wstring& n, FontStyle* f, int i, bool g, bool c)
+NTerm	uLanguageDefinition2.h	/^      struct NTerm$/;"	s	class:SHEdit::LanguageDefinition	access:private
+NType	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	g	class:SHEdit::LanguageDefinition	access:private
 Name	uLanguageDefinition.h	/^        wchar_t * Name;$/;"	m	struct:SHEdit::LanguageDefinition::TreeNode	access:public
+Node	uLanguageDefinition2.h	/^        Node() : type(ntLambda), r(), nextnodes(), lftidx(), recidx(){};$/;"	f	struct:SHEdit::LanguageDefinition::Node	access:public	signature:()
+Node	uLanguageDefinition2.h	/^        Node(NTerm* t) : type(ntNTerm), r(t), nextnodes(), lftidx(), recidx(){};$/;"	f	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(NTerm* t)
+Node	uLanguageDefinition2.h	/^        Node(NType t) : type(t), r(), nextnodes(), lftidx(), recidx(){};$/;"	f	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(NType t)
+Node	uLanguageDefinition2.h	/^        Node(Term* t) : type(ntTerm), r(t), nextnodes(), lftidx(), recidx(){};$/;"	f	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(Term* t)
+Node	uLanguageDefinition2.h	/^      struct Node$/;"	s	class:SHEdit::LanguageDefinition	access:private
 Node	uStack.h	/^      Node(T_data _data) : data(_data) { };$/;"	f	struct:Stack::Node	access:public	signature:(T_data _data)
 Node	uStack.h	/^    struct Node$/;"	s	class:Stack	access:public
 Nomatch	uLanguageDefinition.h	/^  enum LangDefSpecType{Empty = 0x1, Nomatch = 0x2, Normal=0x4, Jump=0x8, WordTag=0x20, LineTag=0x40, Lookahead = 0x80};$/;"	e	enum:SHEdit::LangDefSpecType
@@ -865,6 +889,8 @@ PARSEINADVANCE	config.h	28;"	d
 PARSEINONEGO	config.h	29;"	d
 POP_AUTO	uLanguageDefinition.h	68;"	d
 POP_AUTO	uLanguageDefinitionWebLangs.h	20;"	d
+PState	uLanguageDefinition2.h	/^        PState() : st(){};$/;"	f	struct:SHEdit::LanguageDefinition::PState	access:public	signature:()
+PState	uLanguageDefinition2.h	/^      struct PState$/;"	s	class:SHEdit::LanguageDefinition	access:public
 PUSH_ALWAYS	uLanguageDefinition.h	67;"	d
 PUSH_ALWAYS	uLanguageDefinitionWebLangs.h	21;"	d
 Paint	cSHEdit.cpp	/^void __fastcall TSHEdit::Paint()$/;"	f	class:TSHEdit	signature:()
@@ -873,6 +899,8 @@ Paint	uDrawer.cpp	/^void __fastcall Drawer::Paint()$/;"	f	class:Drawer	signature
 Paint	uDrawer.h	/^      void __fastcall Paint();$/;"	p	class:SHEdit::Drawer	access:private	signature:()
 PaintWindow	cSHEdit.cpp	/^void __fastcall TSHEdit::PaintWindow(HDC DC)$/;"	f	class:TSHEdit	signature:(HDC DC)
 PaintWindow	cSHEdit.h	/^      virtual void __fastcall PaintWindow(HDC DC);$/;"	p	class:SHEdit::TSHEdit	access:protected	signature:(HDC DC)
+Parse	uLanguageDefinition2.cpp	/^void LanguageDefinition::Parse(IT& from, const IT& to, PState& s, bool& stylechanged, FontStyle*&fs)$/;"	f	class:LanguageDefinition	signature:(IT& from, const IT& to, PState& s, bool& stylechanged, FontStyle*&fs)
+Parse	uLanguageDefinition2.h	/^      void Parse(IT& from, const IT& to, PState&, bool& stylechanged, FontStyle*&fs);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(IT& from, const IT& to, PState&, bool& stylechanged, FontStyle*&fs)
 ParseFromLine	uParser.cpp	/^void Parser::ParseFromLine(NSpan * line, int linenum, int prior)$/;"	f	class:Parser	signature:(NSpan * line, int linenum, int prior)
 ParseFromLine	uParser.h	/^      void ParseFromLine(NSpan * line, int linenum, int prior);$/;"	p	class:SHEdit::Parser	access:public	signature:(NSpan * line, int linenum, int prior)
 ParseFromToLine	uParser.cpp	/^void Parser::ParseFromToLine(NSpan * line, int linenum, int count, int prior)$/;"	f	class:Parser	signature:(NSpan * line, int linenum, int count, int prior)
@@ -882,6 +910,7 @@ ParseLine	uParser.h	/^      void ParseLine(Iter * itr, LanguageDefinition::Searc
 ParseScreenBetween	cSHEdit.cpp	/^void TSHEdit::ParseScreenBetween(Iter * it1, Iter * it2)$/;"	f	class:TSHEdit	signature:(Iter * it1, Iter * it2)
 ParseScreenBetween	cSHEdit.h	/^      void ParseScreenBetween(Iter * it1, Iter * it2);                                               \/*!< Pushes visible lines between it1 and it2 to parser. Takes care of right order of iters, and of trimming the. *\/$/;"	p	class:SHEdit::TSHEdit	access:protected	signature:(Iter * it1, Iter * it2)
 ParseString	uLanguageDefinition2.cpp	/^void LanguageDefinition::ParseString(std::wstring& rule, std::vector<Node*>& endnodes)$/;"	f	class:LanguageDefinition	signature:(std::wstring& rule, std::vector<Node*>& endnodes)
+ParseString	uLanguageDefinition2.h	/^      void ParseString(std::wstring& rule, std::vector<Node*>& endnodes);$/;"	p	class:SHEdit::LanguageDefinition	access:private	signature:(std::wstring& rule, std::vector<Node*>& endnodes)
 ParseTask	uParser.cpp	/^Parser::ParseTask::ParseTask()$/;"	f	class:Parser::ParseTask	signature:()
 ParseTask	uParser.cpp	/^Parser::ParseTask::ParseTask(NSpan * l, int ln)$/;"	f	class:Parser::ParseTask	signature:(NSpan * l, int ln)
 ParseTask	uParser.h	/^        ParseTask();$/;"	p	struct:SHEdit::Parser::ParseTask	access:public	signature:()
@@ -964,6 +993,10 @@ Range::Free	uSpan.cpp	/^void Range::Free()$/;"	f	class:Range	signature:()
 Range::Range	uSpan.cpp	/^Range::Range(Span * first, Span * last, bool empty, NSpan * firstLine, NSpan * lastLine, bool lineempty, int linecount)$/;"	f	class:Range	signature:(Span * first, Span * last, bool empty, NSpan * firstLine, NSpan * lastLine, bool lineempty, int linecount)
 Range::~Range	uSpan.cpp	/^Range::~Range()$/;"	f	class:Range	signature:()
 ReadOnly	cSHEdit.h	/^      __property bool ReadOnly= {read=readonly,write=readonly, default=false};$/;"	m	class:SHEdit::TSHEdit	access:public
+Rec	uLanguageDefinition2.h	/^        Rec() : t(NULL), nt(NULL), term(false){};$/;"	f	struct:SHEdit::LanguageDefinition::Rec	access:public	signature:()
+Rec	uLanguageDefinition2.h	/^        Rec(NTerm* t_) : nt(t_), t(NULL), term(false){};$/;"	f	struct:SHEdit::LanguageDefinition::Rec	access:public	signature:(NTerm* t_)
+Rec	uLanguageDefinition2.h	/^        Rec(Term* t_) : t(t_), nt(NULL), term(true){};$/;"	f	struct:SHEdit::LanguageDefinition::Rec	access:public	signature:(Term* t_)
+Rec	uLanguageDefinition2.h	/^      struct Rec$/;"	s	class:SHEdit::LanguageDefinition	access:private
 RecalcPos	uIPos.cpp	/^void IPos::RecalcPos()$/;"	f	class:IPos	signature:()
 RecalcPos	uIPos.h	/^      virtual void RecalcPos();                                                                      \/*!< Recalculates IPos::pos, according to descendant's own positioning *\/$/;"	p	class:SHEdit::IPos	access:public	signature:()
 RecalcPos	uIter.cpp	/^void Iter::RecalcPos()$/;"	f	class:Iter	signature:()
@@ -1318,6 +1351,7 @@ SHEdit::LanguageDefinition::AddLine	uLanguageDefinition.h	/^      TreeNode * Add
 SHEdit::LanguageDefinition::AddLineStrong	uLanguageDefinition.h	/^      TreeNode * AddLineStrong(wchar_t * string, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); \/*!< as AddLine, but stores entire state of parser and at the end of line it restores it back. *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t * string, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL)
 SHEdit::LanguageDefinition::AddNewTree	uLanguageDefinition.h	/^      TreeNode * AddNewTree(FontStyle * format);                                                     \/*!< Just creates and returns an empty new tree with format as the default format *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(FontStyle * format)
 SHEdit::LanguageDefinition::AddNewTree	uLanguageDefinition.h	/^      TreeNode * AddNewTree(FontStyle * format, bool caseSensitive);                                 \/*!< Just creates and returns an empty new tree with format as the default format *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(FontStyle * format, bool caseSensitive)
+SHEdit::LanguageDefinition::AddNonTerm	uLanguageDefinition2.h	/^      void AddNonTerm(const std::wstring& name, FontStyle* fs, int id, int flags);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(const std::wstring& name, FontStyle* fs, int id, int flags)
 SHEdit::LanguageDefinition::AddPair	uLanguageDefinition.h	/^      TreeNode * AddPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL); \/*!< Is just an abreviation for two jumps. Adds jump from "opening" tag at "at" tree to newly created tree and then corresponding jump back *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at = NULL, TreeNode * to = NULL)
 SHEdit::LanguageDefinition::AddPop	uLanguageDefinition.h	/^      void AddPop(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2, short newgmask = 0);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2, short newgmask = 0)
 SHEdit::LanguageDefinition::AddPops	uLanguageDefinition.h	/^      void AddPops(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2, short newgmask = 0); \/*!< Just an abreviation. *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t * string, FontStyle * format, TreeNode * at, short popmask, short popcount = -2, short newgmask = 0)
@@ -1326,9 +1360,16 @@ SHEdit::LanguageDefinition::AddPushFront	uLanguageDefinition.h	/^      void AddP
 SHEdit::LanguageDefinition::AddPushPopPair	uLanguageDefinition.h	/^      TreeNode * AddPushPopPair(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at, TreeNode * to, short mask); \/*!< Is just an abreviation for push that adds the mask and pop that is conditioned by the same mask.*\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t * opening, wchar_t * closing, FontStyle * format, TreeNode * at, TreeNode * to, short mask)
 SHEdit::LanguageDefinition::AddPushes	uLanguageDefinition.h	/^      void AddPushes(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0); \/*!< Just an abreviation. *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0)
 SHEdit::LanguageDefinition::AddPushesFront	uLanguageDefinition.h	/^      void AddPushesFront(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0); \/*!< Just an abreviation. *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t * string, FontStyle * format, TreeNode * at, TreeNode * to, short pushmask, short newmask = 0, short newgmask = 0)
+SHEdit::LanguageDefinition::AddRule	uLanguageDefinition2.h	/^      void AddRule(const std::wstring& name, std::wstring rule);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(const std::wstring& name, std::wstring rule)
+SHEdit::LanguageDefinition::AddTerm	uLanguageDefinition2.h	/^      void AddTerm(const std::wstring& name,FontStyle*,const std::wstring& rgx, int id, int flags);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(const std::wstring& name,FontStyle*,const std::wstring& rgx, int id, int flags)
 SHEdit::LanguageDefinition::AddWord	uLanguageDefinition.h	/^      void AddWord(wchar_t * string, FontStyle * format, TreeNode * at = NULL);                      \/*!< Adds a wordtag item (i.e. for highlighting php variables as $test just by $) *\/$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t * string, FontStyle * format, TreeNode * at = NULL)
+SHEdit::LanguageDefinition::Auto	uLanguageDefinition2.h	/^      const static int Auto = -1;$/;"	m	class:SHEdit::LanguageDefinition	access:public
+SHEdit::LanguageDefinition::Construct	uLanguageDefinition2.h	/^      void Construct(std::wstring& rule, std::vector<Node*>& endnodes);$/;"	p	class:SHEdit::LanguageDefinition	access:private	signature:(std::wstring& rule, std::vector<Node*>& endnodes)
+SHEdit::LanguageDefinition::Finalize	uLanguageDefinition2.h	/^      void Finalize(); $/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:()
 SHEdit::LanguageDefinition::FindOrCreateItem	uLanguageDefinition.h	/^      TreeNode* FindOrCreateItem(TreeNode * item, wchar_t c, TreeNode * at);$/;"	p	class:SHEdit::LanguageDefinition	access:private	signature:(TreeNode * item, wchar_t c, TreeNode * at)
 SHEdit::LanguageDefinition::GetDefSC	uLanguageDefinition.h	/^      SearchIter GetDefSC(short id);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(short id)
+SHEdit::LanguageDefinition::GetToken	uLanguageDefinition2.h	/^      TokType GetToken(std::wstring& str, std::wstring& val);$/;"	p	class:SHEdit::LanguageDefinition	access:private	signature:(std::wstring& str, std::wstring& val)
+SHEdit::LanguageDefinition::GetToken	uLanguageDefinition2.h	/^      TokType GetToken(std::wstring& str, std::wstring& val, bool eat);$/;"	p	class:SHEdit::LanguageDefinition	access:private	signature:(std::wstring& str, std::wstring& val, bool eat)
 SHEdit::LanguageDefinition::GetTree	uLanguageDefinition.h	/^      TreeNode* GetTree();$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:()
 SHEdit::LanguageDefinition::Go	uLanguageDefinition.h	/^      LangDefSpecType Go(SearchIter * item, wchar_t c, bool & lookahead);                            \/*!< Serves Parser for retrieving information about where to go further. Lookahead is set to true, if item was returned to empty and directly went to first unmatched character *\/$/;"	p	class:SHEdit::LanguageDefinition	access:private	signature:(SearchIter * item, wchar_t c, bool & lookahead)
 SHEdit::LanguageDefinition::IsAl	uLanguageDefinition.h	/^      virtual bool IsAl(wchar_t c);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(wchar_t c)
@@ -1345,7 +1386,39 @@ SHEdit::LanguageDefinition::Jump::nextTree	uLanguageDefinition.h	/^        TreeN
 SHEdit::LanguageDefinition::Jump::pushmask	uLanguageDefinition.h	/^        short pushmask;$/;"	m	struct:SHEdit::LanguageDefinition::Jump	access:public
 SHEdit::LanguageDefinition::Jump::type	uLanguageDefinition.h	/^        short type;$/;"	m	struct:SHEdit::LanguageDefinition::Jump	access:public
 SHEdit::LanguageDefinition::LanguageDefinition	uLanguageDefinition.h	/^      LanguageDefinition();$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:()
-SHEdit::LanguageDefinition::NType	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	g	class:SHEdit::LanguageDefinition	access:private
+SHEdit::LanguageDefinition::LanguageDefinition	uLanguageDefinition2.h	/^      LanguageDefinition(const std::locale& loc = std::locale());$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(const std::locale& loc = std::locale())
+SHEdit::LanguageDefinition::NTerm	uLanguageDefinition2.h	/^      struct NTerm$/;"	s	class:SHEdit::LanguageDefinition	access:private
+SHEdit::LanguageDefinition::NTerm::Cq	uLanguageDefinition2.h	/^        bool Cq(const NTerm& n){return ruleid == n.ruleid && gather == n.gather && call == n.call && fs == n.fs;};$/;"	f	struct:SHEdit::LanguageDefinition::NTerm	access:public	signature:(const NTerm& n)
+SHEdit::LanguageDefinition::NTerm::Eq	uLanguageDefinition2.h	/^        bool Eq(const NTerm& n){return ruleid == n.ruleid;};$/;"	f	struct:SHEdit::LanguageDefinition::NTerm	access:public	signature:(const NTerm& n)
+SHEdit::LanguageDefinition::NTerm::NTerm	uLanguageDefinition2.h	/^        NTerm(const std::wstring& n, FontStyle* f, int i, bool g, bool c);$/;"	p	struct:SHEdit::LanguageDefinition::NTerm	access:public	signature:(const std::wstring& n, FontStyle* f, int i, bool g, bool c)
+SHEdit::LanguageDefinition::NTerm::call	uLanguageDefinition2.h	/^        bool call;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
+SHEdit::LanguageDefinition::NTerm::fs	uLanguageDefinition2.h	/^        FontStyle* fs;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
+SHEdit::LanguageDefinition::NTerm::gather	uLanguageDefinition2.h	/^        bool gather;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
+SHEdit::LanguageDefinition::NTerm::name	uLanguageDefinition2.h	/^        std::wstring name;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
+SHEdit::LanguageDefinition::NTerm::node	uLanguageDefinition2.h	/^        Node* node;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
+SHEdit::LanguageDefinition::NTerm::ruleid	uLanguageDefinition2.h	/^        int ruleid;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
+SHEdit::LanguageDefinition::NType	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	g	class:SHEdit::LanguageDefinition	access:private
+SHEdit::LanguageDefinition::Node	uLanguageDefinition2.h	/^      struct Node$/;"	s	class:SHEdit::LanguageDefinition	access:private
+SHEdit::LanguageDefinition::Node::Add	uLanguageDefinition2.h	/^        Node* Add(const Node& n); \/\/returns a pointer to a used node (either a new node, or an already existing done)$/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(const Node& n)
+SHEdit::LanguageDefinition::Node::Cq	uLanguageDefinition2.h	/^        bool Cq(const Node& n); \/\/congruent; more power needed here  - we should check the rest of the tree too$/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(const Node& n)
+SHEdit::LanguageDefinition::Node::Eq	uLanguageDefinition2.h	/^        bool Eq(const Node& n); \/\/equal (indistinguishable by perser)$/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(const Node& n)
+SHEdit::LanguageDefinition::Node::ExpandLambda	uLanguageDefinition2.h	/^        void ExpandLambda(std::map<int, Node*>& index, Node* next);$/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(std::map<int, Node*>& index, Node* next)
+SHEdit::LanguageDefinition::Node::Finalize	uLanguageDefinition2.h	/^        void Finalize(); $/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:()
+SHEdit::LanguageDefinition::Node::Node	uLanguageDefinition2.h	/^        Node() : type(ntLambda), r(), nextnodes(), lftidx(), recidx(){};$/;"	f	struct:SHEdit::LanguageDefinition::Node	access:public	signature:()
+SHEdit::LanguageDefinition::Node::Node	uLanguageDefinition2.h	/^        Node(NTerm* t) : type(ntNTerm), r(t), nextnodes(), lftidx(), recidx(){};$/;"	f	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(NTerm* t)
+SHEdit::LanguageDefinition::Node::Node	uLanguageDefinition2.h	/^        Node(NType t) : type(t), r(), nextnodes(), lftidx(), recidx(){};$/;"	f	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(NType t)
+SHEdit::LanguageDefinition::Node::Node	uLanguageDefinition2.h	/^        Node(Term* t) : type(ntTerm), r(t), nextnodes(), lftidx(), recidx(){};$/;"	f	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(Term* t)
+SHEdit::LanguageDefinition::Node::lftidx	uLanguageDefinition2.h	/^        std::map<int, Node*> lftidx; \/\/leave index$/;"	m	struct:SHEdit::LanguageDefinition::Node	access:public
+SHEdit::LanguageDefinition::Node::nextnodes	uLanguageDefinition2.h	/^        std::vector<Node*> nextnodes;$/;"	m	struct:SHEdit::LanguageDefinition::Node	access:public
+SHEdit::LanguageDefinition::Node::operator ==	uLanguageDefinition2.h	/^        bool operator==(const Node& n);$/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(const Node& n)
+SHEdit::LanguageDefinition::Node::r	uLanguageDefinition2.h	/^        Rec r;$/;"	m	struct:SHEdit::LanguageDefinition::Node	access:public
+SHEdit::LanguageDefinition::Node::recidx	uLanguageDefinition2.h	/^        std::map<int, Node*> recidx; \/\/recursive index (for nonterminals)$/;"	m	struct:SHEdit::LanguageDefinition::Node	access:public
+SHEdit::LanguageDefinition::Node::type	uLanguageDefinition2.h	/^        NType type;$/;"	m	struct:SHEdit::LanguageDefinition::Node	access:public
+SHEdit::LanguageDefinition::PState	uLanguageDefinition2.h	/^      struct PState$/;"	s	class:SHEdit::LanguageDefinition	access:public
+SHEdit::LanguageDefinition::PState::PState	uLanguageDefinition2.h	/^        PState() : st(){};$/;"	f	struct:SHEdit::LanguageDefinition::PState	access:public	signature:()
+SHEdit::LanguageDefinition::PState::st	uLanguageDefinition2.h	/^        std::stack<StackItem> st;$/;"	m	struct:SHEdit::LanguageDefinition::PState	access:public
+SHEdit::LanguageDefinition::Parse	uLanguageDefinition2.h	/^      void Parse(IT& from, const IT& to, PState&, bool& stylechanged, FontStyle*&fs);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(IT& from, const IT& to, PState&, bool& stylechanged, FontStyle*&fs)
+SHEdit::LanguageDefinition::ParseString	uLanguageDefinition2.h	/^      void ParseString(std::wstring& rule, std::vector<Node*>& endnodes);$/;"	p	class:SHEdit::LanguageDefinition	access:private	signature:(std::wstring& rule, std::vector<Node*>& endnodes)
 SHEdit::LanguageDefinition::Pop	uLanguageDefinition.h	/^      struct Pop$/;"	s	class:SHEdit::LanguageDefinition	access:private
 SHEdit::LanguageDefinition::Pop::Pop	uLanguageDefinition.h	/^        Pop();$/;"	p	struct:SHEdit::LanguageDefinition::Pop	access:public	signature:()
 SHEdit::LanguageDefinition::Pop::Pop	uLanguageDefinition.h	/^        Pop(short _popmask, short _newgmask, short _popcount, FontStyle * format);$/;"	p	struct:SHEdit::LanguageDefinition::Pop	access:public	signature:(short _popmask, short _newgmask, short _popcount, FontStyle * format)
@@ -1353,6 +1426,15 @@ SHEdit::LanguageDefinition::Pop::format	uLanguageDefinition.h	/^        FontStyl
 SHEdit::LanguageDefinition::Pop::newgmask	uLanguageDefinition.h	/^        short newgmask;$/;"	m	struct:SHEdit::LanguageDefinition::Pop	access:public
 SHEdit::LanguageDefinition::Pop::popcount	uLanguageDefinition.h	/^        short popcount;$/;"	m	struct:SHEdit::LanguageDefinition::Pop	access:public
 SHEdit::LanguageDefinition::Pop::popmask	uLanguageDefinition.h	/^        short popmask;$/;"	m	struct:SHEdit::LanguageDefinition::Pop	access:public
+SHEdit::LanguageDefinition::Rec	uLanguageDefinition2.h	/^      struct Rec$/;"	s	class:SHEdit::LanguageDefinition	access:private
+SHEdit::LanguageDefinition::Rec::GetName	uLanguageDefinition2.h	/^        const std::wstring& GetName()const{return term? t->name : nt->name;};$/;"	f	struct:SHEdit::LanguageDefinition::Rec	access:public	signature:() const
+SHEdit::LanguageDefinition::Rec::Rec	uLanguageDefinition2.h	/^        Rec() : t(NULL), nt(NULL), term(false){};$/;"	f	struct:SHEdit::LanguageDefinition::Rec	access:public	signature:()
+SHEdit::LanguageDefinition::Rec::Rec	uLanguageDefinition2.h	/^        Rec(NTerm* t_) : nt(t_), t(NULL), term(false){};$/;"	f	struct:SHEdit::LanguageDefinition::Rec	access:public	signature:(NTerm* t_)
+SHEdit::LanguageDefinition::Rec::Rec	uLanguageDefinition2.h	/^        Rec(Term* t_) : t(t_), nt(NULL), term(true){};$/;"	f	struct:SHEdit::LanguageDefinition::Rec	access:public	signature:(Term* t_)
+SHEdit::LanguageDefinition::Rec::nt	uLanguageDefinition2.h	/^        NTerm* nt;$/;"	m	struct:SHEdit::LanguageDefinition::Rec	access:public
+SHEdit::LanguageDefinition::Rec::operator <	uLanguageDefinition2.h	/^        bool operator<(const Rec& r)const{return GetName() < r.GetName();};$/;"	f	struct:SHEdit::LanguageDefinition::Rec	access:public	signature:(const Rec& r) const
+SHEdit::LanguageDefinition::Rec::t	uLanguageDefinition2.h	/^        Term* t;$/;"	m	struct:SHEdit::LanguageDefinition::Rec	access:public
+SHEdit::LanguageDefinition::Rec::term	uLanguageDefinition2.h	/^        bool term;$/;"	m	struct:SHEdit::LanguageDefinition::Rec	access:public
 SHEdit::LanguageDefinition::SearchIter	uLanguageDefinition.h	/^      struct SearchIter$/;"	s	class:SHEdit::LanguageDefinition	access:public
 SHEdit::LanguageDefinition::SearchIter::SearchIter	uLanguageDefinition.h	/^        SearchIter();$/;"	p	struct:SHEdit::LanguageDefinition::SearchIter	access:public	signature:()
 SHEdit::LanguageDefinition::SearchIter::base	uLanguageDefinition.h	/^        TreeNode * base;$/;"	m	struct:SHEdit::LanguageDefinition::SearchIter	access:public
@@ -1364,11 +1446,15 @@ SHEdit::LanguageDefinition::SetAllowWhiteSkipping	uLanguageDefinition.h	/^      
 SHEdit::LanguageDefinition::SetCaseSensitive	uLanguageDefinition.h	/^      void SetCaseSensitive(bool caseSensitive);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(bool caseSensitive)
 SHEdit::LanguageDefinition::SetDefaultColor	uLanguageDefinition.h	/^      void SetDefaultColor(TColor * defColor);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(TColor * defColor)
 SHEdit::LanguageDefinition::SetTreeCaseSensitive	uLanguageDefinition.h	/^      void SetTreeCaseSensitive(TreeNode * item, bool caseSensitive);$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:(TreeNode * item, bool caseSensitive)
+SHEdit::LanguageDefinition::StackItem	uLanguageDefinition2.h	/^      struct StackItem$/;"	s	class:SHEdit::LanguageDefinition	access:public
+SHEdit::LanguageDefinition::StackItem::ptr	uLanguageDefinition2.h	/^        Node* ptr;$/;"	m	struct:SHEdit::LanguageDefinition::StackItem	access:public
 SHEdit::LanguageDefinition::Term	uLanguageDefinition2.h	/^      struct Term$/;"	s	class:SHEdit::LanguageDefinition	access:private
-SHEdit::LanguageDefinition::Term::Eq	uLanguageDefinition2.h	/^        bool Eq(const Term& n){return tokid == n.tokid);$/;"	f	struct:SHEdit::LanguageDefinition::Term	access:public	signature:(const Term& n)
-SHEdit::LanguageDefinition::Term::Term	uLanguageDefinition2.h	/^        Term(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c) : name(n), fs(fs_), id(i), getstyle(g), call(c) {} ;$/;"	f	struct:SHEdit::LanguageDefinition::Term	access:public	signature:(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c)
+SHEdit::LanguageDefinition::Term::Cq	uLanguageDefinition2.h	/^        bool Cq(const Term& n){return tokid == n.tokid && remember == n.remember && getstyle == n.getstyle && call == n.call && fs == n.fs;};$/;"	f	struct:SHEdit::LanguageDefinition::Term	access:public	signature:(const Term& n)
+SHEdit::LanguageDefinition::Term::Eq	uLanguageDefinition2.h	/^        bool Eq(const Term& n){return tokid == n.tokid;};$/;"	f	struct:SHEdit::LanguageDefinition::Term	access:public	signature:(const Term& n)
+SHEdit::LanguageDefinition::Term::Term	uLanguageDefinition2.h	/^        Term(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c) : name(n), fs(fs_), tokid(i), getstyle(g), call(c) {} ;$/;"	f	struct:SHEdit::LanguageDefinition::Term	access:public	signature:(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c)
 SHEdit::LanguageDefinition::Term::call	uLanguageDefinition2.h	/^        bool call;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
 SHEdit::LanguageDefinition::Term::fs	uLanguageDefinition2.h	/^        FontStyle* fs;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
+SHEdit::LanguageDefinition::Term::gather	uLanguageDefinition2.h	/^        bool gather;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
 SHEdit::LanguageDefinition::Term::getstyle	uLanguageDefinition2.h	/^        bool getstyle;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
 SHEdit::LanguageDefinition::Term::name	uLanguageDefinition2.h	/^        std::wstring name;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
 SHEdit::LanguageDefinition::Term::remember	uLanguageDefinition2.h	/^        bool remember;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
@@ -1395,19 +1481,33 @@ SHEdit::LanguageDefinition::_AddPush	uLanguageDefinition.h	/^      void _AddPush
 SHEdit::LanguageDefinition::allowWhiteSkipping	uLanguageDefinition.h	/^      bool allowWhiteSkipping;$/;"	m	class:SHEdit::LanguageDefinition	access:private
 SHEdit::LanguageDefinition::caseSensitive	uLanguageDefinition.h	/^      bool caseSensitive;$/;"	m	class:SHEdit::LanguageDefinition	access:private
 SHEdit::LanguageDefinition::defFormat	uLanguageDefinition.h	/^      FontStyle * defFormat;$/;"	m	class:SHEdit::LanguageDefinition	access:private
+SHEdit::LanguageDefinition::entering	uLanguageDefinition2.h	/^      Node* entering;$/;"	m	class:SHEdit::LanguageDefinition	access:private
+SHEdit::LanguageDefinition::flags	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	g	class:SHEdit::LanguageDefinition	access:public
+SHEdit::LanguageDefinition::global	uLanguageDefinition2.h	/^      Node* global;$/;"	m	class:SHEdit::LanguageDefinition	access:private
 SHEdit::LanguageDefinition::ids	uLanguageDefinition2.h	/^      int ids;$/;"	m	class:SHEdit::LanguageDefinition	access:private
+SHEdit::LanguageDefinition::index	uLanguageDefinition2.h	/^      std::map<std::wstring, Rec> index;$/;"	m	class:SHEdit::LanguageDefinition	access:private
 SHEdit::LanguageDefinition::loc	uLanguageDefinition2.h	/^      std::locale loc;$/;"	m	class:SHEdit::LanguageDefinition	access:private
-SHEdit::LanguageDefinition::ntEnd	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
-SHEdit::LanguageDefinition::ntLambda	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
-SHEdit::LanguageDefinition::ntNterm	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
-SHEdit::LanguageDefinition::ntTailrec	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
-SHEdit::LanguageDefinition::ntTerm	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
+SHEdit::LanguageDefinition::nodes	uLanguageDefinition2.h	/^      std::set<Node*> nodes; \/\/temporary - for construction (and maybe for destruction?)$/;"	m	class:SHEdit::LanguageDefinition	access:private
+SHEdit::LanguageDefinition::nonterms	uLanguageDefinition2.h	/^      std::vector<NTerm*> nonterms;$/;"	m	class:SHEdit::LanguageDefinition	access:private
+SHEdit::LanguageDefinition::ntEnd	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
+SHEdit::LanguageDefinition::ntLambda	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
+SHEdit::LanguageDefinition::ntNTerm	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
+SHEdit::LanguageDefinition::ntTailrec	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
+SHEdit::LanguageDefinition::ntTerm	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
 SHEdit::LanguageDefinition::tC	uLanguageDefinition2.h	/^      enum TokType {tS, tC, tE};$/;"	e	enum:SHEdit::LanguageDefinition::TokType
 SHEdit::LanguageDefinition::tE	uLanguageDefinition2.h	/^      enum TokType {tS, tC, tE};$/;"	e	enum:SHEdit::LanguageDefinition::TokType
 SHEdit::LanguageDefinition::tS	uLanguageDefinition2.h	/^      enum TokType {tS, tC, tE};$/;"	e	enum:SHEdit::LanguageDefinition::TokType
+SHEdit::LanguageDefinition::terms	uLanguageDefinition2.h	/^      std::vector<Term*> terms;$/;"	m	class:SHEdit::LanguageDefinition	access:private
+SHEdit::LanguageDefinition::tfCall	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
+SHEdit::LanguageDefinition::tfCaseSens	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
+SHEdit::LanguageDefinition::tfEntering	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
+SHEdit::LanguageDefinition::tfGather	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
+SHEdit::LanguageDefinition::tfGetStyle	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
+SHEdit::LanguageDefinition::tfGlobal	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
 SHEdit::LanguageDefinition::tokenizer	uLanguageDefinition2.h	/^      WTokenizer tokenizer;$/;"	m	class:SHEdit::LanguageDefinition	access:private
 SHEdit::LanguageDefinition::tree	uLanguageDefinition.h	/^      TreeNode * tree;$/;"	m	class:SHEdit::LanguageDefinition	access:private
 SHEdit::LanguageDefinition::~LanguageDefinition	uLanguageDefinition.h	/^      ~LanguageDefinition();$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:()
+SHEdit::LanguageDefinition::~LanguageDefinition	uLanguageDefinition2.h	/^      ~LanguageDefinition();$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:()
 SHEdit::LanguageDefinitionSQL	uLanguageDefinitionSQL.h	/^  class LanguageDefinitionSQL : public LanguageDefinition$/;"	c	namespace:SHEdit	inherits:LanguageDefinition
 SHEdit::LanguageDefinitionSQL::LanguageDefinitionSQL	uLanguageDefinitionSQL.h	/^    LanguageDefinitionSQL();$/;"	p	class:SHEdit::LanguageDefinitionSQL	access:public	signature:()
 SHEdit::LanguageDefinitionSQL::background	uLanguageDefinitionSQL.h	/^    TColor background;$/;"	m	class:SHEdit::LanguageDefinitionSQL	access:private
@@ -1839,6 +1939,7 @@ Stack::operator ==	uStack.h	/^bool Stack<T_data>::operator==(const Stack<T_data>
 Stack::top	uStack.h	/^    Node * top;$/;"	m	class:Stack	typeref:struct:Stack::iterator	access:public
 Stack::~Stack	uStack.h	/^    ~Stack();$/;"	p	class:Stack	access:public	signature:()
 Stack::~Stack	uStack.h	/^Stack<T_data>::~Stack()$/;"	f	class:Stack	signature:()
+StackItem	uLanguageDefinition2.h	/^      struct StackItem$/;"	s	class:SHEdit::LanguageDefinition	access:public
 StressTest	uDrawer.cpp	/^void Drawer::StressTest()$/;"	f	class:Drawer	signature:()
 StressTest	uDrawer.h	/^      void StressTest();$/;"	p	class:SHEdit::Drawer	access:private	signature:()
 TAB_WIDTH	config.h	19;"	d
@@ -1963,9 +2064,12 @@ TSearchBar::forward	fSearchBar.h	/^  bool forward;$/;"	m	class:TSearchBar	access
 TSearchBar::success	fSearchBar.h	/^  bool success;$/;"	m	class:TSearchBar	access:public
 TSearchBar::text	fSearchBar.h	/^  String text;$/;"	m	class:TSearchBar	access:public
 TabOrder	cSHEdit.h	/^      __property TTabOrder TabOrder = {read=GetTabOrder, write=SetTabOrder, default=-1};$/;"	m	class:SHEdit::TSHEdit	access:public
-Term	uLanguageDefinition2.cpp	/^LanguageDefinition::Term::Term(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c) : name(n), fs(fs_), id(i), getstyle(g), call(c) {} ;$/;"	f	class:LanguageDefinition::Term	signature:(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c)
-Term	uLanguageDefinition2.h	/^        Term(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c) : name(n), fs(fs_), id(i), getstyle(g), call(c) {} ;$/;"	f	struct:SHEdit::LanguageDefinition::Term	access:public	signature:(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c)
+Term	uLanguageDefinition2.h	/^        Term(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c) : name(n), fs(fs_), tokid(i), getstyle(g), call(c) {} ;$/;"	f	struct:SHEdit::LanguageDefinition::Term	access:public	signature:(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c)
 Term	uLanguageDefinition2.h	/^      struct Term$/;"	s	class:SHEdit::LanguageDefinition	access:private
+TestParser	tags	/^TestParser	uLangDef2Test.cpp	\/^    TestParser(): LanguageDefinition(){};$\/;"	f	class:TestParser	access:public	signature:()$/;"	f	signature:()
+TestParser	uLangDef2Test.cpp	/^    TestParser(): LanguageDefinition(){};$/;"	f	class:TestParser	access:public	signature:()
+TestParser	uLangDef2Test.cpp	/^class TestParser : public LanguageDefinition$/;"	c	file:	inherits:LanguageDefinition
+TestParser::TestParser	uLangDef2Test.cpp	/^    TestParser(): LanguageDefinition(){};$/;"	f	class:TestParser	access:public	signature:()
 Text	cSHEdit.h	/^      __property String Text = {read=GetText, write=SetText};$/;"	m	class:SHEdit::TSHEdit	access:public
 TokType	uLanguageDefinition2.h	/^      enum TokType {tS, tC, tE};$/;"	g	class:SHEdit::LanguageDefinition	access:private
 TreeNode	uLanguageDefinition.cpp	/^LanguageDefinition::TreeNode::TreeNode(TreeNode * tree, SHEdit::FontStyle * format)$/;"	f	class:LanguageDefinition::TreeNode	signature:(TreeNode * tree, SHEdit::FontStyle * format)
@@ -2092,6 +2196,7 @@ bitmap	uDrawer.h	/^      Graphics::TBitmap * bitmap;$/;"	m	class:SHEdit::Drawer	
 buffer	cSHEdit.h	/^      Buffer * buffer;                                                                               \/*!< *\/$/;"	m	class:SHEdit::TSHEdit	access:private
 buffer	uIPos.h	/^      Buffer * buffer;                                                                               \/*!< A pointer to buffer that owns data pointed to by IPos instance. If buffer is null, then IPos or Iter respectively works in a "position less mode", and in that case does not guarantee to remain valid*\/$/;"	m	class:SHEdit::IPos	access:public
 cSHEditH	cSHEdit.h	4;"	d
+call	uLanguageDefinition2.h	/^        bool call;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
 call	uLanguageDefinition2.h	/^        bool call;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
 canvas	uDrawer.h	/^      TCanvas * canvas;$/;"	m	class:SHEdit::Drawer	access:private
 caseSensitive	uLanguageDefinition.h	/^        bool caseSensitive;$/;"	m	struct:SHEdit::LanguageDefinition::TreeNode	access:public
@@ -2145,12 +2250,14 @@ end	cSHEdit.h	/^      CIter end();$/;"	p	class:SHEdit::TSHEdit	access:public	sig
 end	uBuffer.cpp	/^Iter Buffer::end()$/;"	f	class:Buffer	signature:()
 end	uBuffer.h	/^      Iter end();$/;"	p	class:SHEdit::Buffer	access:public	signature:()
 end	uStack.h	/^    iterator end(){return iterator(NULL);}$/;"	f	class:Stack	access:public	signature:()
+entering	uLanguageDefinition2.h	/^      Node* entering;$/;"	m	class:SHEdit::LanguageDefinition	access:private
 fSearchBarH	fSearchBar.h	4;"	d
 fallbackLangDef	cSHEdit.h	/^      LanguageDefinition * fallbackLangDef;$/;"	m	class:SHEdit::TSHEdit	access:private
 first	uBuffer.cpp	/^Iter Buffer::first()   \/\/technically shows wrong location - just if we NEED to maintain a link to fist link no matter what gets inserted$/;"	f	class:Buffer	signature:()
 first	uBuffer.h	/^      Iter first();$/;"	p	class:SHEdit::Buffer	access:public	signature:()
 first	uSpan.h	/^    Span* first;$/;"	m	struct:SHEdit::Range	access:public
 firstLine	uSpan.h	/^    NSpan* firstLine;$/;"	m	struct:SHEdit::Range	access:public
+flags	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	g	class:SHEdit::LanguageDefinition	access:public
 fontsize	uDrawer.h	/^      int fontsize;$/;"	m	class:SHEdit::Drawer	access:private
 foreground	uFormat.h	/^      TColor * foreground;$/;"	m	class:SHEdit::FontStyle	access:public
 foreground	uLanguageDefinitionSQL.h	/^    TColor foreground;$/;"	m	class:SHEdit::LanguageDefinitionSQL	access:private
@@ -2163,8 +2270,12 @@ format	uMark.h	/^      Format * format;$/;"	m	class:SHEdit::Mark	access:public
 forward	fSearchBar.h	/^  bool forward;$/;"	m	class:TSearchBar	access:public
 fromlinenum	uSpan.h	/^    int fromlinenum;$/;"	m	struct:SHEdit::Action	access:public
 frompos	uSpan.h	/^    int frompos;$/;"	m	struct:SHEdit::Action	access:public
+fs	uLanguageDefinition2.h	/^        FontStyle* fs;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
 fs	uLanguageDefinition2.h	/^        FontStyle* fs;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
+gather	uLanguageDefinition2.h	/^        bool gather;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
+gather	uLanguageDefinition2.h	/^        bool gather;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
 getstyle	uLanguageDefinition2.h	/^        bool getstyle;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
+global	uLanguageDefinition2.h	/^      Node* global;$/;"	m	class:SHEdit::LanguageDefinition	access:private
 globalMask	uParser.h	/^        short globalMask;$/;"	m	struct:SHEdit::Parser::ParserState	access:public
 htmlAttribs	uLanguageDefinitionWebLangs.h	/^      TColor htmlAttribs;$/;"	m	class:SHEdit::LanguageDefinitionWebLangs	access:private
 htmlBG	uLanguageDefinitionWebLangs.h	/^      TColor htmlBG;$/;"	m	class:SHEdit::LanguageDefinitionWebLangs	access:private
@@ -2178,6 +2289,7 @@ htmlTags	uLanguageDefinitionWebLangs.h	/^      TColor htmlTags;$/;"	m	class:SHEd
 htmlTree	uLanguageDefinitionWebLangs.h	/^      TreeNode * htmlTree;$/;"	m	class:SHEdit::LanguageDefinitionWebLangs	access:private
 ids	uLanguageDefinition2.h	/^      int ids;$/;"	m	class:SHEdit::LanguageDefinition	access:private
 imarks	uFormat.h	/^      std::set<IPos*, IMark::compare> imarks; \/\/Actually stores IMark pointers casted to pos for comparison$/;"	m	class:SHEdit::Format	access:private
+index	uLanguageDefinition2.h	/^      std::map<std::wstring, Rec> index;$/;"	m	class:SHEdit::LanguageDefinition	access:private
 insertion	uSpan.h	/^    enum ActionType{deletion, insertion};$/;"	e	enum:SHEdit::Action::ActionType
 inword	uParser.h	/^      bool inword;$/;"	m	class:SHEdit::Parser	access:private
 iptIter	uIPos.h	/^      enum IPType{iptPos, iptIter, iptMark};$/;"	e	enum:SHEdit::IPos::IPType
@@ -2209,6 +2321,7 @@ lastLine	uSpan.h	/^    NSpan* lastLine;$/;"	m	struct:SHEdit::Range	access:public
 lastlinenumcount	uDrawer.h	/^      int lastlinenumcount; \/\/to be able to update lw automatically$/;"	m	class:SHEdit::Drawer	access:private
 length	uSpan.h	/^    short length;$/;"	m	struct:SHEdit::Span	access:public
 level	DOCUMENTATION	/^The data are stored in the buffer in a two-level linked list, which maintains a continuous text stream on one level, and a newline list on the other one. Almost entire data structure is designed "lineary" - without binary tree indexes, mainly because of relatively high time complexity of keeping the binary tree up-to-date (at least that was the original idea) - that means, main approach, that amortizes time complexity to be constant (considering the size of buffer) (except for line movements) is to have an iterator that points to the current position of application's view, without having access to information about the rest of the data (there is implemented just a linear positioning system, which keeps a track of the current line number and offset, and which keeps all the iterators valid and having the correct positioning info). Above the buffer is the component (the actual TSHEdit class), whose job is to process all user input, to let the buffer insert and remove text, to handle undo and redo funcionality, and to manage the painting of the screen. When updating the screen, the component repaints just those parts of the screen that are no longer valid (by lines - always an entire line is reparsed\/repainted). Lines which need to be repainted or reparsed are handed over to the Parser whose job is to parse the lines and to send those that are in visible part of the screen further to drawer which draws them. The Parser works "asynchronously" - can reparse every time just what it needs to reparse while maintaining the context through an entire buffer.$/;"	v
+lftidx	uLanguageDefinition2.h	/^        std::map<int, Node*> lftidx; \/\/leave index$/;"	m	struct:SHEdit::LanguageDefinition::Node	access:public
 line	uIPos.h	/^      NSpan * line;                                                                                  \/*!< Pointer to the befinning of current line. Positioning relies on correct line and linenum initialization. Other members can be recalculated *\/$/;"	m	class:SHEdit::IPos	access:public
 line	uParser.h	/^        NSpan * line;$/;"	m	struct:SHEdit::Parser::ParseTask	access:public
 linecount	uSpan.h	/^    int linecount;$/;"	m	struct:SHEdit::Range	access:public
@@ -2220,6 +2333,7 @@ linenumsenabled	uDrawer.h	/^      bool linenumsenabled;$/;"	m	class:SHEdit::Draw
 linenumwidth	uDrawer.h	/^      int linenumwidth;$/;"	m	class:SHEdit::Drawer	access:private
 linesize	uDrawer.h	/^      int linesize;$/;"	m	class:SHEdit::Drawer	access:private
 loc	uLanguageDefinition2.h	/^      std::locale loc;$/;"	m	class:SHEdit::LanguageDefinition	access:private
+main	uLangDef2Test.cpp	/^int main()$/;"	f	signature:()
 map	uLanguageDefinition.h	/^        TreeNode * map[128];$/;"	m	struct:SHEdit::LanguageDefinition::TreeNode	access:public
 marks	uFormat.h	/^      std::list< Stack<Mark >::Node* > marks;$/;"	m	class:SHEdit::Format	access:private
 marks	uSpan.h	/^    Stack<Mark> marks;$/;"	m	struct:SHEdit::Span	access:public
@@ -2237,6 +2351,7 @@ msgLock	cSHEdit.h	/^      bool msgLock;$/;"	m	class:SHEdit::TSHEdit	access:priva
 mx	cSHEdit.h	/^      int mx, my;                                                                                    \/*!< Position of itrCursorSecond*\/$/;"	m	class:SHEdit::TSHEdit	access:private
 my	cSHEdit.h	/^      int mx, my;                                                                                    \/*!< Position of itrCursorSecond*\/$/;"	m	class:SHEdit::TSHEdit	access:private
 myown	uCursor.h	/^                bool myown;$/;"	m	class:SHEdit::CIter	access:private
+name	uLanguageDefinition2.h	/^        std::wstring name;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
 name	uLanguageDefinition2.h	/^        std::wstring name;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
 newgmask	uLanguageDefinition.h	/^        short newgmask;$/;"	m	struct:SHEdit::LanguageDefinition::Jump	access:public
 newgmask	uLanguageDefinition.h	/^        short newgmask;$/;"	m	struct:SHEdit::LanguageDefinition::Pop	access:public
@@ -2248,11 +2363,16 @@ nextTree	uLanguageDefinition.h	/^        TreeNode * nextTree;$/;"	m	struct:SHEdi
 nextimark	uIter.h	/^      int nextimark;                                                                                 \/*!< See the Iter class info for explanation *\/$/;"	m	class:SHEdit::Iter	access:protected
 nextimarkln	uIter.h	/^      int nextimarkln;                                                                               \/*!< See the Iter class info for explanation *\/$/;"	m	class:SHEdit::Iter	access:protected
 nextline	uSpan.h	/^    NSpan * nextline;$/;"	m	struct:SHEdit::NSpan	access:public
-ntEnd	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
-ntLambda	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
-ntNterm	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
-ntTailrec	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
-ntTerm	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
+nextnodes	uLanguageDefinition2.h	/^        std::vector<Node*> nextnodes;$/;"	m	struct:SHEdit::LanguageDefinition::Node	access:public
+node	uLanguageDefinition2.h	/^        Node* node;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
+nodes	uLanguageDefinition2.h	/^      std::set<Node*> nodes; \/\/temporary - for construction (and maybe for destruction?)$/;"	m	class:SHEdit::LanguageDefinition	access:private
+nonterms	uLanguageDefinition2.h	/^      std::vector<NTerm*> nonterms;$/;"	m	class:SHEdit::LanguageDefinition	access:private
+nt	uLanguageDefinition2.h	/^        NTerm* nt;$/;"	m	struct:SHEdit::LanguageDefinition::Rec	access:public
+ntEnd	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
+ntLambda	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
+ntNTerm	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
+ntTailrec	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
+ntTerm	uLanguageDefinition2.h	/^      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};$/;"	e	enum:SHEdit::LanguageDefinition::NType
 number	uLanguageDefinitionSQL.h	/^    TColor number ;$/;"	m	class:SHEdit::LanguageDefinitionSQL	access:private
 offset	uIter.h	/^      int offset;                                                                                    \/*!< Offset from beginning of current Span *\/$/;"	m	class:SHEdit::Iter	access:protected
 oldidle	uParser.h	/^      TIdleEvent oldidle;$/;"	m	class:SHEdit::Parser	access:private
@@ -2287,6 +2407,7 @@ operator --	uIter.h	/^      Iter& operator--();$/;"	p	class:SHEdit::Iter	access:
 operator ->	uStack.h	/^      T_data* operator->() {return &ptr->data};$/;"	f	struct:Stack::iterator	access:public	signature:()
 operator <	uIter.cpp	/^bool Iter::operator<(const Iter& itr)$/;"	f	class:Iter	signature:(const Iter& itr)
 operator <	uIter.h	/^      bool operator<(const Iter& itr);$/;"	p	class:SHEdit::Iter	access:public	signature:(const Iter& itr)
+operator <	uLanguageDefinition2.h	/^        bool operator<(const Rec& r)const{return GetName() < r.GetName();};$/;"	f	struct:SHEdit::LanguageDefinition::Rec	access:public	signature:(const Rec& r) const
 operator <	uParser.cpp	/^bool Parser::ParseTask::operator<(const Parser::ParseTask & pt)  const$/;"	f	class:Parser::ParseTask	signature:(const Parser::ParseTask & pt) const
 operator <	uParser.h	/^        bool operator<(const ParseTask & pt)const;$/;"	p	struct:SHEdit::Parser::ParseTask	access:public	signature:(const ParseTask & pt) const
 operator =	uFormat.cpp	/^SHEdit::FontStyle& FontStyle::operator=(const SHEdit::FontStyle& f)$/;"	f	class:FontStyle	signature:(const SHEdit::FontStyle& f)
@@ -2314,6 +2435,7 @@ operator ==	uIter.h	/^      bool operator==(const Iter& itr);$/;"	p	class:SHEdit
 operator ==	uLanguageDefinition.cpp	/^bool LanguageDefinition::SearchIter::operator==(const SearchIter& sit)$/;"	f	class:LanguageDefinition::SearchIter	signature:(const SearchIter& sit)
 operator ==	uLanguageDefinition.h	/^        bool operator==(const SearchIter& sit);$/;"	p	struct:SHEdit::LanguageDefinition::SearchIter	access:public	signature:(const SearchIter& sit)
 operator ==	uLanguageDefinition2.cpp	/^bool LanguageDefinition::Node::operator==(const Node& n)$/;"	f	class:LanguageDefinition::Node	signature:(const Node& n)
+operator ==	uLanguageDefinition2.h	/^        bool operator==(const Node& n);$/;"	p	struct:SHEdit::LanguageDefinition::Node	access:public	signature:(const Node& n)
 operator ==	uParser.cpp	/^bool Parser::ParseTask::operator==(const Parser::ParseTask & pt) const$/;"	f	class:Parser::ParseTask	signature:(const Parser::ParseTask & pt) const
 operator ==	uParser.cpp	/^bool Parser::ParserState::operator==(const ParserState& state)$/;"	f	class:Parser::ParserState	signature:(const ParserState& state)
 operator ==	uParser.h	/^        bool operator==(const ParseTask & pt)const;$/;"	p	struct:SHEdit::Parser::ParseTask	access:public	signature:(const ParseTask & pt) const
@@ -2340,7 +2462,6 @@ phpQuoteTree	uLanguageDefinitionWebLangs.h	/^      TreeNode * phpQuoteTree;$/;"	
 phpQuotes	uLanguageDefinitionWebLangs.h	/^      TColor phpQuotes;$/;"	m	class:SHEdit::LanguageDefinitionWebLangs	access:private
 phpQuotesBack	uLanguageDefinitionWebLangs.h	/^      TColor phpQuotesBack;$/;"	m	class:SHEdit::LanguageDefinitionWebLangs	access:private
 phpReserved	uLanguageDefinitionWebLangs.h	/^      TColor phpReserved;$/;"	m	class:SHEdit::LanguageDefinitionWebLangs	access:private
-phpTree	.uLanguageDefinitionWebLangs.cpp.swp	/^/;"	v
 phpTree	uLanguageDefinitionWebLangs.h	/^      TreeNode * phpTree;$/;"	m	class:SHEdit::LanguageDefinitionWebLangs	access:private
 phpVariable	uLanguageDefinitionWebLangs.h	/^      TColor phpVariable;$/;"	m	class:SHEdit::LanguageDefinitionWebLangs	access:private
 places	DOCUMENTATION	/^!!!THIS FILE IS NOT UP TO DATE!! It turned out to be impossible to maintain documentation on 2 different places; $/;"	v
@@ -2355,17 +2476,22 @@ prev	uSpan.h	/^    Span* prev;$/;"	m	struct:SHEdit::Span	access:public
 prev	uStack.h	/^      Node ** prev;$/;"	m	struct:Stack::Node	access:public
 prevline	uSpan.h	/^    NSpan * prevline;$/;"	m	struct:SHEdit::NSpan	access:public
 ptr	uIter.h	/^      wchar_t * ptr;                                                                                 \/*!< Direct pointer to current character *\/$/;"	m	class:SHEdit::Iter	access:protected
+ptr	uLanguageDefinition2.h	/^        Node* ptr;$/;"	m	struct:SHEdit::LanguageDefinition::StackItem	access:public
 ptr	uStack.h	/^      Node * ptr;$/;"	m	struct:Stack::iterator	access:public
 publish	LICENSE	/^the rights to use, copy, modify, merge, publish, distribute, sublicense,$/;"	v
 pushmask	uLanguageDefinition.h	/^        short pushmask;$/;"	m	struct:SHEdit::LanguageDefinition::Jump	access:public
+r	uLanguageDefinition2.h	/^        Rec r;$/;"	m	struct:SHEdit::LanguageDefinition::Node	access:public
 range	uSpan.h	/^    Range * range;$/;"	m	struct:SHEdit::UndoTask	access:public
 readonly	cSHEdit.h	/^      bool readonly;$/;"	m	class:SHEdit::TSHEdit	access:private
+recidx	uLanguageDefinition2.h	/^        std::map<int, Node*> recidx; \/\/recursive index (for nonterminals)$/;"	m	struct:SHEdit::LanguageDefinition::Node	access:public
 recmsg	cSHEdit.h	/^      bool recmsg;                                                                                   \/*!< Originally to handle re-entrancy of processmessages, but quite obsolete by now.*\/$/;"	m	class:SHEdit::TSHEdit	access:private
 recpopcount	uLanguageDefinition.h	/^        short recpopcount;$/;"	m	struct:SHEdit::LanguageDefinition::TreeNode	access:public
 recurse	uParser.h	/^      int recurse;$/;"	m	class:SHEdit::Parser	access:private
 remember	uLanguageDefinition2.h	/^        bool remember;$/;"	m	struct:SHEdit::LanguageDefinition::Term	access:public
 reserved	uLanguageDefinitionSQL.h	/^    TColor reserved;$/;"	m	class:SHEdit::LanguageDefinitionSQL	access:private
 restriction	LICENSE	/^to deal in the Software without restriction, including without limitation$/;"	v
+returned	.uLanguageDefinition2.h.swp	/^/;"	v
+ruleid	uLanguageDefinition2.h	/^        int ruleid;$/;"	m	struct:SHEdit::LanguageDefinition::NTerm	access:public
 scrolldelta	cSHEdit.h	/^      int scrolldelta;                                                                               \/*!< used by ms to treat smooth-scroll wheels...*\/$/;"	m	class:SHEdit::TSHEdit	access:private
 scrolldeltafontsize	cSHEdit.h	/^      int scrolldeltafontsize;                                                                       \/*!< used by ms to treat smooth-scroll wheels...*\/$/;"	m	class:SHEdit::TSHEdit	access:private
 searchColor	cSHEdit.h	/^      TColor searchColor;$/;"	m	class:SHEdit::TSHEdit	access:private
@@ -2376,15 +2502,16 @@ selColor	cSHEdit.h	/^      TColor selColor;$/;"	m	class:SHEdit::TSHEdit	access:p
 selFColor	cSHEdit.h	/^      TColor selFColor;$/;"	m	class:SHEdit::TSHEdit	access:private
 selectionFormat	cSHEdit.h	/^      Format * selectionFormat;$/;"	m	class:SHEdit::TSHEdit	access:private
 so	LICENSE	/^Software is furnished to do so, subject to the following conditions:$/;"	v
+st	uLanguageDefinition2.h	/^        std::stack<StackItem> st;$/;"	m	struct:SHEdit::LanguageDefinition::PState	access:public
 stackRedo	uBuffer.h	/^      std::stack<UndoTask*> stackRedo;$/;"	m	class:SHEdit::Buffer	access:private
 stackUndo	uBuffer.h	/^      std::stack<UndoTask*> stackUndo;$/;"	m	class:SHEdit::Buffer	access:private
 state	uParser.h	/^      ParserState state;$/;"	m	class:SHEdit::Parser	access:private
 string	uLanguageDefinitionSQL.h	/^    TColor string ;$/;"	m	class:SHEdit::LanguageDefinitionSQL	access:private
 string	uSpan.h	/^    wchar_t* string;$/;"	m	struct:SHEdit::Span	access:public
-stringstyle	.uLanguageDefinitionSQL.cpp.swp	/^/;"	v
 style	uFormat.h	/^      TFontStyles style;$/;"	m	class:SHEdit::FontStyle	access:public
 sublicense	LICENSE	/^the rights to use, copy, modify, merge, publish, distribute, sublicense,$/;"	v
 success	fSearchBar.h	/^  bool success;$/;"	m	class:TSearchBar	access:public
+t	uLanguageDefinition2.h	/^        Term* t;$/;"	m	struct:SHEdit::LanguageDefinition::Rec	access:public
 tC	uLanguageDefinition2.h	/^      enum TokType {tS, tC, tE};$/;"	e	enum:SHEdit::LanguageDefinition::TokType
 tE	uLanguageDefinition2.h	/^      enum TokType {tS, tC, tE};$/;"	e	enum:SHEdit::LanguageDefinition::TokType
 tJump	uLanguageDefinition.h	/^  enum LangDefJumpType{tJump, tPush, tMask};$/;"	e	enum:SHEdit::LangDefJumpType
@@ -2393,7 +2520,15 @@ tPush	uLanguageDefinition.h	/^  enum LangDefJumpType{tJump, tPush, tMask};$/;"	e
 tS	uLanguageDefinition2.h	/^      enum TokType {tS, tC, tE};$/;"	e	enum:SHEdit::LanguageDefinition::TokType
 tasklist	uParser.h	/^      std::list<ParseTask> tasklist;$/;"	m	class:SHEdit::Parser	access:private
 tasklistprior	uParser.h	/^      std::list<ParseTask> tasklistprior;$/;"	m	class:SHEdit::Parser	access:private
+term	uLanguageDefinition2.h	/^        bool term;$/;"	m	struct:SHEdit::LanguageDefinition::Rec	access:public
+terms	uLanguageDefinition2.h	/^      std::vector<Term*> terms;$/;"	m	class:SHEdit::LanguageDefinition	access:private
 text	fSearchBar.h	/^  String text;$/;"	m	class:TSearchBar	access:public
+tfCall	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
+tfCaseSens	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
+tfEntering	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
+tfGather	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
+tfGetStyle	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
+tfGlobal	uLanguageDefinition2.h	/^      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};$/;"	e	enum:SHEdit::LanguageDefinition::flags
 thisItem	uLanguageDefinition.h	/^        wchar_t thisItem;$/;"	m	struct:SHEdit::LanguageDefinition::TreeNode	access:public
 timer	cSHEdit.h	/^      TTimer * timer;$/;"	m	class:SHEdit::TSHEdit	access:private
 tokenizer	uLanguageDefinition2.h	/^      WTokenizer tokenizer;$/;"	m	class:SHEdit::LanguageDefinition	access:private
@@ -2406,6 +2541,7 @@ type	uCursor.h	/^                short type;$/;"	m	class:SHEdit::CIter	access:pr
 type	uIPos.h	/^      IPType type;                                                                                   \/*!< Determines type of object - allows IPos casted IMark\/Iter comparisons without requiring dynamic casting. *\/$/;"	m	class:SHEdit::IPos	access:public
 type	uLanguageDefinition.h	/^        LangDefSpecType type;$/;"	m	struct:SHEdit::LanguageDefinition::TreeNode	access:public
 type	uLanguageDefinition.h	/^        short type;$/;"	m	struct:SHEdit::LanguageDefinition::Jump	access:public
+type	uLanguageDefinition2.h	/^        NType type;$/;"	m	struct:SHEdit::LanguageDefinition::Node	access:public
 type	uSpan.h	/^    ActionType type;$/;"	m	struct:SHEdit::Action	access:public
 uBufferH	uBuffer.h	4;"	d
 uCursorH	uCursor.h	4;"	d
@@ -2447,6 +2583,7 @@ y	uDrawer.h	/^      int x, y;$/;"	m	class:SHEdit::Drawer	access:private
 ~LanguageDefinition	uLanguageDefinition.cpp	/^LanguageDefinition::~LanguageDefinition()$/;"	f	class:LanguageDefinition	signature:()
 ~LanguageDefinition	uLanguageDefinition.h	/^      ~LanguageDefinition();$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:()
 ~LanguageDefinition	uLanguageDefinition2.cpp	/^LanguageDefinition::~LanguageDefinition()$/;"	f	class:LanguageDefinition	signature:()
+~LanguageDefinition	uLanguageDefinition2.h	/^      ~LanguageDefinition();$/;"	p	class:SHEdit::LanguageDefinition	access:public	signature:()
 ~NSpan	uSpan.cpp	/^NSpan::~NSpan()$/;"	f	class:NSpan	signature:()
 ~NSpan	uSpan.h	/^    ~NSpan();$/;"	p	struct:SHEdit::NSpan	access:public	signature:()
 ~Parser	uParser.cpp	/^__fastcall Parser::~Parser()$/;"	f	class:Parser	signature:()

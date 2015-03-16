@@ -6,11 +6,12 @@
 #define uLanguageDefinition2H
 
 #include <list>
-#include <vcl.h>
+#include <set>
+//#include <vcl.h> //why?
 
 #include "config.h"
 #include "tokenizer.h"
-#include "uStack.h"
+//#include "uStack.h"
 
 using namespace drgxtokenizer;
 
@@ -54,7 +55,7 @@ namespace SHEdit
    *             code, you can do something like (lowercase denotes nonterminals, uppercase terminals):
    *             command_block -> command error COMMAND_SEPARATOR
    *             command -> <your correct grammar>
-   *             error -> EVERY | SINGLE | TERMINAL | OF | YOUR | GRAMMAR | EXCEPT | THE SAFE SYMBOL
+   *             error -> EVERY | SINGLE | TERMINAL | OF | YOUR | GRAMMAR <except for the COMMAND_SEPARATOR
    *
    * Lexical analysis is performed by the tokenizer, which is a member object of this class. The token ids are used to uniquely identify the tokens. The tokenizer accepts basic algebraic regular expressions, always preferres the longest match and highest token id. 
    *
@@ -72,22 +73,24 @@ namespace SHEdit
 
       int ids;
 
-      enum NType {ntTerm, ntNterm, ntLambda, ntEnd, ntTailrec};
+      enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};
       enum TokType {tS, tC, tE};
 
+      class Node;
 
       struct Term
       {
         bool remember;
         int tokid;
         bool getstyle;
+        bool gather;
         bool call;
         FontStyle* fs;
         std::wstring name;
 
-        Term(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c) : name(n), fs(fs_), id(i), getstyle(g), call(c) {} ;
-        bool Eq(const Term& n){return tokid == n.tokid);
-        bool Cq(const Term& n){return tokid == n.tokid && remember == n.remember && getstyle == n.getstyle && call == n.call && *fs == *n.fs);
+        Term(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c) : name(n), fs(fs_), tokid(i), getstyle(g), call(c) {} ;
+        bool Eq(const Term& n){return tokid == n.tokid;};
+        bool Cq(const Term& n){return tokid == n.tokid && remember == n.remember && getstyle == n.getstyle && call == n.call && fs == n.fs;};
       };
 
       struct NTerm
@@ -99,8 +102,8 @@ namespace SHEdit
         bool call;
         Node* node;
         NTerm(const std::wstring& n, FontStyle* f, int i, bool g, bool c);
-        bool Eq(const NTerm& n){return ruleid == n.ruleid);
-        bool Cq(const NTerm& n){return ruleid == n.ruleid && gather == n.gather && call == n.call && *fs == *n.fs);
+        bool Eq(const NTerm& n){return ruleid == n.ruleid;};
+        bool Cq(const NTerm& n){return ruleid == n.ruleid && gather == n.gather && call == n.call && fs == n.fs;};
       };
 
       struct Rec
@@ -108,10 +111,10 @@ namespace SHEdit
         Term* t;
         NTerm* nt;
         bool term;
-        const std::wstring& GetName(){return term? t->name : nt->name;};
-        bool operator<(const Rec& r){return GetName() < r.GetName();};
-        Rec(Term* t_) : t(t_), nt(NULL), tern(true);
-        Rec(NTerm* t_) : nt(t), t(NULL), term(false);
+        const std::wstring& GetName()const{return term? t->name : nt->name;};
+        bool operator<(const Rec& r)const{return GetName() < r.GetName();};
+        Rec(Term* t_) : t(t_), nt(NULL), term(true){};
+        Rec(NTerm* t_) : nt(t_), t(NULL), term(false){};
         Rec() : t(NULL), nt(NULL), term(false){};
       };
 
@@ -123,38 +126,64 @@ namespace SHEdit
         std::map<int, Node*> lftidx; //leave index
         std::map<int, Node*> recidx; //recursive index (for nonterminals)
 
-        Node(NType t) : type(t), r(), nextnodes(), index();
-        void Add(const Node& n);
+        Node() : type(ntLambda), r(), nextnodes(), lftidx(), recidx(){};
+        Node(NType t) : type(t), r(), nextnodes(), lftidx(), recidx(){};
+        Node(NTerm* t) : type(ntNTerm), r(t), nextnodes(), lftidx(), recidx(){};
+        Node(Term* t) : type(ntTerm), r(t), nextnodes(), lftidx(), recidx(){};
+        Node* Add(const Node& n); //returns a pointer to a used node (either a new node, or an already existing done)
         bool Eq(const Node& n); //equal (indistinguishable by perser)
         bool Cq(const Node& n); //congruent; more power needed here  - we should check the rest of the tree too
         bool operator==(const Node& n);
         void Finalize(); 
         void ExpandLambda(std::map<int, Node*>& index, Node* next);
-      }
-
-      struct StackItem
-      {
-      }
+      };
 
       std::set<Node*> nodes; //temporary - for construction (and maybe for destruction?)
       std::vector<Term*> terms;
-      std::vector<Nonterm*> nonterms;
+      std::vector<NTerm*> nonterms;
       std::map<std::wstring, Rec> index;
 
-      TokType GetToken(std::wstring& str, std::wstring& val);
-    public:
-      const int Auto = -1;
+      Node* global;
+      Node* entering;
 
-      void AddTerm(const std::wstring& name,FontStyle*,const std::wstring& rgx, int id, bool caseSens, bool getst, bool confirm);
-      void AddNonTerm(const std::wstring& name, FontStyle* fs, int id, bool gather, bool call);
+      void ParseString(std::wstring& rule, std::vector<Node*>& endnodes);
+      TokType GetToken(std::wstring& str, std::wstring& val, bool eat);
+      TokType GetToken(std::wstring& str, std::wstring& val);
+      void Construct(std::wstring& rule, std::vector<Node*>& endnodes);
+    public:
+      struct StackItem
+      {
+        Node* ptr;
+      };
+
+      struct PState
+      {
+        PState() : st(){};
+        std::vector<StackItem> st;
+      };
+
+      const static int Auto = -1;
+
+      enum flags {tfCall = 1, tfGetStyle = 2, tfGather = 4, tfGlobal = 8, tfCaseSens = 16, tfEntering = 32};
+
+      void AddTerm(const std::wstring& name,FontStyle*,const std::wstring& rgx, int id, int flags);
+      void AddNonTerm(const std::wstring& name, FontStyle* fs, int id, int flags);
       void AddRule(const std::wstring& name, std::wstring rule);
 
+      virtual void GetStyle(int id, const wchar_t * value, bool& draw, PState & s, FontStyle *& fs);
+      virtual void Call(int id, PState & s);
+      virtual void EraseState(int identif);
+
       void Finalize(); 
+
+      template<class IT>
+      void Parse(IT& from, const IT& to, PState&, bool& stylechanged, FontStyle*&fs, bool& draw);
 
       LanguageDefinition(const std::locale& loc = std::locale());
       ~LanguageDefinition();
 
   };
 }
+
 //---------------------------------------------------------------------------
 #endif
