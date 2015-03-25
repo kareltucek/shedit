@@ -281,7 +281,7 @@ void LanguageDefinition::Parse(IT& from, const IT& to, PState& s, bool& stylecha
 
   while(true)
   {
-    std::map<int, Node*>& ref = s.st.top().ptr->type == ntNTerm && !goingup ? s.st.top().ptr->recidx: s.st.top().ptr->lftidx;
+    const std::map<int, Node*>& ref = s.st.top().ptr->type == ntNTerm && !goingup ? s.st.top().ptr->recidx: s.st.top().ptr->lftidx;
     std::map<int, Node*>::iterator itr = ref.search(tokid);
     if(itr == ref.end())
     {

@@ -16,6 +16,9 @@ vsplit uLanguageDefinitionSQL.cpp
 
 tabfind uLanguageDefinitionWebLangs.h
 vsplit uLanguageDefinitionWebLangs.cpp
+ 
+tabfind uLangDef2Test.h 
+vsplit uLangDef2Test.cpp
 
 tabfind uStack.h
 vsplit uStack.cpp

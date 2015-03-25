@@ -12,3 +12,6 @@ unittest.o : uLangDef2Test.h uLangDef2Test.cpp
 langdef.o : uLanguageDefinition2.h uLanguageDefinition2.cpp
 	g++ ${INCLUDE} ${FLAGS} uLanguageDefinition2.cpp -c -o langdef.o 
 
+clean :
+	rm test *.o
+
