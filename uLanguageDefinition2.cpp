@@ -267,8 +267,47 @@ begin:
 }
 
 //---------------------------------------------------------------------------
-template<class IT>
-void LanguageDefinition::Parse(IT& from, const IT& to, PState& s, bool& stylechanged, FontStyle*&fs)
+void LanguageDefinition::Push(PState& s, Node* ptr)
+{
+  if(s.st.top()->type == ntNTerm && !s.st.top()->r.nt->gather && !s.st.top()->r.nt->call && s.st.top()->lftidx.empty())
+  {
+    //tail recursion 
+    s.st.top()=ptr;
+    return;
+  }
+  s.st.push(ptr);
+}
+//---------------------------------------------------------------------------
+void LanguageDefinition::DestroyTree(NTree* n)
+{
+  if(n == NULL)
+    return;
+  for(NTree::container_type::iterator itr = n->childs.begin(); itr != n->childs.end(); ++itr)
+    DestroyTree(*itr);
+  delete n;
+}
+//---------------------------------------------------------------------------
+void LanguageDefinition::Pop(PState& s)
+{
+  switch(s.st.top()->type)
+  {
+    case ntNTerm:
+      if(s.st.top()->r.nt->call)
+        Call(s.st.top()->r.nt->ruleid);
+      if(s.st.top()->r.nt->gather)
+      {
+        NTree* tmp = s.st.top().tree;
+        s.st.pop();
+      }
+//TOOD
+    case ntTerm:
+    case ntLambda:
+
+  }
+}
+//---------------------------------------------------------------------------
+  template<class IT>
+void LanguageDefinition::Parse(IT& from, const IT& to, PState& s, bool& stylechanged, FontStyle*&fs, bool& draw)
 {
   if(s.st.empty())
     s.st.push(StackItem(entering->r.nt->node));
@@ -286,6 +325,7 @@ void LanguageDefinition::Parse(IT& from, const IT& to, PState& s, bool& stylecha
     if(itr == ref.end())
     {
       goingup = true;
+      stylechanged |= s.st.top().ptr->nt->fs != NULL;
       Pop(s);
 
       if(s.st.empty())
@@ -303,15 +343,19 @@ void LanguageDefinition::Parse(IT& from, const IT& to, PState& s, bool& stylecha
       if(itr->second->type == ntNTerm)
       {
         Push(s, itr->second);
-        if(itr->second->nt->fs != NULL)
-          stylechanged = true;
+        stylechanged |= itr->second->nt->fs != NULL;
         continue;
       }
       else
       {
         s.st.top().ptr = itr->second;
+        fs = s.st.top().ptr->t.fs;
         if(itr->second->n->getstyle)
-          //...
+        {
+          FontStyle * tmp = fs;
+          GetStyle(tokid, a, from, draw, s, fs);
+          stylechanged |= tmp != fs;
+        }
         return;
       }
     }

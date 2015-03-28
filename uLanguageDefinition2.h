@@ -150,10 +150,22 @@ namespace SHEdit
       TokType GetToken(std::wstring& str, std::wstring& val, bool eat);
       TokType GetToken(std::wstring& str, std::wstring& val);
       void Construct(std::wstring& rule, std::vector<Node*>& endnodes);
+
+      inline void Push(PState& s, Node* ptr);
+      inline void Pop(PState& s);
     public:
+
+      struct NTree
+      {
+        typedef std::vector<NTree*> container_type;
+        container_type childs;
+        const wchar_t* value;
+      };
+
       struct StackItem
       {
         Node* ptr;
+        NTree* tree;
       };
 
       struct PState
@@ -170,7 +182,8 @@ namespace SHEdit
       void AddNonTerm(const std::wstring& name, FontStyle* fs, int id, int flags);
       void AddRule(const std::wstring& name, std::wstring rule);
 
-      virtual void GetStyle(int id, const wchar_t * value, bool& draw, PState & s, FontStyle *& fs);
+      template<class IT>
+      virtual void GetStyle(int id, IT begin, const IT& end, bool& draw, PState & s, FontStyle *& fs);
       virtual void Call(int id, PState & s);
       virtual void EraseState(int identif);
 
