@@ -116,6 +116,9 @@ namespace SHEdit
         Rec(Term* t_) : t(t_), nt(NULL), term(true){};
         Rec(NTerm* t_) : nt(t_), t(NULL), term(false){};
         Rec() : t(NULL), nt(NULL), term(false){};
+        bool GatherFlg(){ return term ? t->gather : nt->gather;};
+        bool CallFlg(){return term ? t->call : nt->call;};
+        int Id(){ return term ? t->tokid : nt->ruleid;};
       };
 
       struct Node
@@ -143,29 +146,38 @@ namespace SHEdit
       std::vector<NTerm*> nonterms;
       std::map<std::wstring, Rec> index;
 
+      std::set<std::wstring> symtab;
+
       Node* global;
       Node* entering;
+
+      std::wstring emptstr;
 
       void ParseString(std::wstring& rule, std::vector<Node*>& endnodes);
       TokType GetToken(std::wstring& str, std::wstring& val, bool eat);
       TokType GetToken(std::wstring& str, std::wstring& val);
       void Construct(std::wstring& rule, std::vector<Node*>& endnodes);
 
-      inline void Push(PState& s, Node* ptr);
-      inline void Pop(PState& s);
     public:
 
       struct NTree
       {
-        typedef std::vector<NTree*> container_type;
+        typedef std::vector<NTree> container_type;
+
         container_type childs;
-        const wchar_t* value;
+        const std::wstring& value;
+
+        NTree(const std::wstring & v) : childs(), value(v){};
+
+        const NTree& operator[](int i) const;
       };
 
       struct StackItem
       {
         Node* ptr;
-        NTree* tree;
+        NTree tree;
+
+        StackItem(Node* n, NTree* t = NULL) : ptr(n), tree(*t){};
       };
 
       struct PState
@@ -180,10 +192,10 @@ namespace SHEdit
 
       void AddTerm(const std::wstring& name,FontStyle*,const std::wstring& rgx, int id, int flags);
       void AddNonTerm(const std::wstring& name, FontStyle* fs, int id, int flags);
+      void AddNonTerm(const std::wstring& name, FontStyle* fs, const std::wstring& rule, int id, int flags);
       void AddRule(const std::wstring& name, std::wstring rule);
 
-      template<class IT>
-      virtual void GetStyle(int id, IT begin, const IT& end, bool& draw, PState & s, FontStyle *& fs);
+      virtual void GetStyle(int id, const std::wstring& val, bool& draw, PState & s, FontStyle *& fs);
       virtual void Call(int id, PState & s);
       virtual void EraseState(int identif);
 
@@ -194,6 +206,10 @@ namespace SHEdit
 
       LanguageDefinition(const std::locale& loc = std::locale());
       ~LanguageDefinition();
+
+    private:
+      inline void Push(PState& s, Node* ptr);
+      inline void Pop(PState& s);
 
   };
 }

@@ -11,7 +11,7 @@ class FontStyle;
 using namespace SHEdit;
 
 //---------------------------------------------------------------------------
-LanguageDefinition::LanguageDefinition(const std::locale& l) : loc(l), tokenizer(), ids(1)
+LanguageDefinition::LanguageDefinition(const std::locale& l) : loc(l), tokenizer(), ids(1), nodes(), terms(), nonterms(), index(), symtab(), emptstr(L"")
 {
   NTerm * t = new NTerm(L"", NULL, 0, false, false);
   nonterms.push_back(t);
@@ -35,6 +35,12 @@ void LanguageDefinition::AddTerm(const std::wstring& name,FontStyle* fs,const st
 
   if(flags & tfGlobal)
     nodes.insert(global->Add(Node(t)));
+}
+//---------------------------------------------------------------------------
+void LanguageDefinition::AddNonTerm(const std::wstring& name, FontStyle* fs, const std::wstring & rule, int id, int flags)
+{
+  AddNonTerm(name, fs, id, flags);
+  AddRule(name, rule);
 }
 //---------------------------------------------------------------------------
 void LanguageDefinition::AddNonTerm(const std::wstring& name, FontStyle* fs, int id, int flags)
@@ -267,12 +273,12 @@ begin:
 }
 
 //---------------------------------------------------------------------------
-void LanguageDefinition::Push(PState& s, Node* ptr)
+void LanguageDefinition::Push(PState & s, Node* ptr)
 {
-  if(s.st.top()->type == ntNTerm && !s.st.top()->r.nt->gather && !s.st.top()->r.nt->call && s.st.top()->lftidx.empty())
+  if(s.st.back().ptr->type == ntNTerm && !s.st.back().ptr->r.nt->gather && !s.st.back().ptr->r.nt->call && s.st.back().ptr->lftidx.empty())
   {
     //tail recursion 
-    s.st.top()=ptr;
+    s.st.back()=ptr;
     return;
   }
   s.st.push(ptr);
@@ -287,23 +293,26 @@ void LanguageDefinition::DestroyTree(NTree* n)
   delete n;
 }
 //---------------------------------------------------------------------------
+const LanguageDefinition::NTree& LanguageDefinition::NTree::operator[](int i)
+{
+  return childs[i];
+}
+//---------------------------------------------------------------------------
 void LanguageDefinition::Pop(PState& s)
 {
-  switch(s.st.top()->type)
-  {
-    case ntNTerm:
-      if(s.st.top()->r.nt->call)
-        Call(s.st.top()->r.nt->ruleid);
-      if(s.st.top()->r.nt->gather)
+      if(s.st.back()->r.CallFlg())
+        Call(s.st.back()->r.Id());
+      if(s.st.size() > 1 && (s.st.end()-2)->ptr->r.GatherFlg() && s.st.back().ptr->r.GatherFlg())
       {
-        NTree* tmp = s.st.top().tree;
+        NTree* tmp = &s.st.back().tree;
+        s.st.pop();
+        s.st.back().AddValue(tmp);
+      }
+      else
+      {
+        DestroyTree(s.st.back().tree);
         s.st.pop();
       }
-//TOOD
-    case ntTerm:
-    case ntLambda:
-
-  }
 }
 //---------------------------------------------------------------------------
   template<class IT>
@@ -320,12 +329,12 @@ void LanguageDefinition::Parse(IT& from, const IT& to, PState& s, bool& stylecha
 
   while(true)
   {
-    const std::map<int, Node*>& ref = s.st.top().ptr->type == ntNTerm && !goingup ? s.st.top().ptr->recidx: s.st.top().ptr->lftidx;
+    const std::map<int, Node*>& ref = s.st.back().ptr->type == ntNTerm && !goingup ? s.st.back().ptr->recidx: s.st.back().ptr->lftidx;
     std::map<int, Node*>::iterator itr = ref.search(tokid);
     if(itr == ref.end())
     {
       goingup = true;
-      stylechanged |= s.st.top().ptr->nt->fs != NULL;
+      stylechanged |= s.st.back().ptr->nt->fs != NULL;
       Pop(s);
 
       if(s.st.empty())
@@ -348,13 +357,20 @@ void LanguageDefinition::Parse(IT& from, const IT& to, PState& s, bool& stylecha
       }
       else
       {
-        s.st.top().ptr = itr->second;
-        fs = s.st.top().ptr->t.fs;
-        if(itr->second->n->getstyle)
+        s.st.back().ptr = itr->second;
+        fs = s.st.back().ptr->t.fs;
+        const std::wstring& sym = itr->second->t.getstyle || itr->second->t.gather ? *symtab.insert(std::wstring(a,from)) : emptstr;
+        if(itr->second->t.getstyle)
         {
           FontStyle * tmp = fs;
-          GetStyle(tokid, a, from, draw, s, fs);
+          GetStyle(tokid, sym, draw, s, fs);
           stylechanged |= tmp != fs;
+        }
+        if(s.st.back()->r.CallFlg())
+          Call(s.st.back()->r.Id());
+        if(itr->second->t.gather && s.st.size() > 1 && (s.st.end()-2)->ptr.r.GatherFlg())
+        {
+          (s.st.end()-2)->AddValue(new NTree(sym));
         }
         return;
       }

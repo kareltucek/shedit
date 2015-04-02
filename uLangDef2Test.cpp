@@ -7,24 +7,24 @@ using namespace SHEdit;
 class TestParser : public LanguageDefinition
 {
   public:
-    TestParser(): LanguageDefinition(){};
+    TestParser();
 };
 
 TestParser::TestParser() : LanguageDefinition()
 {
   int i = 1;
-  AddTerm("IDENTIF", NULL, "[a-zA-Z][a-zA-Z0-9_-]*", ++i, 0);
-  AddTerm("TYPE", NULL, "(int|bool|char|string)", ++i, 0);
-  AddTerm("OP", NULL, "[+*/-]", ++i, 0);
-  AddTerm("ASS", NULL, "=", ++i, 0);
-  AddTerm("NUM", NULL, "[0-9]+", ++i, 0);
-  AddTerm("SEMIC", NULL, ";", ++i, 0);
-  AddTerm("WHITE", NULL, "[ \t\n\r]+", ++i, 0);
+  AddTerm(L"IDENTIF", NULL, L"[a-zA-Z][a-zA-Z0-9_-]*", ++i, 0);
+  AddTerm(L"TYPE", NULL,    L"(int|bool|char|string)", ++i, 0);
+  AddTerm(L"OP", NULL,      L"[+*/-]", ++i, 0);
+  AddTerm(L"ASS", NULL,     L"=", ++i, 0);
+  AddTerm(L"NUM", NULL,     L"[0-9]+", ++i, 0);
+  AddTerm(L"SEMIC", NULL,   L";", ++i, 0);
+  AddTerm(L"WHITE", NULL,   L"[ \t\n\r]+", ++i, 0);
 
-  AddNonTerm("program", NULL, "decl|ass", ++i, 0);
-  AddNonTerm("decl", NULL, "TYPE IDENT SEMIC", ++i, 0);
-  AddNonTerm("oper", NULL, "num OP oper", ++i, 0);
-  AddNonTerm("ass", NULL, "IDENTIF ASS oper SEMIC | IDENTIF ASS IDENTIF SEMIC", ++i, 0);
+  AddNonTerm(L"program", NULL, L"decl|ass", ++i, 0);
+  AddNonTerm(L"decl", NULL, L"TYPE IDENT SEMIC", ++i, 0);
+  AddNonTerm(L"oper", NULL, L"num OP oper", ++i, 0);
+  AddNonTerm(L"ass", NULL, L"IDENTIF ASS oper SEMIC | IDENTIF ASS IDENTIF SEMIC", ++i, 0);
 }
 
 int main()
@@ -46,7 +46,7 @@ int main()
     bool dc;
     class FontStyle;
     FontStyle* dc2;
-    p.Parse<std::wstring::iterator>(b, c, ps, dc, (SHEdit::FontStyle*&)dc2);
+    p.Parse<std::wstring::iterator>(b, c, ps, dc, (SHEdit::FontStyle*&)dc2,dc);
     std::wcout << std::wstring(a,b) << std::endl;
     a = b;
   }
