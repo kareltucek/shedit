@@ -10,6 +10,9 @@
 //#include <vcl.h> //why?
 
 #include "config.h"
+
+#define DRGXTOKENIZER_TEMPLATED
+
 #include "tokenizer.h"
 //#include "uStack.h"
 
@@ -67,6 +70,8 @@ namespace SHEdit
   //---------------------------------------------------------------------------
   class LanguageDefinition
   {
+    public:
+      class NTree;
     private:
       WTokenizer tokenizer;
       std::locale loc;
@@ -158,16 +163,18 @@ namespace SHEdit
       TokType GetToken(std::wstring& str, std::wstring& val);
       void Construct(std::wstring& rule, std::vector<Node*>& endnodes);
 
+      void DestroyTree(NTree* n);
     public:
 
       struct NTree
       {
-        typedef std::vector<NTree> container_type;
+        typedef std::vector<NTree*> container_type;
 
         container_type childs;
-        const std::wstring& value;
+        const std::wstring* value;
+        int id;
 
-        NTree(const std::wstring & v) : childs(), value(v){};
+        NTree(int ident, const std::wstring* v = NULL) : childs(), value(v), id(ident){};
 
         const NTree& operator[](int i) const;
       };
@@ -175,9 +182,10 @@ namespace SHEdit
       struct StackItem
       {
         Node* ptr;
-        NTree tree;
+        NTree* tree;
 
-        StackItem(Node* n, NTree* t = NULL) : ptr(n), tree(*t){};
+        StackItem(Node* n, NTree* t = NULL) : ptr(n), tree(t){};
+        void AddValue(NTree*);
       };
 
       struct PState
@@ -195,23 +203,86 @@ namespace SHEdit
       void AddNonTerm(const std::wstring& name, FontStyle* fs, const std::wstring& rule, int id, int flags);
       void AddRule(const std::wstring& name, std::wstring rule);
 
-      virtual void GetStyle(int id, const std::wstring& val, bool& draw, PState & s, FontStyle *& fs);
-      virtual void Call(int id, PState & s);
-      virtual void EraseState(int identif);
+      virtual void GetStyle(int id, const std::wstring& val, bool& draw, PState & s, FontStyle *& fs){};
+      virtual void Call(int id, PState & s){};
+      virtual void EraseState(int identif){};
 
       void Finalize(); 
 
       template<class IT>
-      void Parse(IT& from, const IT& to, PState&, bool& stylechanged, FontStyle*&fs, bool& draw);
+      void Parse(IT& from, IT& to, PState&, bool& stylechanged, FontStyle*&fs, bool& draw);
 
       LanguageDefinition(const std::locale& loc = std::locale());
       ~LanguageDefinition();
 
     private:
-      inline void Push(PState& s, Node* ptr);
-      inline void Pop(PState& s);
+      void Push(PState& s, Node* ptr);
+      void Pop(PState& s);
 
   };
+  //---------------------------------------------------------------------------
+  template<class IT>
+    void LanguageDefinition::Parse(IT& from, IT& to, PState& s, bool& stylechanged, FontStyle*&fs, bool& draw)
+    {
+      if(s.st.empty())
+        s.st.push_back(StackItem(entering->r.nt->node));
+
+      IT a(from);
+      int tokid;
+      tokenizer.NextToken(from, to, tokid);
+
+      bool goingup = false;
+
+      while(true)
+      {
+        const std::map<int, Node*>& ref = s.st.back().ptr->type == ntNTerm && !goingup ? s.st.back().ptr->recidx: s.st.back().ptr->lftidx;
+        std::map<int, Node*>::const_iterator itr = ref.find(tokid);
+        if(itr == ref.end())
+        {
+          goingup = true;
+          stylechanged |= s.st.back().ptr->r.nt->fs != NULL;
+          Pop(s);
+
+          if(s.st.empty())
+          {
+            s.st.push_back(StackItem(entering->r.nt->node));
+            return;
+          }
+          else
+          {
+            continue;
+          }
+        }
+        else
+        {
+          if(itr->second->type == ntNTerm)
+          {
+            Push(s, itr->second);
+            stylechanged |= itr->second->r.nt->fs != NULL;
+            continue;
+          }
+          else
+          {
+            s.st.back().ptr = itr->second;
+            fs = s.st.back().ptr->r.t->fs;
+            const std::wstring* sym = itr->second->r.t->getstyle || itr->second->r.t->gather ? &*symtab.insert(std::wstring(a,from)).first : NULL;
+            if(itr->second->r.t->getstyle)
+            {
+              FontStyle * tmp = fs;
+              GetStyle(tokid, *sym, draw, s, fs);
+              stylechanged |= tmp != fs;
+            }
+            if(s.st.back().ptr->r.CallFlg())
+              Call(tokid, s);
+            if(itr->second->r.t->gather && s.st.size() > 1 && (s.st.end()-2)->ptr->r.GatherFlg())
+            {
+              (s.st.end()-2)->AddValue(new NTree(tokid, sym));
+            }
+            return;
+          }
+        }
+      }   
+    }
 }
 
 //---------------------------------------------------------------------------

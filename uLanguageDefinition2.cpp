@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------
 #pragma hdrstop
 
+#define DRGXTOKENIZER_TEMPLATED
 
 #include "uLanguageDefinition2.h"
 #include <string>
@@ -281,7 +282,7 @@ void LanguageDefinition::Push(PState & s, Node* ptr)
     s.st.back()=ptr;
     return;
   }
-  s.st.push(ptr);
+  s.st.push_back(ptr);
 }
 //---------------------------------------------------------------------------
 void LanguageDefinition::DestroyTree(NTree* n)
@@ -293,91 +294,34 @@ void LanguageDefinition::DestroyTree(NTree* n)
   delete n;
 }
 //---------------------------------------------------------------------------
-const LanguageDefinition::NTree& LanguageDefinition::NTree::operator[](int i)
+const LanguageDefinition::NTree& LanguageDefinition::NTree::operator[](int i) const
 {
-  return childs[i];
+  return *childs[i];
 }
 //---------------------------------------------------------------------------
 void LanguageDefinition::Pop(PState& s)
 {
-      if(s.st.back()->r.CallFlg())
-        Call(s.st.back()->r.Id());
+      if(s.st.back().ptr->r.CallFlg())
+        Call(s.st.back().ptr->r.Id(), s);
       if(s.st.size() > 1 && (s.st.end()-2)->ptr->r.GatherFlg() && s.st.back().ptr->r.GatherFlg())
       {
-        NTree* tmp = &s.st.back().tree;
-        s.st.pop();
+        NTree* tmp = s.st.back().tree;
+        s.st.pop_back();
         s.st.back().AddValue(tmp);
       }
       else
       {
         DestroyTree(s.st.back().tree);
-        s.st.pop();
+        s.st.pop_back();
       }
 }
 //---------------------------------------------------------------------------
-  template<class IT>
-void LanguageDefinition::Parse(IT& from, const IT& to, PState& s, bool& stylechanged, FontStyle*&fs, bool& draw)
+void LanguageDefinition::StackItem::AddValue(NTree* ntr)
 {
-  if(s.st.empty())
-    s.st.push(StackItem(entering->r.nt->node));
-
-  IT a(from);
-  int tokid;
-  tokenizer.NextToken(from, to, tokid);
-
-  bool goingup = false;
-
-  while(true)
-  {
-    const std::map<int, Node*>& ref = s.st.back().ptr->type == ntNTerm && !goingup ? s.st.back().ptr->recidx: s.st.back().ptr->lftidx;
-    std::map<int, Node*>::iterator itr = ref.search(tokid);
-    if(itr == ref.end())
-    {
-      goingup = true;
-      stylechanged |= s.st.back().ptr->nt->fs != NULL;
-      Pop(s);
-
-      if(s.st.empty())
-      {
-        s.st.push(StackItem(entering->r.nt->node));
-        return;
-      }
-      else
-      {
-        continue;
-      }
-    }
-    else
-    {
-      if(itr->second->type == ntNTerm)
-      {
-        Push(s, itr->second);
-        stylechanged |= itr->second->nt->fs != NULL;
-        continue;
-      }
-      else
-      {
-        s.st.back().ptr = itr->second;
-        fs = s.st.back().ptr->t.fs;
-        const std::wstring& sym = itr->second->t.getstyle || itr->second->t.gather ? *symtab.insert(std::wstring(a,from)) : emptstr;
-        if(itr->second->t.getstyle)
-        {
-          FontStyle * tmp = fs;
-          GetStyle(tokid, sym, draw, s, fs);
-          stylechanged |= tmp != fs;
-        }
-        if(s.st.back()->r.CallFlg())
-          Call(s.st.back()->r.Id());
-        if(itr->second->t.gather && s.st.size() > 1 && (s.st.end()-2)->ptr.r.GatherFlg())
-        {
-          (s.st.end()-2)->AddValue(new NTree(sym));
-        }
-        return;
-      }
-    }
-  }   
+  if(tree == NULL)
+    tree = new NTree(ptr->r.Id());
+  tree->childs.push_back(ntr);
 }
-
-
+//---------------------------------------------------------------------------
 
 #pragma package(smart_init)

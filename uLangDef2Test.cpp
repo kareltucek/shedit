@@ -45,8 +45,8 @@ int main()
   {
     bool dc;
     class FontStyle;
-    FontStyle* dc2;
-    p.Parse<std::wstring::iterator>(b, c, ps, dc, (SHEdit::FontStyle*&)dc2,dc);
+    SHEdit::FontStyle* dc2;
+    p.Parse(b, c, ps, dc, dc2 ,dc);
     std::wcout << std::wstring(a,b) << std::endl;
     a = b;
   }
