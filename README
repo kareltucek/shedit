@@ -1,0 +1,12 @@
+SHEdit is a VCL based syntax highlight text editor component written "from scratch" as a semestral project (for school; in C++). Currently it is in a "not entirely finished" state, which though is already usable (but with a lot of "should be extended/rewritten" points). It is tested and written under the BCB XE.
+
+FEATURES/CAPABILITIES
+Is written to handle large amounts of data
+Syntax highlight is implemented as part of rendering engine. More complicated grammars are to be specified as automatons using a bit awkward syntax (the basis is a push-down automaton with stack for the automaton states and a single register that can be used to remember some trivial in formation). (Currenly common language constructs are more-or-less supported, but tokens cannot be specified using regular expressions). The syntax highlighter supports recursive dictionaries.
+The standard windows like keyboard shortcuts are used. Undo/redo working. Line numbers optional.
+Explicit formatting (foreground/background color + font style) besides the syntax highlight.
+Text wrapping is currently NOT supported.
+Integration with vcl aware IDEs.
+Rendering is written so that it redraws just what has to be redrawn.
+Buffer is implemented as a linear two-level linked list, which allows comfortable continuous movement using iterators.
+Note that API is not complete. If you decide to use this component in your project you most likely will have to extend it yourself.
