@@ -58,7 +58,7 @@ namespace SHEdit
       int HPos, HMax;
       void __fastcall UpdateHBar();
 
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
       void Write(String message);
       void QueueDump();
       void StressTest();

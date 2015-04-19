@@ -13,7 +13,7 @@
 
 using namespace SHEdit;
 
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
 #include <fstream>
 std::wofstream myfiledraw;
 #endif
@@ -24,7 +24,7 @@ std::wofstream myfiledraw;
 //---------------------------------------------------------------------------
 __fastcall Drawer::Drawer(TCanvas * canvas, TSHEdit * parent)
 {
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
   if(!myfiledraw.is_open())
     myfiledraw.open("drawer.txt", ios::out );
 #endif
@@ -63,7 +63,7 @@ __fastcall Drawer::Drawer(TCanvas * canvas, TSHEdit * parent)
 
 void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontStyle format)
 {
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
   TColor bg = *format.background;
   TColor fg = *format.foreground;
   assert(linenum < parent->Height/GetLinesize() + 5);
@@ -116,7 +116,7 @@ void __fastcall Drawer::DrawText(String text, bool newline, short linenum, FontS
 #ifndef QUICKDRAW
   drawcanvas->Brush->Style = bsSolid;
 #endif
-#ifdef _DEBUG_COPY_DRAW
+#ifdef SHEDIT_DEBUG_COPY_DRAW
   StressTest();
 #endif
 
@@ -139,7 +139,7 @@ void __fastcall Drawer::DrawMove(int from, int to, int by)
       drawcanvas->Brush->Color = (TColor)0xFFFFFF;
       drawcanvas->Rectangle(0, linesize*(TO+BY),RightBorder(), BottomBorder());
     }
-#ifdef _DEBUG_COPY_DRAW
+#ifdef SHEDIT_DEBUG_COPY_DRAW
   drawcanvas->Pen->Color = clBlack;
   drawcanvas->Pen->Width = 2;
   drawcanvas->Brush->Style = bsClear;
@@ -157,7 +157,7 @@ void __fastcall Drawer::DrawEof(short linenum)
   drawcanvas->Rectangle(0, y,RightBorder(), BottomBorder());
   if(linenumsenabled)
     DrawLinenum(linenum);
-#ifdef _DEBUG_COPY_DRAW
+#ifdef SHEDIT_DEBUG_COPY_DRAW
   StressTest();
 #endif
 }
@@ -169,7 +169,7 @@ void __fastcall Drawer::UpdateCursor(int x, int y)
   DrawCursor(); //this one here deletes the last one
   cx = x;
   cy = y;
-#ifdef _DEBUG_COPY_DRAW
+#ifdef SHEDIT_DEBUG_COPY_DRAW
   StressTest();
 #endif
   //cursorBGcolor = canvas->Pixels[cx][cy];
@@ -222,7 +222,7 @@ void __fastcall Drawer::DrawEndl(short linenum, FontStyle format)
     drawcanvas->Pen->Color = (TColor)0x444444;
     drawcanvas->LineTo(GetLinenumWidth(), y+linesize);
   }
-#ifdef _DEBUG_COPY_DRAW
+#ifdef SHEDIT_DEBUG_COPY_DRAW
   StressTest();
 #endif
 }
@@ -299,7 +299,7 @@ void __fastcall Drawer::DrawLinenum(int from)
   drawcanvas->Pen->Color = (TColor)0x444444;
   drawcanvas->MoveTo(GetLinenumWidth(), 0);
   drawcanvas->LineTo(GetLinenumWidth(), parent->Height);
-#ifdef _DEBUG_COPY_DRAW
+#ifdef SHEDIT_DEBUG_COPY_DRAW
   StressTest();
 #endif
 }
@@ -389,10 +389,10 @@ __fastcall Drawer::~Drawer()
 {
 }
 //---------------------------------------------------------------------------
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
 void Drawer::Write(String message)
 {
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
   assert(myfiledraw.is_open());
   myfiledraw << UTF8String(message.c_str()).c_str();
   myfiledraw << std::endl;
@@ -400,7 +400,7 @@ void Drawer::Write(String message)
 }
 #endif
 //---------------------------------------------------------------------------
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
 void Drawer::StressTest()
 {
   Sleep(20);

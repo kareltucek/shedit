@@ -10,7 +10,6 @@
 #include "uFormat.h"
 #include <stack>
 #include <wchar.h>
-#include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -18,7 +17,7 @@
 #include <ctype.h>
 
 using namespace SHEdit;
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
 std::ofstream myfile;
 #endif
 
@@ -26,7 +25,7 @@ std::ofstream myfile;
 //---------------------------------------------------------------------------
 Buffer::Buffer()
 {
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
   myfile.open("buffer.txt", ios::out);
 #endif
   NSpan * head = new NSpan();
@@ -112,12 +111,12 @@ void Buffer::_Insert(Span * word)
 void Buffer::_Delete(Span * word)
 {
 
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
   //Write("delete words "+String((int)word->prev)+String(" ")+String((int)word->next));
 #endif
   word->next->prev = word->prev;
   word->prev->next = word->next;
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
   //Write("delete words returning");
 #endif
 }
@@ -296,7 +295,7 @@ int Buffer::Delete(Iter * From, Iter * To)
   else
   {
 
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
     //Write("Delete cycle");
 #endif
     Span * begin, * end;
@@ -567,7 +566,7 @@ void Buffer::UndoPush(UndoTask * event)
 //---------------------------------------------------------------------------
 Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*> * stackRedo, Iter *& begin)
 {
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
   //Write(String("undo called"));
 #endif
   if((*stackUndo).size() == 0)
@@ -703,16 +702,41 @@ Iter * Buffer::UndoRedo(std::stack<UndoTask*> * stackUndo, std::stack<UndoTask*>
 
   delete event;
   return itr;
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
   //Write(String("undone"));
 #endif
 }
 //---------------------------------------------------------------------------
-void Buffer::SimpleLoadFile(const wchar_t * filename)
+bool Buffer::getwline(FILE* file, std::string& line)
 {
-  std::ifstream * file = new std::ifstream();
-  file->open(filename);
-  if (file && file->is_open())
+  line = "";
+  char buffer [100];
+  bool succ = false;
+  while(fgets(buffer, 100, file) != NULL)
+  {
+    succ = true;
+    for(char* ptr = buffer; *ptr != '\0'; ++ptr)
+    {
+      if(*ptr == '\n' || *ptr == '\r')
+      {
+        *ptr = '\0';
+        line.append(buffer);
+        return true;
+      }
+    }
+    line.append(buffer);
+  }
+  return succ;
+}
+//---------------------------------------------------------------------------
+bool Buffer::SimpleLoadFile(const wchar_t * filename)
+{
+
+  bool succ = true;
+  FILE *file;
+  file = _wfopen(filename, L"r");
+
+  if (file != NULL)
   {
     Iter * a = Begin();
     Iter * b = End();
@@ -723,7 +747,7 @@ void Buffer::SimpleLoadFile(const wchar_t * filename)
     std::string line;
     Span * lastword = data->first;
     NSpan * lastline = data->firstLine;
-    while(getline(*file,line))
+    while(getwline(file,line))
     {
       data->linecount++;
       wchar_t * str;
@@ -731,7 +755,7 @@ void Buffer::SimpleLoadFile(const wchar_t * filename)
       if(line.size() > 0)
       {
         wchars_num =  MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, NULL , 0 );
-        str = new wchar_t[wchars_num];
+        str = new wchar_t[wchars_num]; //this string becomes part of the buffer
         MultiByteToWideChar( CP_UTF8 , 0 , line.c_str() , -1, str , wchars_num );
         lastword = new Span(lastword, data->last, str, wcslen(str));
         _Insert(lastword);
@@ -740,36 +764,47 @@ void Buffer::SimpleLoadFile(const wchar_t * filename)
       _Insert(lastline);
       lastword = lastline;
     }
+    if (ferror (file))
+      succ = false;
     Range * r = new Range(data->first, data->last, true, data->firstLine, data->lastLine, true, -data->linecount+1); //- is not typo
     Action * ac = new Action(1, data->linecount, 0, 0, Action::ActionType::insertion);
     UndoPush(new UndoTask(ac, r));
     ItersTranslateInsert(1, 1, 1, 1, data->firstLine);
   }
-  delete file;
+  else
+    succ = false;
+  fclose(file);
+
+  return succ;
 }
 //---------------------------------------------------------------------------
-void Buffer::SimpleSaveFile(const wchar_t * filename)
+bool Buffer::SimpleSaveFile(const wchar_t * filename)
 {
-  std::ofstream * file = new std::ofstream();
-  file->open(filename);
-  if (file && file->is_open())
+  bool succ = true;
+  FILE *file;
+  file = _wfopen(filename, L"w");
+
+  if (file != NULL)
   {
+    fprintf(file, "\xef\xbb\xbf");
     Iter * itr = Begin();
     while(itr->word->next != NULL)
     {
       int size_needed = WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, NULL, 0, NULL, NULL);
-      std::string strTo( size_needed, 0 );
       char * utf8 = new char[size_needed+1];
       utf8[size_needed] = '\0';
       WideCharToMultiByte(CP_UTF8, 0, itr->word->string, -1, utf8, size_needed, NULL, NULL);
-      *file << utf8;
+      fprintf(file, utf8);
       delete utf8;
       itr->GoWord();
     }
-    file->close();
     delete itr;
   }
-  delete file;
+  else
+    succ = false;
+  fclose(file);
+
+  return succ;
 }
 //---------------------------------------------------------------------------
 /*
@@ -1011,7 +1046,7 @@ void Buffer::ItersTranslateInsert(int linenum, int pos, int bylines, int topos, 
 {
   for (std::list<IPos*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
   {
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
     int size = ItrList.size();
     IPos *debug = *itr;
 #endif
@@ -1036,7 +1071,7 @@ void Buffer::ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, i
 {
   for (std::list<IPos*>::iterator itr = ItrList.begin(); itr != ItrList.end(); itr++)
   {
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
     int size = ItrList.size();
     IPos *debug = *itr;
 #endif
@@ -1069,7 +1104,7 @@ void Buffer::ItersTranslateDelete(int fromlinenum, int frompos, int tolinenum, i
 //---------------------------------------------------------------------------
 int Buffer::CheckIntegrity(int& emptyCount)
 {
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
   //Write(String("checking integrity"));
 #endif
   emptyCount = 0;
@@ -1107,16 +1142,16 @@ int Buffer::CheckIntegrity(int& emptyCount)
     lastword = word;
     word = word->next;
   }
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
   //Write(String("integrity check done"));
 #endif
   return 0;
 }
 //---------------------------------------------------------------------------
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
 void Buffer::Write(AnsiString message)
 {
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
   myfile << message.c_str() << std::endl;
 #endif
 }

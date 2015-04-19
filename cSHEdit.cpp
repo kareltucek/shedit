@@ -35,7 +35,7 @@ namespace Cshedit
 
 using namespace SHEdit;
 
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
 #include <fstream>
 std::wofstream myfile;
 #endif
@@ -48,7 +48,7 @@ TSHEdit * TSHEditFocused; //callback musi jit na statickou metodu...
   __fastcall TSHEdit::TSHEdit(TComponent* Owner)
 : TCustomControl(Owner)
 {
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
   if(!myfile.is_open())
     myfile.open("main.txt", ios::out );
 #endif
@@ -160,7 +160,7 @@ void __fastcall TSHEdit::PaintWindow(HDC DC)
 //---------------------------------------------------------------------------
 void __fastcall TSHEdit::RepaintWindow(bool force)
 {
-  if(!_DEBUG_REPAINT || force)
+  if(!SHEDIT_DEBUG_REPAINT || force)
   {
     NSpan * line = itrLine.line;
     for(int j = GetVisLineCount(), i = 0; i < j; i++)
@@ -196,12 +196,18 @@ LRESULT CALLBACK TSHEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
 
     if(Key != 0)
     {
-      wchar_t c;
-      BYTE keyboard_state[256];
+      wchar_t c,d;
 
-      GetKeyboardState(keyboard_state);
-      if (ToUnicode(Key, (lParam & 0x0FF0000) >> 16, keyboard_state, &c, 1, 0) > 0)
+      if(!lastKeyDead)
       {
+        GetKeyboardState(keyboard_state);
+      }
+
+      int type = ToUnicode(Key, (lParam & 0x0FF0000) >> 16, keyboard_state, &c, 1, 0);
+      int type2 = ToUnicode(Key, (lParam & 0x0FF0000) >> 16, keyboard_state, &d, 1, 0);
+      if (type > 0)
+      {
+        lastKeyDead = false;
         KeyPressHandler(this, c);
         if(c != 0)
         {
@@ -209,8 +215,15 @@ LRESULT CALLBACK TSHEdit::ProcessKey(int code, WPARAM wParam, LPARAM lParam)
           return 0;
         }
       }
+      else if (type == -1)
+      {
+        msgLock = false;
+        lastKeyDead = true;
+        return 0;
+      }
       else
       {
+        lastKeyDead = false;
         msgLock = false;
         return 0;
       }
@@ -265,7 +278,7 @@ void TSHEdit::Scroll(int by)
 //---------------------------------------------------------------------------
 void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &Key, Classes::TShiftState Shift)
 {
-#ifndef _DEBUG_FORCE_SHORTCUTTS
+#ifndef SHEDIT_DEBUG_FORCE_SHORTCUTTS
   if(FOnKeyDown != NULL)
   {
     FOnKeyDown(this, Key, Shift);
@@ -314,7 +327,7 @@ void __fastcall TSHEdit::KeyDownHandler(System::TObject * Sender,System::Word &K
       AdjustLine(true);
       UpdateCursor(true);
       break;
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
     case VK_F2:
       LoadFile(L"test.txt");
       return;
@@ -498,7 +511,7 @@ void __fastcall TSHEdit::KeyPressHandler(System::TObject * Sender, System::WideC
   NSpan* changed = NULL;
   int linesMovedFrom = 0;
 
-#ifndef _DEBUG_FORCE_SHORTCUTTS
+#ifndef SHEDIT_DEBUG_FORCE_SHORTCUTTS
   if(FOnKeyPress != NULL)
   {
     FOnKeyPress(this, Key);
@@ -640,7 +653,7 @@ void TSHEdit::UndoRedo(bool redo)
 
   Action("  done");
 
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
         /*
            Write("Undone");
            int empty = 0;
@@ -657,7 +670,7 @@ void TSHEdit::UndoRedo(bool redo)
 void __fastcall TSHEdit::KeyUpHandler(System::TObject * Sender,System::Word &Key, Classes::TShiftState Shift)
 {
 
-#ifndef _DEBUG_FORCE_SHORTCUTTS
+#ifndef SHEDIT_DEBUG_FORCE_SHORTCUTTS
   if(FOnKeyUp != NULL)
   {
     FOnKeyUp(this, Key, Shift);
@@ -842,7 +855,7 @@ void TSHEdit::AdjustLine(bool paint, bool fromtop)
     parser->Execute();
 }
 //---------------------------------------------------------------------------
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
 void TSHEdit::CheckIntegrity()
 {
   int empty = 0;
@@ -881,7 +894,7 @@ void TSHEdit::CheckIterIntegrity(Iter * itr)
   assert(itr->word->string <= itr->ptr && itr->ptr < itr->word->string + itr->word->length);
   delete tmp;
 }
-#endif DEBUG
+#endif SHEDIT_DEBUG
 //---------------------------------------------------------------------------
 void TSHEdit::ItrToXY(Iter * itr, int& x, int& y)
 {
@@ -959,7 +972,7 @@ void __fastcall TSHEdit::MouseMove(Classes::TShiftState Shift, int X, int Y)
   if(!mouseSelect)
     return;
 
-#ifndef _DEBUG_CURSOR
+#ifndef SHEDIT_DEBUG_CURSOR
   ProcessMouseMove(X, Y);
 #endif
 }
@@ -1192,7 +1205,7 @@ int __fastcall TSHEdit::GetLineCount()
   return buffer->GetLineCount();
 }
 //---------------------------------------------------------------------------
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
 void __fastcall TSHEdit::dbgIter()
 {
   Log("cursor pos at "+String(itrCursor.offset)+":"+itrCursor.word->string+" at line "+itrCursor.line->next->string+"; prevline "+(itrCursor.line->prevline != NULL ? itrCursor.line->prevline->next->string : L"")+"+ nextline "+(itrCursor.line->nextline != NULL ? itrCursor.line->nextline->string : L""));
@@ -1247,7 +1260,7 @@ void TSHEdit::DeleteSel(bool allowsync, Iter * start, Iter * end)
   {
     ProcessChange(linesMovedFrom < 0 ? 0 : linesMovedFrom, linesMoved, changed);
   }
-#ifdef _DEBUG_UNDO
+#ifdef SHEDIT_DEBUG_UNDO
   UndoCheck();
 #endif
   if(FOnChange != NULL)
@@ -1299,7 +1312,7 @@ void TSHEdit::Insert(const wchar_t * text, Iter * itr)
 
   AdjustLine(true);
 
-#ifdef _DEBUG_UNDO
+#ifdef SHEDIT_DEBUG_UNDO
   UndoCheck();
 #endif
 
@@ -1533,9 +1546,9 @@ void TSHEdit::SelectAll()
   parser->Execute();
 }
 //---------------------------------------------------------------------------
-void TSHEdit::LoadFile(const wchar_t * filename)
+bool TSHEdit::LoadFile(const wchar_t * filename)
 {
-  buffer->SimpleLoadFile(filename);
+  bool succ = buffer->SimpleLoadFile(filename);
   itrCursor = buffer->begin();
   itrLine = buffer->begin();
   parser->InvalidateAll();
@@ -1543,11 +1556,12 @@ void TSHEdit::LoadFile(const wchar_t * filename)
   UpdateCursor(false);
   UpdateVBar();
   RepaintWindow(true);
+  return succ;
 }
 //---------------------------------------------------------------------------
-void TSHEdit::SaveFile(const wchar_t * filename)
+bool TSHEdit::SaveFile(const wchar_t * filename)
 {
-  buffer->SimpleSaveFile(filename);
+  return buffer->SimpleSaveFile(filename);
 }
 //---------------------------------------------------------------------------
 void TSHEdit::ParseScreenBetween(Iter * it1, Iter * it2)
@@ -1607,10 +1621,10 @@ void __fastcall TSHEdit::SetLanguageDefinition(LanguageDefinition * def)
 //---------------------------------------------------------------------------
 void TSHEdit::Action(String msg, bool end)
 {
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
   Write(msg + PositionDescription(), end);
 #endif
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
   CheckIntegrity();
   CheckIterIntegrity(&itrLine);
   CheckIterIntegrity(&itrCursor);
@@ -1625,7 +1639,7 @@ String TSHEdit::Escape(String str)
   return str;
 }
 //---------------------------------------------------------------------------
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
 void __fastcall TSHEdit::Log(String str)
 {
   if(dbgLog != NULL)
@@ -1659,7 +1673,7 @@ String TSHEdit::PositionDescription()
 //---------------------------------------------------------------------------
 void TSHEdit::Write(String message, bool end)
 {
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
   assert(myfile.is_open());
   myfile << UTF8String(message.c_str()).c_str();
   if(end)
@@ -1733,6 +1747,16 @@ CIter TSHEdit::begin()
 CIter TSHEdit::end()
 {
   return CIter(this, buffer->end(), false, true);
+}
+//---------------------------------------------------------------------------
+Iter TSHEdit::beginNIC()
+{
+  return buffer->begin();
+}
+//---------------------------------------------------------------------------
+Iter TSHEdit::endNIC()
+{
+  return buffer->end();
 }
 //---------------------------------------------------------------------------
 CIter TSHEdit::GetCursor()

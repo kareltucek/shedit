@@ -1,14 +1,14 @@
 #ifdef _DEBUG
-#define DEBUG
-//define _DEBUG_COPY_DRAW
-//define _DEBUG_LOGGING              //enables logging to files
-//define _DEBUG_UNDO                 //test undo each time a change is made to buffer
-//define _DEBUG_FORCE_SHORTCUTTS      //disables onkey_whatever events that may override the debug keys
-//define _DEBUG_PARSELINELOOP
-//define _DEBUG_CURSOR               //For debug of mouse-selection; disables movement updates
+//define SHEDIT_DEBUG
+//define SHEDIT_DEBUG_COPY_DRAW
+//define SHEDIT_DEBUG_LOGGING              //enables logging to files
+//define SHEDIT_DEBUG_UNDO                 //test undo each time a change is made to buffer
+//define SHEDIT_DEBUG_FORCE_SHORTCUTTS      //disables onkey_whatever events that may override the debug keys
+//define SHEDIT_DEBUG_PARSELINELOOP
+//define SHEDIT_DEBUG_CURSOR               //For debug of mouse-selection; disables movement updates
 #endif
 
-#define _DEBUG_REPAINT false
+#define SHEDIT_DEBUG_REPAINT false
 
 #ifndef _DEBUG
 #define NDEBUG       //disables asserts (iff this header is included before the assert header)

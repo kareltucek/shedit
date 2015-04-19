@@ -20,7 +20,7 @@
 
 using namespace SHEdit;
 
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
 #include <fstream>
 std::ofstream myfile;
 #endif
@@ -97,7 +97,7 @@ bool Parser::ParseTask::operator<(const Parser::ParseTask & pt)  const
 //---------------------------------------------------------------------------
 __fastcall Parser::Parser(TSHEdit * parent, Drawer * drawer)
 {
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
   myfile.open("parser.txt", ios::out);
   dbgLogging = false;
 #endif
@@ -288,7 +288,7 @@ void __fastcall Parser::Draw()
 //---------------------------------------------------------------------------
 void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, bool paint)
 {
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
   //Write(" entering parseline");
 #endif
   wchar_t * ptr;
@@ -304,7 +304,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
 
   while(true)
   {
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
     TColor bg = *actFormat.background;
     TColor fg = *actFormat.foreground;
 #endif
@@ -312,7 +312,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
     bool whiteskipped = false;
     while(langdef->IsWhite(*(itr->ptr)) && *(itr->ptr) != '\n')
     {
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
       bg =  *actFormat.background;
       fg =  *actFormat.foreground;
 #endif
@@ -402,7 +402,7 @@ void Parser::ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, 
       searchiter->current = searchiter->base;
     }
 
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
     /* int dbgtype = type; if( dbgLogging )  parent->Log( String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String((int)lookahead));        //Write(String(*(itr->ptr))+String(" ")+String(type)+String(" ")+String(searchiter->type));  */
 #endif
     if(lookahead || (lasttype == LangDefSpecType::Empty && type != LangDefSpecType::Empty))
@@ -714,7 +714,7 @@ void Parser::AddChar(Iter * itr, int & pos)
 
 void Parser::CheckMarkup(Iter * itr, bool paint)
 {
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
   //Write(" markup check");
 #endif
   if(itr->word->marks.top != NULL)
@@ -830,10 +830,10 @@ __fastcall Parser::~Parser()
 {
 }
 //---------------------------------------------------------------------------
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
 void Parser::DumpStackState()
 {
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
   /*
      Write(String("  current bank is ")+String(state.actBank));
      for(int i = 0; i < langdef->GetBankIdCount(); i++)
@@ -847,7 +847,7 @@ void Parser::DumpStackState()
 //---------------------------------------------------------------------------
 void Parser::Write(AnsiString message)
 {
-#ifdef _DEBUG_LOGGING
+#ifdef SHEDIT_DEBUG_LOGGING
   if(dbgLogging)
     myfile << message.c_str() << std::endl;
 #endif

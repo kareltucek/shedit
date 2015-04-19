@@ -140,6 +140,11 @@ namespace SHEdit
 
       bool msgLock;
 
+      //accept composite characters as ACUTE + A
+      bool lastKeyDead;
+      BYTE keyboard_state[256];
+
+
       TTimer * timer;
 
       TColor selColor;
@@ -227,7 +232,7 @@ namespace SHEdit
       void ProcessNewSelection(bool execdraw = true, bool draw = true);
 
     public:
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
       void __fastcall dbgIter();
       void __fastcall Log(String str);
       void CheckIntegrity();
@@ -270,6 +275,9 @@ namespace SHEdit
       CIter begin();
       CIter end();
 
+      Iter beginNIC(); //use Iter for direct edits to the buffer (skips drawing)
+      Iter endNIC(); //use Iter for direct edits to the buffer (skips drawing)
+
       int GetCursorX();
       int GetCursorY();
       int GetCursorCaretX();
@@ -289,8 +297,8 @@ namespace SHEdit
       String GetLine(Iter* itr);
       String GetLine(int index);
 
-      void LoadFile(const wchar_t * filename);
-      void SaveFile(const wchar_t * filename);
+      bool LoadFile(const wchar_t * filename);
+      bool SaveFile(const wchar_t * filename);
 
       void MarkAll(const String& text, bool caseSensitive = false, bool wholeWord = false);
       void UnMarkMarked();

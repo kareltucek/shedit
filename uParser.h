@@ -125,12 +125,12 @@ namespace SHEdit
 
       void ParseLine(Iter * itr, LanguageDefinition::SearchIter * searchiter, bool paint);
       void __fastcall Draw();
-#ifdef _DEBUG
+#ifdef SHEDIT_DEBUG
       void Write(AnsiString message);
       void DumpStackState();
 #endif
     public:
-#ifdef _DEBUG
+#ifdef SHEDIT_DEBUG
       bool dbgLogging;
 #endif
       friend class TSHEdit;

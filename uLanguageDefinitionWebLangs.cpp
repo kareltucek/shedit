@@ -155,7 +155,7 @@ using namespace SHEdit;
 
 
 
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
   htmlTree->Name = L"html";
   htmlCommentTree->Name = L"html comment";
   htmlTagTree->Name = L"html tag tree";

@@ -7,6 +7,7 @@
 #include "uIter.h"
 #include <stack>
 #include <iostream>
+#include <stdio.h>
 #include <fstream>
 namespace SHEdit
 {
@@ -108,9 +109,11 @@ namespace SHEdit
       void HistoryOnOff();        //purges stacks if the keepHistory flag is off; to be placed before returns in insert/delete
       void PurgeStack(std::stack<UndoTask*>& stack);
 
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
       void Write(AnsiString message);
 #endif
+
+      bool getwline(FILE* file, std::string& line);
 
     public:
       Buffer();
@@ -132,8 +135,8 @@ namespace SHEdit
       String GetLine(Iter * line, bool replaceTabs);
       String GetLineTo(Iter * To, bool replaceTabs);
 
-      void SimpleLoadFile(const wchar_t * filename);
-      void SimpleSaveFile(const wchar_t * filename);
+      bool SimpleLoadFile(const wchar_t * filename);
+      bool SimpleSaveFile(const wchar_t * filename);
       /*                                    //multithreaded
                                             void LoadFile(wchar_t * filename);
                                             void LoadFileAsync(wchar_t * filename);

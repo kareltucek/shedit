@@ -52,7 +52,7 @@ template <class T_data> class Stack
 
       T_data& operator*() {return ptr->data};
       T_data* operator->() {return &ptr->data};
-    }
+    };
 
     Node * top;
 
@@ -61,10 +61,8 @@ template <class T_data> class Stack
     Node* Push(const T_data& d);
     void Pop();
     void Erase();
-    void Erase(iterator itr);
     void Remove(T_data d);
     bool Contains(T_data d);
-
     Stack<T_data>& operator=(const Stack<T_data>& stack);
     bool operator==(const Stack<T_data>& stack);
     
@@ -136,12 +134,6 @@ void Stack<T_data>::Remove(T_data d)
     else
       n = n->next;
   }
-}
-//---------------------------------------------------------------------------
-  template <class T_data>
-void Stack<T_data>::Erase(iterator it)
-{
-  it.ptr->Remove();
 }
 //---------------------------------------------------------------------------
   template <class T_data>

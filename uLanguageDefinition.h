@@ -139,7 +139,7 @@ namespace SHEdit
         short recpopcount;
         Pop * pops;
 
-#ifdef DEBUG
+#ifdef SHEDIT_DEBUG
         wchar_t * Name;
 #endif
       };
