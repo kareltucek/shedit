@@ -27,15 +27,20 @@ LanguageDefinition::~LanguageDefinition()
   delete global;
 }
 //---------------------------------------------------------------------------
+LanguageDefinition::NTerm::NTerm(const std::wstring& n, FontStyle* f, int i, bool g, bool c)
+    : name(n), fs(f), ruleid(i), gather(g), call(c), node(new Node())
+{
+}
+//---------------------------------------------------------------------------
 void LanguageDefinition::AddTerm(const std::wstring& name,FontStyle* fs,const std::wstring& rgx, int id, int flags)
 {
-  Term* t = new Term( name,fs, id == Auto ? ++ids : id,  flags & tfGetStyle , flags & tfCall );
+  Term* t = new Term( name,fs, id == Auto ? ++ids : id,  flags & tfGetStyle , flags & tfCall);
   tokenizer.AddToken(rgx,id, flags & tfCaseSens);
   terms.push_back(t);
   index[name] = Rec(t);
 
   if(flags & tfGlobal)
-    nodes.insert(global->Add(Node(t)));
+    nodes.insert(global->r.nt->node->Add(Node(t)));
 }
 //---------------------------------------------------------------------------
 void LanguageDefinition::AddNonTerm(const std::wstring& name, FontStyle* fs, const std::wstring & rule, int id, int flags)
@@ -51,11 +56,12 @@ void LanguageDefinition::AddNonTerm(const std::wstring& name, FontStyle* fs, int
   index[name] = Rec(t);
 
   if(flags & tfGlobal)
-    nodes.insert(global->Add(Node(t)));
+    nodes.insert(global->r.nt->node->Add(Node(t)));
   if(flags & tfEntering)
   {
     entering = new Node(t);
     nodes.insert(entering);
+    nodes.insert(entering->r.nt->node);
     nodes.insert(t->node);
   }
 }
@@ -92,7 +98,8 @@ void LanguageDefinition::Node::ExpandLambda(std::map<int, Node*>& index, Node* n
       break;
     case ntNTerm: 
       next = next == NULL ? this : next;
-      r.nt->node->ExpandLambda(recidx, next); //first nonterminal or nonlambda node will take place
+      r.nt->node->ExpandLambda(index, next); //first nonterminal or nonlambda node will take place
+      //just changed recidx to index above... may be wron
       break;
     case ntLambda: 
       for(std::vector<Node*>::iterator itr = nextnodes.begin(); itr != nextnodes.end(); ++itr)
@@ -163,13 +170,14 @@ void LanguageDefinition::Construct(std::wstring& rule, std::vector<Node*>& endno
           if(cont_emp)
             endnodes.insert(endnodes.end(), ends.begin(), ends.end());
           else
-            endnodes == ends;
+            endnodes = ends;
           return;
         }
         else
         {
           GetToken(rule, buff, true);
         }
+        break;
       default:
         {
         std::vector<Node*> tmp(begins);
@@ -193,6 +201,9 @@ void LanguageDefinition::ParseString(std::wstring& rule, std::vector<Node*>& end
       case tS:
         {
         Rec r = index[buff];
+        if(r.t == NULL && r.nt == NULL)
+          throw std::wstring(L"name not yet declared : ").append(buff).c_str();
+
         Node n;
         if(r.term) //(two different constructors)
           n = Node(r.t);
@@ -202,7 +213,7 @@ void LanguageDefinition::ParseString(std::wstring& rule, std::vector<Node*>& end
         for(std::vector<Node*>::iterator itr = endnodes.begin(); itr != endnodes.end(); ++itr)
         {
           *itr = (*itr)->Add(n);
-          nodes.insert(*itr);
+          nodes.insert(*itr); //global accumulator
         }
 
         GetToken(rule, buff, true);
@@ -259,16 +270,19 @@ begin:
   switch(str[0])
   {
     case ' ':
+      str = str.substr(1);
       goto begin;
     case '|':
-      str = str.substr(1);
+      if(eat)
+        str = str.substr(1);
       return tC;
     default:
       int i = 0;
       while(str.length() > i && str[i] != ' ' && str[i] != '|')
         ++i;
       val = str.substr(0,i);
-      str = str.substr(i);
+      if(eat)
+        str = str.substr(i);
       return i > 0 ? tS : tE;
   }
 }
@@ -277,12 +291,8 @@ begin:
 void LanguageDefinition::Push(PState & s, Node* ptr)
 {
   if(s.st.back().ptr->type == ntNTerm && !s.st.back().ptr->r.nt->gather && !s.st.back().ptr->r.nt->call && s.st.back().ptr->lftidx.empty())
-  {
-    //tail recursion 
-    s.st.back()=ptr;
-    return;
-  }
-  s.st.push_back(ptr);
+    return; //tail recursion
+  s.st.push_back(StackItem(ptr));
 }
 //---------------------------------------------------------------------------
 void LanguageDefinition::DestroyTree(NTree* n)

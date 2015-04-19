@@ -79,7 +79,7 @@ namespace SHEdit
       int ids;
 
       enum NType {ntTerm, ntNTerm, ntLambda, ntEnd, ntTailrec};
-      enum TokType {tS, tC, tE};
+      enum TokType {tS, tC, tE}; //string, choice, end?
 
       class Node;
 
@@ -93,9 +93,9 @@ namespace SHEdit
         FontStyle* fs;
         std::wstring name;
 
-        Term(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c) : name(n), fs(fs_), tokid(i), getstyle(g), call(c) {} ;
+        Term(const std::wstring& n, FontStyle* fs_, int i, bool g, bool c) : name(n), fs(fs_), tokid(i), getstyle(g), call(c){} ;
         bool Eq(const Term& n){return tokid == n.tokid;};
-        bool Cq(const Term& n){return tokid == n.tokid && remember == n.remember && getstyle == n.getstyle && call == n.call && fs == n.fs;};
+        bool Cq(const Term& n){return tokid == n.tokid && remember == n.remember && getstyle == n.getstyle && call == n.call && fs == n.fs ;};
       };
 
       struct NTerm
@@ -223,42 +223,74 @@ namespace SHEdit
   //---------------------------------------------------------------------------
   template<class IT>
     void LanguageDefinition::Parse(IT& from, IT& to, PState& s, bool& stylechanged, FontStyle*&fs, bool& draw)
+    //the stylechanged refers to the inherited styles; the fs of the terminals is returned with false (even when set)
     {
       if(s.st.empty())
-        s.st.push_back(StackItem(entering->r.nt->node));
+        // s.st.push_back(StackItem(entering->r.nt->node)); //not working (we are not prepared (to encounter Lambda))
+        s.st.push_back(StackItem(entering));
 
       IT a(from);
       int tokid;
       tokenizer.NextToken(from, to, tokid);
 
-      bool goingup = false;
+      bool goingup = false; //signalizes to search leaveindexes instead of recindexes
+      bool retried = false; //signalizes that we do second pass from the entering clause
 
       while(true)
       {
         const std::map<int, Node*>& ref = s.st.back().ptr->type == ntNTerm && !goingup ? s.st.back().ptr->recidx: s.st.back().ptr->lftidx;
         std::map<int, Node*>::const_iterator itr = ref.find(tokid);
+        bool skip = false; //goto or not goto, that's the question
         if(itr == ref.end())
         {
-          goingup = true;
-          stylechanged |= s.st.back().ptr->r.nt->fs != NULL;
-          Pop(s);
-
-          if(s.st.empty())
+          if(!goingup && !retried)
           {
-            s.st.push_back(StackItem(entering->r.nt->node));
-            return;
+            //if we are here, we are pointing either on the entering nonterminal or on a terminal
+            itr = global->recidx.find(tokid);
+            if(itr != global->recidx.end())
+            {
+              if(itr->second->type == ntTerm && itr->second->lftidx.empty() && itr->second->recidx.empty())
+                return;
+              Push(s, global);
+              skip = true;
+            }
           }
-          else
+
+          if(!skip)
           {
-            continue;
+            goingup = true;
+            stylechanged |= s.st.back().ptr->type == ntNTerm && s.st.back().ptr->r.nt->fs != NULL;
+            Pop(s);
+
+            if(s.st.empty())
+            {
+              s.st.push_back(StackItem(entering));
+              std::wcout << "popped from the stack!" << std::endl;
+              if(retried)
+                return;
+              goingup = false;
+              retried = true;
+              continue;
+            }
+            else
+            {
+              continue;
+            }
           }
         }
-        else
+
+        if(!skip)
         {
+          if(s.st.back().ptr->type == ntNTerm && !goingup)
+          {
+            Push(s, s.st.back().ptr);
+            stylechanged |= s.st.back().ptr->r.nt->fs != NULL;
+          }
+        }
+
           if(itr->second->type == ntNTerm)
           {
-            Push(s, itr->second);
-            stylechanged |= itr->second->r.nt->fs != NULL;
+            s.st.back().ptr = itr->second;
             continue;
           }
           else
@@ -280,8 +312,7 @@ namespace SHEdit
             }
             return;
           }
-        }
-      }   
+      }
     }
 }
 
