@@ -13,7 +13,7 @@
 
 #define DRGXTOKENIZER_TEMPLATED
 
-#include "tokenizer.h"
+#include "tokenizer/tokenizer.h"
 //#include "uStack.h"
 
 using namespace drgxtokenizer;
@@ -136,10 +136,10 @@ namespace SHEdit
         std::map<int, Node*> lftidx; //leave index
         std::map<int, Node*> recidx; //recursive index (for nonterminals)
 
-        Node() : type(ntLambda), r(), nextnodes(), lftidx(), recidx(){};
+        Node() : type(NType::ntLambda), r(), nextnodes(), lftidx(), recidx(){};
         Node(NType t) : type(t), r(), nextnodes(), lftidx(), recidx(){};
-        Node(NTerm* t) : type(ntNTerm), r(t), nextnodes(), lftidx(), recidx(){};
-        Node(Term* t) : type(ntTerm), r(t), nextnodes(), lftidx(), recidx(){};
+        Node(NTerm* t) : type(NType::ntNTerm), r(t), nextnodes(), lftidx(), recidx(){};
+        Node(Term* t) : type(NType::ntTerm), r(t), nextnodes(), lftidx(), recidx(){};
         Node* Add(const Node& n); //returns a pointer to a used node (either a new node, or an already existing done)
         bool Eq(const Node& n); //equal (indistinguishable by perser)
         bool Cq(const Node& n); //congruent; more power needed here  - we should check the rest of the tree too

@@ -82,7 +82,7 @@ void LanguageDefinition::Node::ExpandLambda(std::map<int, Node*>& index, Node* n
 {
   switch(type)
   {
-    case ntTerm:
+    case NType::ntTerm:
       {
       next = next == NULL ? this : next;
       std::map<int,Node*>::iterator it = index.find(r.t->tokid);
@@ -118,7 +118,7 @@ void LanguageDefinition::Node::Finalize()
 {
   switch(type)
   {
-    case ntTerm:
+    case NType::ntTerm:
       for(std::vector<Node*>::iterator itr = nextnodes.begin(); itr != nextnodes.end(); ++itr)
         (*itr)->ExpandLambda(lftidx, *itr);
       break;
