@@ -11,6 +11,8 @@
 class FontStyle;
 using namespace SHEdit;
 
+#define SHEDIT_FSTYPE SHEdit::FontStyle*
+
 //---------------------------------------------------------------------------
 LanguageDefinition::LanguageDefinition(const std::locale& l) : loc(l), tokenizer(), ids(1), nodes(), terms(), nonterms(), index(), symtab(), emptstr(L"")
 {
@@ -27,12 +29,12 @@ LanguageDefinition::~LanguageDefinition()
   delete global;
 }
 //---------------------------------------------------------------------------
-LanguageDefinition::NTerm::NTerm(const std::wstring& n, FontStyle* f, int i, bool g, bool c)
+LanguageDefinition::NTerm::NTerm(const std::wstring& n, SHEDIT_FSTYPE f, int i, bool g, bool c)
     : name(n), fs(f), ruleid(i), gather(g), call(c), node(new Node())
 {
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddTerm(const std::wstring& name,FontStyle* fs,const std::wstring& rgx, int id, int flags)
+void LanguageDefinition::AddTerm(const std::wstring& name, SHEDIT_FSTYPE fs,const std::wstring& rgx, int id, int flags)
 {
   Term* t = new Term( name,fs, id == Auto ? ++ids : id,  flags & tfGetStyle , flags & tfCall);
   tokenizer.AddToken(rgx,id, flags & tfCaseSens);
@@ -43,13 +45,13 @@ void LanguageDefinition::AddTerm(const std::wstring& name,FontStyle* fs,const st
     nodes.insert(global->r.nt->node->Add(Node(t)));
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddNonTerm(const std::wstring& name, FontStyle* fs, const std::wstring & rule, int id, int flags)
+void LanguageDefinition::AddNonTerm(const std::wstring& name, SHEDIT_FSTYPE fs, const std::wstring & rule, int id, int flags)
 {
   AddNonTerm(name, fs, id, flags);
   AddRule(name, rule);
 }
 //---------------------------------------------------------------------------
-void LanguageDefinition::AddNonTerm(const std::wstring& name, FontStyle* fs, int id, int flags)
+void LanguageDefinition::AddNonTerm(const std::wstring& name, SHEDIT_FSTYPE fs, int id, int flags)
 {
   NTerm* t = new NTerm(name, fs, id == Auto ? ++ids : id, flags & tfGather, flags & tfCall);
   nonterms.push_back(t);
@@ -80,7 +82,7 @@ void LanguageDefinition::Node::ExpandLambda(std::map<int, Node*>& index, Node* n
 {
   switch(type)
   {
-    case ntTerm:
+    case NType::ntTerm:
       {
       next = next == NULL ? this : next;
       std::map<int,Node*>::iterator it = index.find(r.t->tokid);
@@ -96,17 +98,17 @@ void LanguageDefinition::Node::ExpandLambda(std::map<int, Node*>& index, Node* n
       }
       }
       break;
-    case ntNTerm: 
+    case NType::ntNTerm:
       next = next == NULL ? this : next;
       r.nt->node->ExpandLambda(index, next); //first nonterminal or nonlambda node will take place
       //just changed recidx to index above... may be wron
       break;
-    case ntLambda: 
+    case NType::ntLambda:
       for(std::vector<Node*>::iterator itr = nextnodes.begin(); itr != nextnodes.end(); ++itr)
         (*itr)->ExpandLambda(index, next);
-    case ntEnd: 
+    case NType::ntEnd:
            break;
-    case ntTailrec: 
+    case NType::ntTailrec:
                    /*TODO in case we want tail recursion support*/
            break;
   }
@@ -116,20 +118,20 @@ void LanguageDefinition::Node::Finalize()
 {
   switch(type)
   {
-    case ntTerm:
+    case NType::ntTerm:
       for(std::vector<Node*>::iterator itr = nextnodes.begin(); itr != nextnodes.end(); ++itr)
         (*itr)->ExpandLambda(lftidx, *itr);
       break;
-    case ntNTerm: 
+    case NType::ntNTerm:
       for(std::vector<Node*>::iterator itr = nextnodes.begin(); itr != nextnodes.end(); ++itr)
         (*itr)->ExpandLambda(lftidx, *itr);
       r.nt->node->ExpandLambda(recidx, NULL); //first nonterminal or nonlambda node will take place
       break;
-    case ntLambda: 
-    case ntEnd: 
+    case NType::ntLambda:
+    case NType::ntEnd:
 
            break;
-    case ntTailrec: 
+    case NType::ntTailrec:
                    /*TODO in case we want tail recursion support*/
            break;
   }
