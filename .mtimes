@@ -5,6 +5,7 @@
 1429428967|config.h
 1411395146|fSearchBar.cpp
 1411395149|fSearchBar.h
+2269860|tags
 1429428967|uBuffer.cpp
 1429428968|uBuffer.h
 1429428967|uCursor.cpp
@@ -17,6 +18,8 @@
 1425709751|uIter.h
 1425709751|uLanguageDefinition.cpp
 1429428968|uLanguageDefinition.h
+1429437090|uLanguageDefinition2.cpp
+1429437090|uLanguageDefinition2.h
 1429428967|uLanguageDefinitionSQL.cpp
 1429428967|uLanguageDefinitionWebLangs.cpp
 1429428967|uParser.cpp

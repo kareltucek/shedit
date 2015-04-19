@@ -68,6 +68,7 @@ namespace SHEdit
   class FontStyle;
 
   //---------------------------------------------------------------------------
+
   class LanguageDefinition
   {
     public:
@@ -82,6 +83,7 @@ namespace SHEdit
       enum TokType {tS, tC, tE}; //string, choice, end?
 
       class Node;
+      friend class Node;
 
       struct Term
       {
